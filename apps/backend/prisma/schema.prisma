@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(DONOR)
+  projects  Project[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  ORGANIZER
+  DONOR
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  organizerId String
+  organizer   User        @relation(fields: [organizerId], references: [id])
+  contractAddress String? // Address of the deployed Project contract
+  milestones  Milestone[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  description String
+  amount      Float
+  status      MilestoneStatus @default(PENDING)
+  proofs      Proof[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Proof {
+  id          String   @id @default(uuid())
+  milestoneId String
+  milestone   Milestone @relation(fields: [milestoneId], references: [id])
+  imageUrl    String
+  ipfsHash    String
+  gpsLat      Float
+  gpsLong     Float
+  timestamp   DateTime
+  status      ProofStatus @default(PENDING)
+  aiAnalysis  Json?
+  createdAt   DateTime @default(now())
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  APPROVED
+  REJECTED
+}
+
+enum ProofStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
