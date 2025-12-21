@@ -1,9 +1,8 @@
 
-### Open-Audit -> Decentralized Fund Release & Verification System
+## Open-Audit -> Decentralized Fund Release & Verification System
 
 **Open-Audit** is a platform designed to bridge the trust gap in public, institutional, and community-funded infrastructure projects. It ensures that funds are released only after real-world milestones are completed and independently verified.
 
----
 
 ## The Core Problem
 Public and CSR-funded projects (e.g., solar panels for schools, water filters, public WiFi) often suffer from:
@@ -20,7 +19,6 @@ Public and CSR-funded projects (e.g., solar panels for schools, water filters, p
 
 > **"You never gate physical work — you only gate funding."**
 
----
 
 ## Tech Stack
 
@@ -40,7 +38,6 @@ This project is organized as a monorepo using **Turbo**:
 - **Storage**: MinIO (S3 Compatible)
 - **Payments**: Stripe (Sandbox)
 
----
 
 ## Getting Started
 
@@ -72,8 +69,6 @@ This project is organized as a monorepo using **Turbo**:
    npm run dev
    ```
 
----
-
 ## Workflow
 
 1.  **Project Creation**: Organizer defines milestones (e.g., "Foundation Laid").
@@ -84,12 +79,8 @@ This project is organized as a monorepo using **Turbo**:
 6.  **Consensus**: Verifiers vote on the proof.
 7.  **Release**: Smart contract triggers fund release upon approval.
 
----
 
 ## Why This Works
 - **India-Compatible**: Uses INR and existing banking rails, not crypto payments.
 - **Assistive AI**: AI helps humans, it doesn't replace them.
 - **Immutable Trust**: Blockchain ensures no retroactive tampering of records.
-
----
-
