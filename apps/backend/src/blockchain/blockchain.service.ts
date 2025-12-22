@@ -84,8 +84,23 @@ export class BlockchainService implements OnModuleInit {
 
             console.log(`BlockchainService: Project created on-chain. Tx Hash: ${receipt.hash}`);
 
-            // Return the transaction hash so the caller (ProjectsService) can store it if needed.
-            return receipt.hash;
+            // Parse logs to get the new project address
+            let projectAddress = null;
+            for (const log of receipt.logs) {
+                try {
+                    const parsedLog = this.factoryContract.interface.parseLog(log);
+                    if (parsedLog && parsedLog.name === 'ProjectCreated') {
+                        projectAddress = parsedLog.args[0]; // projectAddress is the first argument
+                        break;
+                    }
+                } catch (e) {
+                    // ignore logs that don't belong to this contract
+                }
+            }
+
+            console.log(`BlockchainService: Project created on-chain. Tx Hash: ${receipt.hash}, Address: ${projectAddress}`);
+
+            return { hash: receipt.hash, address: projectAddress };
         } catch (error) {
             console.error('Error creating project on chain:', error);
             // We throw the error so the caller knows the blockchain part failed, 

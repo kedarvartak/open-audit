@@ -15,16 +15,21 @@ export class ProjectsService {
     // create project - both onchain and offchain
     // graceful degradation pattern
     async create(data: any, userId: string) {
+        let contractAddress = null;
         try {
-            await this.blockchainService.createProjectOnChain(data.title); // calls the smart contract function
+            const result = await this.blockchainService.createProjectOnChain(data.title);
+            if (result) {
+                contractAddress = result.address;
+            }
         } catch (e) {
             console.error("Blockchain creation failed", e);
         }
-        // create project in DB
+
         return this.prisma.project.create({
             data: {
                 ...data,
                 organizerId: userId,
+                contractAddress,
             },
         });
     }
