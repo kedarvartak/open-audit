@@ -11,7 +11,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     PrismaModule,
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'secretKey',
+      secret: process.env.JWT_SECRET!, // adding ! guarantees that env exists at runtime
       signOptions: { expiresIn: '60m' },
     }),
   ],
@@ -20,3 +20,13 @@ import { PrismaModule } from '../prisma/prisma.module';
   exports: [AuthService],
 })
 export class AuthModule { }
+
+// Request
+//  → JwtAuthGuard
+//    → JwtStrategy
+//      → Extract JWT
+//      → Verify signature
+//      → Check expiry
+//      → validate(payload)
+//        → return user object
+//  → Controller executes
