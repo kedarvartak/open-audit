@@ -38,7 +38,7 @@ export class BlockchainService implements OnModuleInit {
         // This file contains the 'ABI' which tells us what functions the contract has (createProject, etc.).
         const factoryAbiPath = path.resolve(
             __dirname,
-            '../../../../../packages/contracts/artifacts/contracts/ProjectFactory.sol/ProjectFactory.json',
+            '../../../../packages/contracts/artifacts/contracts/ProjectFactory.sol/ProjectFactory.json',
         );
 
         // We check if the ABI file exists to avoid crashing if the contracts haven't been compiled yet.
