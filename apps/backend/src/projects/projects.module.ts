@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
-import { BlockchainModule } from '../blockchain/blockchain.module';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [BlockchainModule],
+  imports: [PrismaModule],
   controllers: [ProjectsController],
-  providers: [ProjectsService]
+  providers: [ProjectsService],
+  exports: [ProjectsService],
 })
 export class ProjectsModule { }

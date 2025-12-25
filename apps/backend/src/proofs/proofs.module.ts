@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ProofsController } from './proofs.controller';
 import { ProofsService } from './proofs.service';
-import { BlockchainModule } from '../blockchain/blockchain.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
-    imports: [BlockchainModule],
+    imports: [PrismaModule, StorageModule],
     controllers: [ProofsController],
-    providers: [ProofsService]
+    providers: [ProofsService],
+    exports: [ProofsService],
 })
 export class ProofsModule { }
