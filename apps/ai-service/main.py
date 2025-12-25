@@ -12,6 +12,7 @@ import numpy as np
 from services.detection_service import DetectionService
 from services.comparison_service import ComparisonService
 from services.visualization_service import VisualizationService
+from services.defect_detection_service import DefectDetectionService
 
 app = FastAPI(
     title="AI Verification Service",
@@ -32,6 +33,7 @@ app.add_middleware(
 detection_service = DetectionService()
 comparison_service = ComparisonService()
 visualization_service = VisualizationService()
+defect_detection_service = DefectDetectionService()
 
 
 class VerificationRequest(BaseModel):
@@ -216,6 +218,88 @@ def generate_recommendations(comparison_result: dict, status: str) -> List[str]:
         recommendations.append("No new objects detected between before and after images")
     
     return recommendations if recommendations else ["Verification successful"]
+
+
+@app.post("/analyze-defect")
+async def analyze_defect(
+    before_image: UploadFile = File(...),
+    after_image: UploadFile = File(...),
+    proof_id: str = "unknown"
+):
+    """
+    Analyze before/after images for defect detection and repair verification.
+    Optimized for infrastructure repairs (rust, cracks, damage, etc.)
+    
+    Args:
+        before_image: Image showing the defect
+        after_image: Image showing the repair
+        proof_id: ID of the proof being analyzed
+    
+    Returns:
+        Analysis with defect locations and repair verification
+    """
+    try:
+        # Read images
+        before_img = Image.open(io.BytesIO(await before_image.read())).convert("RGB")
+        after_img = Image.open(io.BytesIO(await after_image.read())).convert("RGB")
+        
+        # Run defect detection and repair verification
+        result = defect_detection_service.detect_and_verify(before_img, after_img)
+        
+        # Preprocess for visualization
+        before_cv, after_cv = defect_detection_service.preprocess_images(before_img, after_img)
+        
+        # Draw bounding boxes on detected changes
+        annotated_before = before_cv.copy()
+        annotated_after = after_cv.copy()
+        
+        for detection in result['defect_detections']:
+            bbox = detection['bbox']
+            x1, y1, x2, y2 = bbox['x1'], bbox['y1'], bbox['x2'], bbox['y2']
+            
+            # Color based on repair status
+            color = (0, 255, 0) if detection['is_repair'] else (0, 0, 255)  # Green if repair, Red if not
+            thickness = 3
+            
+            # Draw on before image (red/orange for defect)
+            import cv2
+            cv2.rectangle(annotated_before, (x1, y1), (x2, y2), (0, 165, 255), thickness)
+            label = f"Defect #{detection['region_id']}"
+            cv2.putText(annotated_before, label, (x1, y1 - 10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 165, 255), 2)
+            
+            # Draw on after image (green if repaired, red if not)
+            cv2.rectangle(annotated_after, (x1, y1), (x2, y2), color, thickness)
+            status_label = "REPAIRED" if detection['is_repair'] else "NOT FIXED"
+            label = f"{status_label} ({detection['repair_confidence']:.0%})"
+            cv2.putText(annotated_after, label, (x1, y1 - 10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        
+        # Convert OpenCV images to PIL for base64 encoding
+        annotated_before_pil = Image.fromarray(cv2.cvtColor(annotated_before, cv2.COLOR_BGR2RGB))
+        annotated_after_pil = Image.fromarray(cv2.cvtColor(annotated_after, cv2.COLOR_BGR2RGB))
+        
+        # Convert to base64
+        before_base64 = image_to_base64(annotated_before_pil)
+        after_base64 = image_to_base64(annotated_after_pil)
+        
+        # Build response
+        return {
+            "proof_id": proof_id,
+            "status": result['status'],
+            "confidence": result['confidence'],
+            "summary": result['summary'],
+            "detected_changes": result['detected_changes'],
+            "verified_repairs": result['verified_repairs'],
+            "defect_detections": result['defect_detections'],
+            "annotated_before_image": before_base64,
+            "annotated_after_image": after_base64,
+            "processing_time": "< 5 seconds"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Defect analysis failed: {str(e)}")
+
 
 
 if __name__ == "__main__":
