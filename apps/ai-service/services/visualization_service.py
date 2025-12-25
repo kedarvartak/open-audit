@@ -18,7 +18,7 @@ class VisualizationService:
         """Generate n distinct colors for bounding boxes"""
         colors = []
         for i in range(n):
-            hue = int((i * 360 / n) % 360)
+            hue = int((i * 180 / n) % 180)  # OpenCV hue range is 0-179
             # Convert HSV to RGB
             c = cv2.cvtColor(np.uint8([[[hue, 255, 255]]]), cv2.COLOR_HSV2RGB)[0][0]
             colors.append(tuple(map(int, c)))
