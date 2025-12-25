@@ -36,9 +36,19 @@ detection_service = DetectionService()
 comparison_service = ComparisonService()
 visualization_service = VisualizationService()
 
-# Initialize defect detection with Groq API key for VLM-based analysis
+# Initialize DEEP LEARNING defect detection with Groq API key for VLM-based analysis
+# This uses ResNet50 + VGG16 for feature extraction and perceptual similarity
 groq_api_key = os.getenv("GROQ_API_KEY", "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")
-defect_detection_service = DefectDetectionService(groq_api_key=groq_api_key)
+
+# Import and use the deep learning service
+try:
+    from services.deep_defect_detection_service import DeepDefectDetectionService
+    defect_detection_service = DeepDefectDetectionService(groq_api_key=groq_api_key)
+except Exception as e:
+    # Fallback to original service if deep learning fails
+    from services.defect_detection_service import DefectDetectionService
+    defect_detection_service = DefectDetectionService(groq_api_key=groq_api_key)
+    print(f"Using fallback detection service: {e}")
 
 
 class VerificationRequest(BaseModel):
