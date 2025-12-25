@@ -12,7 +12,7 @@ class VisualizationService:
     
     def __init__(self):
         self.colors = self._generate_colors(80)  # 80 COCO classes
-        print("✅ Visualization service initialized")
+        print("Visualization service initialized")
     
     def _generate_colors(self, n: int) -> List[tuple]:
         """Generate n distinct colors for bounding boxes"""

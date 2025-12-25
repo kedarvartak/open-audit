@@ -16,7 +16,7 @@ class SimpleDetectionService:
     """
     
     def __init__(self):
-        print("✅ Simple detection service initialized (OpenCV-based)")
+        print("Simple detection service initialized (OpenCV-based)")
         print("   Note: For full YOLO detection, install torch and ultralytics")
     
     def detect_objects(

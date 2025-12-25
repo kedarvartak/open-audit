@@ -6,8 +6,10 @@ from typing import Optional, List
 import uvicorn
 import io
 import base64
+import os
 from PIL import Image
 import numpy as np
+import cv2
 
 from services.detection_service import DetectionService
 from services.comparison_service import ComparisonService
@@ -33,7 +35,10 @@ app.add_middleware(
 detection_service = DetectionService()
 comparison_service = ComparisonService()
 visualization_service = VisualizationService()
-defect_detection_service = DefectDetectionService()
+
+# Initialize defect detection with Groq API key for VLM-based analysis
+groq_api_key = os.getenv("GROQ_API_KEY", "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")
+defect_detection_service = DefectDetectionService(groq_api_key=groq_api_key)
 
 
 class VerificationRequest(BaseModel):
@@ -262,7 +267,6 @@ async def analyze_defect(
             thickness = 3
             
             # Draw on before image (red/orange for defect)
-            import cv2
             cv2.rectangle(annotated_before, (x1, y1), (x2, y2), (0, 165, 255), thickness)
             label = f"Defect #{detection['region_id']}"
             cv2.putText(annotated_before, label, (x1, y1 - 10),

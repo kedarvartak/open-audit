@@ -1,0 +1,91 @@
+INFO:services.vlm_service:VLM Service initialized with llama-3.2-90b-vision-preview
+INFO:services.defect_detection_service:Enhanced Defect Detection with VLM initialized
+Loading YOLOv8n model...
+Using device: cpu
+YOLOv8 model loaded successfully
+Comparison service initialized
+Visualization service initialized
+INFO:     Will watch for changes in these directories: ['/home/shashank/Desktop/side pros/gdg/apps/ai-service']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [1187375] using WatchFiles
+INFO:services.vlm_service:VLM Service initialized with llama-3.2-90b-vision-preview
+INFO:services.defect_detection_service:Enhanced Defect Detection with VLM initialized
+Loading YOLOv8n model...
+Using device: cpu
+YOLOv8 model loaded successfully
+Comparison service initialized
+Visualization service initialized
+INFO:watchfiles.main:1 change detected
+INFO:services.vlm_service:VLM Service initialized with llama-3.2-90b-vision-preview
+INFO:services.defect_detection_service:Enhanced Defect Detection with VLM initialized
+INFO:     Started server process [1187537]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+Loading YOLOv8n model...
+Using device: cpu
+YOLOv8 model loaded successfully
+Comparison service initialized
+Visualization service initialized
+INFO:     127.0.0.1:54194 - "GET /health HTTP/1.1" 200 OK
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:watchfiles.main:1 change detected
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1187537]
+INFO:     Stopping reloader process [1187375]

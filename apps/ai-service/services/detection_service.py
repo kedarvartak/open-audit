@@ -19,17 +19,17 @@ class DetectionService:
             model_size: YOLO model size (n=nano, s=small, m=medium, l=large, x=xlarge)
                        nano is fastest, xlarge is most accurate
         """
-        print(f"🤖 Loading YOLOv8{model_size} model...")
+        print(f"Loading YOLOv8{model_size} model...")
         
         # Use CPU if GPU not available
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        print(f"📱 Using device: {self.device}")
+        print(f"Using device: {self.device}")
         
         # Load YOLOv8 model (will download on first run)
         self.model = YOLO(f'yolov8{model_size}.pt')
         self.model.to(self.device)
         
-        print("✅ YOLOv8 model loaded successfully")
+        print("YOLOv8 model loaded successfully")
     
     def detect_objects(
         self,

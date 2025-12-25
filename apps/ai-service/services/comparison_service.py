@@ -11,7 +11,7 @@ class ComparisonService:
     """
     
     def __init__(self):
-        print("✅ Comparison service initialized")
+        print("Comparison service initialized")
     
     def compare_images(
         self,
