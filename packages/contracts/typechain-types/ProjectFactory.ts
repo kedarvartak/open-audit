@@ -25,30 +25,87 @@ import type {
 
 export interface ProjectFactoryInterface extends Interface {
   getFunction(
-    nameOrSignature: "createProject" | "getProjects" | "projects"
+    nameOrSignature:
+      | "admin"
+      | "createProject"
+      | "getProjectCount"
+      | "getProjectDetails"
+      | "getProjects"
+      | "getProjectsByOrganizer"
+      | "isProject"
+      | "isValidProject"
+      | "organizerProjects"
+      | "projects"
   ): FunctionFragment;
 
   getEvent(nameOrSignatureOrTopic: "ProjectCreated"): EventFragment;
 
+  encodeFunctionData(functionFragment: "admin", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "createProject",
-    values: [string]
+    values: [AddressLike, string, string, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getProjectCount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getProjectDetails",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "getProjects",
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "getProjectsByOrganizer",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isProject",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isValidProject",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "organizerProjects",
+    values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "projects",
     values: [BigNumberish]
   ): string;
 
+  decodeFunctionResult(functionFragment: "admin", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createProject",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "getProjectCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getProjectDetails",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getProjects",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getProjectsByOrganizer",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "isProject", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "isValidProject",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "organizerProjects",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "projects", data: BytesLike): Result;
@@ -58,17 +115,23 @@ export namespace ProjectCreatedEvent {
   export type InputTuple = [
     projectAddress: AddressLike,
     organizer: AddressLike,
-    title: string
+    title: string,
+    fundingGoal: BigNumberish,
+    timestamp: BigNumberish
   ];
   export type OutputTuple = [
     projectAddress: string,
     organizer: string,
-    title: string
+    title: string,
+    fundingGoal: bigint,
+    timestamp: bigint
   ];
   export interface OutputObject {
     projectAddress: string;
     organizer: string;
     title: string;
+    fundingGoal: bigint;
+    timestamp: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -119,9 +182,57 @@ export interface ProjectFactory extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  createProject: TypedContractMethod<[_title: string], [void], "nonpayable">;
+  admin: TypedContractMethod<[], [string], "view">;
+
+  createProject: TypedContractMethod<
+    [
+      _organizer: AddressLike,
+      _title: string,
+      _description: string,
+      _fundingGoal: BigNumberish
+    ],
+    [string],
+    "nonpayable"
+  >;
+
+  getProjectCount: TypedContractMethod<[], [bigint], "view">;
+
+  getProjectDetails: TypedContractMethod<
+    [_index: BigNumberish],
+    [
+      [string, string, string, string, bigint, bigint] & {
+        projectAddress: string;
+        organizer: string;
+        title: string;
+        description: string;
+        fundingGoal: bigint;
+        createdAt: bigint;
+      }
+    ],
+    "view"
+  >;
 
   getProjects: TypedContractMethod<[], [string[]], "view">;
+
+  getProjectsByOrganizer: TypedContractMethod<
+    [_organizer: AddressLike],
+    [string[]],
+    "view"
+  >;
+
+  isProject: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+
+  isValidProject: TypedContractMethod<
+    [_projectAddress: AddressLike],
+    [boolean],
+    "view"
+  >;
+
+  organizerProjects: TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [string],
+    "view"
+  >;
 
   projects: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
@@ -130,11 +241,58 @@ export interface ProjectFactory extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "admin"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "createProject"
-  ): TypedContractMethod<[_title: string], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [
+      _organizer: AddressLike,
+      _title: string,
+      _description: string,
+      _fundingGoal: BigNumberish
+    ],
+    [string],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "getProjectCount"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getProjectDetails"
+  ): TypedContractMethod<
+    [_index: BigNumberish],
+    [
+      [string, string, string, string, bigint, bigint] & {
+        projectAddress: string;
+        organizer: string;
+        title: string;
+        description: string;
+        fundingGoal: bigint;
+        createdAt: bigint;
+      }
+    ],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "getProjects"
   ): TypedContractMethod<[], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "getProjectsByOrganizer"
+  ): TypedContractMethod<[_organizer: AddressLike], [string[]], "view">;
+  getFunction(
+    nameOrSignature: "isProject"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "isValidProject"
+  ): TypedContractMethod<[_projectAddress: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "organizerProjects"
+  ): TypedContractMethod<
+    [arg0: AddressLike, arg1: BigNumberish],
+    [string],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "projects"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
@@ -148,7 +306,7 @@ export interface ProjectFactory extends BaseContract {
   >;
 
   filters: {
-    "ProjectCreated(address,address,string)": TypedContractEvent<
+    "ProjectCreated(address,address,string,uint256,uint256)": TypedContractEvent<
       ProjectCreatedEvent.InputTuple,
       ProjectCreatedEvent.OutputTuple,
       ProjectCreatedEvent.OutputObject

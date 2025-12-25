@@ -27,16 +27,27 @@ export interface ProjectInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "addDonor"
+      | "addVerifier"
       | "admin"
       | "createMilestone"
+      | "createdAt"
+      | "description"
       | "donorCount"
+      | "fundingGoal"
+      | "getMilestone"
+      | "getMilestoneCount"
+      | "getProof"
+      | "hasUserVoted"
       | "hasVoted"
       | "isDonor"
+      | "isVerifier"
       | "milestoneProofs"
       | "milestones"
       | "organizer"
+      | "removeVerifier"
       | "submitProof"
       | "title"
+      | "verifierCount"
       | "voteOnProof"
   ): FunctionFragment;
 
@@ -47,21 +58,52 @@ export interface ProjectInterface extends Interface {
       | "MilestoneCreated"
       | "MilestoneRejected"
       | "ProofSubmitted"
+      | "VerifierAdded"
+      | "VerifierRemoved"
       | "VoteCast"
   ): EventFragment;
 
   encodeFunctionData(
     functionFragment: "addDonor",
+    values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "addVerifier",
     values: [AddressLike]
   ): string;
   encodeFunctionData(functionFragment: "admin", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "createMilestone",
-    values: [string, BigNumberish]
+    values: [string, string, BigNumberish]
+  ): string;
+  encodeFunctionData(functionFragment: "createdAt", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "description",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "donorCount",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "fundingGoal",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getMilestone",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getMilestoneCount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getProof",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "hasUserVoted",
+    values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "hasVoted",
@@ -69,6 +111,10 @@ export interface ProjectInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "isDonor",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isVerifier",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
@@ -81,24 +127,59 @@ export interface ProjectInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "organizer", values?: undefined): string;
   encodeFunctionData(
+    functionFragment: "removeVerifier",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "submitProof",
-    values: [BigNumberish, string, string]
+    values: [BigNumberish, BytesLike, BytesLike, string]
   ): string;
   encodeFunctionData(functionFragment: "title", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "verifierCount",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "voteOnProof",
     values: [BigNumberish, boolean]
   ): string;
 
   decodeFunctionResult(functionFragment: "addDonor", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "addVerifier",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "admin", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createMilestone",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "createdAt", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "description",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "donorCount", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "fundingGoal",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getMilestone",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getMilestoneCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "getProof", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "hasUserVoted",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "hasVoted", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "isDonor", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "isVerifier", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "milestoneProofs",
     data: BytesLike
@@ -106,10 +187,18 @@ export interface ProjectInterface extends Interface {
   decodeFunctionResult(functionFragment: "milestones", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "organizer", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "removeVerifier",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "submitProof",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "title", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "verifierCount",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "voteOnProof",
     data: BytesLike
@@ -117,10 +206,11 @@ export interface ProjectInterface extends Interface {
 }
 
 export namespace DonorAddedEvent {
-  export type InputTuple = [donor: AddressLike];
-  export type OutputTuple = [donor: string];
+  export type InputTuple = [donor: AddressLike, amount: BigNumberish];
+  export type OutputTuple = [donor: string, amount: bigint];
   export interface OutputObject {
     donor: string;
+    amount: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -129,10 +219,20 @@ export namespace DonorAddedEvent {
 }
 
 export namespace MilestoneApprovedEvent {
-  export type InputTuple = [milestoneId: BigNumberish];
-  export type OutputTuple = [milestoneId: bigint];
+  export type InputTuple = [
+    milestoneId: BigNumberish,
+    approvalCount: BigNumberish,
+    timestamp: BigNumberish
+  ];
+  export type OutputTuple = [
+    milestoneId: bigint,
+    approvalCount: bigint,
+    timestamp: bigint
+  ];
   export interface OutputObject {
     milestoneId: bigint;
+    approvalCount: bigint;
+    timestamp: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -143,18 +243,21 @@ export namespace MilestoneApprovedEvent {
 export namespace MilestoneCreatedEvent {
   export type InputTuple = [
     milestoneId: BigNumberish,
+    title: string,
     description: string,
-    amount: BigNumberish
+    requiredApprovals: BigNumberish
   ];
   export type OutputTuple = [
     milestoneId: bigint,
+    title: string,
     description: string,
-    amount: bigint
+    requiredApprovals: bigint
   ];
   export interface OutputObject {
     milestoneId: bigint;
+    title: string;
     description: string;
-    amount: bigint;
+    requiredApprovals: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -163,10 +266,20 @@ export namespace MilestoneCreatedEvent {
 }
 
 export namespace MilestoneRejectedEvent {
-  export type InputTuple = [milestoneId: BigNumberish];
-  export type OutputTuple = [milestoneId: bigint];
+  export type InputTuple = [
+    milestoneId: BigNumberish,
+    rejectionCount: BigNumberish,
+    timestamp: BigNumberish
+  ];
+  export type OutputTuple = [
+    milestoneId: bigint,
+    rejectionCount: bigint,
+    timestamp: bigint
+  ];
   export interface OutputObject {
     milestoneId: bigint;
+    rejectionCount: bigint;
+    timestamp: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -177,18 +290,48 @@ export namespace MilestoneRejectedEvent {
 export namespace ProofSubmittedEvent {
   export type InputTuple = [
     milestoneId: BigNumberish,
-    ipfsHash: string,
+    beforeImageHash: BytesLike,
+    afterImageHash: BytesLike,
+    gpsCoordinates: string,
     submitter: AddressLike
   ];
   export type OutputTuple = [
     milestoneId: bigint,
-    ipfsHash: string,
+    beforeImageHash: string,
+    afterImageHash: string,
+    gpsCoordinates: string,
     submitter: string
   ];
   export interface OutputObject {
     milestoneId: bigint;
-    ipfsHash: string;
+    beforeImageHash: string;
+    afterImageHash: string;
+    gpsCoordinates: string;
     submitter: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace VerifierAddedEvent {
+  export type InputTuple = [verifier: AddressLike];
+  export type OutputTuple = [verifier: string];
+  export interface OutputObject {
+    verifier: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace VerifierRemovedEvent {
+  export type InputTuple = [verifier: AddressLike];
+  export type OutputTuple = [verifier: string];
+  export interface OutputObject {
+    verifier: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -200,17 +343,20 @@ export namespace VoteCastEvent {
   export type InputTuple = [
     milestoneId: BigNumberish,
     voter: AddressLike,
-    approve: boolean
+    approve: boolean,
+    comment: string
   ];
   export type OutputTuple = [
     milestoneId: bigint,
     voter: string,
-    approve: boolean
+    approve: boolean,
+    comment: string
   ];
   export interface OutputObject {
     milestoneId: bigint;
     voter: string;
     approve: boolean;
+    comment: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -261,17 +407,72 @@ export interface Project extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  addDonor: TypedContractMethod<[_donor: AddressLike], [void], "nonpayable">;
-
-  admin: TypedContractMethod<[], [string], "view">;
-
-  createMilestone: TypedContractMethod<
-    [_description: string, _amount: BigNumberish],
+  addDonor: TypedContractMethod<
+    [_donor: AddressLike, _amount: BigNumberish],
     [void],
     "nonpayable"
   >;
 
+  addVerifier: TypedContractMethod<
+    [_verifier: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  admin: TypedContractMethod<[], [string], "view">;
+
+  createMilestone: TypedContractMethod<
+    [_title: string, _description: string, _requiredApprovals: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  createdAt: TypedContractMethod<[], [bigint], "view">;
+
+  description: TypedContractMethod<[], [string], "view">;
+
   donorCount: TypedContractMethod<[], [bigint], "view">;
+
+  fundingGoal: TypedContractMethod<[], [bigint], "view">;
+
+  getMilestone: TypedContractMethod<
+    [_milestoneId: BigNumberish],
+    [
+      [string, string, bigint, boolean, boolean, bigint, bigint] & {
+        _title: string;
+        _description: string;
+        _requiredApprovals: bigint;
+        _isCompleted: boolean;
+        _isApproved: boolean;
+        _approvalCount: bigint;
+        _rejectionCount: bigint;
+      }
+    ],
+    "view"
+  >;
+
+  getMilestoneCount: TypedContractMethod<[], [bigint], "view">;
+
+  getProof: TypedContractMethod<
+    [_milestoneId: BigNumberish],
+    [
+      [string, string, string, bigint, string, bigint] & {
+        _beforeImageHash: string;
+        _afterImageHash: string;
+        _gpsCoordinates: string;
+        _timestamp: bigint;
+        _submitter: string;
+        _status: bigint;
+      }
+    ],
+    "view"
+  >;
+
+  hasUserVoted: TypedContractMethod<
+    [_milestoneId: BigNumberish, _user: AddressLike],
+    [boolean],
+    "view"
+  >;
 
   hasVoted: TypedContractMethod<
     [arg0: BigNumberish, arg1: AddressLike],
@@ -281,14 +482,18 @@ export interface Project extends BaseContract {
 
   isDonor: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
 
+  isVerifier: TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+
   milestoneProofs: TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [string, bigint, string, string] & {
-        ipfsHash: string;
+      [string, string, string, bigint, string, bigint] & {
+        beforeImageHash: string;
+        afterImageHash: string;
+        gpsCoordinates: string;
         timestamp: bigint;
-        location: string;
         submitter: string;
+        status: bigint;
       }
     ],
     "view"
@@ -297,13 +502,15 @@ export interface Project extends BaseContract {
   milestones: TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [string, bigint, boolean, boolean, bigint, bigint] & {
+      [string, string, bigint, boolean, boolean, bigint, bigint, bigint] & {
+        title: string;
         description: string;
-        amount: bigint;
+        requiredApprovals: bigint;
         isCompleted: boolean;
         isApproved: boolean;
         approvalCount: bigint;
         rejectionCount: bigint;
+        createdAt: bigint;
       }
     ],
     "view"
@@ -311,13 +518,26 @@ export interface Project extends BaseContract {
 
   organizer: TypedContractMethod<[], [string], "view">;
 
+  removeVerifier: TypedContractMethod<
+    [_verifier: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   submitProof: TypedContractMethod<
-    [_milestoneId: BigNumberish, _ipfsHash: string, _location: string],
+    [
+      _milestoneId: BigNumberish,
+      _beforeImageHash: BytesLike,
+      _afterImageHash: BytesLike,
+      _gpsCoordinates: string
+    ],
     [void],
     "nonpayable"
   >;
 
   title: TypedContractMethod<[], [string], "view">;
+
+  verifierCount: TypedContractMethod<[], [bigint], "view">;
 
   voteOnProof: TypedContractMethod<
     [_milestoneId: BigNumberish, _approve: boolean],
@@ -331,20 +551,79 @@ export interface Project extends BaseContract {
 
   getFunction(
     nameOrSignature: "addDonor"
-  ): TypedContractMethod<[_donor: AddressLike], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [_donor: AddressLike, _amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "addVerifier"
+  ): TypedContractMethod<[_verifier: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "admin"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "createMilestone"
   ): TypedContractMethod<
-    [_description: string, _amount: BigNumberish],
+    [_title: string, _description: string, _requiredApprovals: BigNumberish],
     [void],
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "createdAt"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "description"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "donorCount"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "fundingGoal"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getMilestone"
+  ): TypedContractMethod<
+    [_milestoneId: BigNumberish],
+    [
+      [string, string, bigint, boolean, boolean, bigint, bigint] & {
+        _title: string;
+        _description: string;
+        _requiredApprovals: bigint;
+        _isCompleted: boolean;
+        _isApproved: boolean;
+        _approvalCount: bigint;
+        _rejectionCount: bigint;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "getMilestoneCount"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "getProof"
+  ): TypedContractMethod<
+    [_milestoneId: BigNumberish],
+    [
+      [string, string, string, bigint, string, bigint] & {
+        _beforeImageHash: string;
+        _afterImageHash: string;
+        _gpsCoordinates: string;
+        _timestamp: bigint;
+        _submitter: string;
+        _status: bigint;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "hasUserVoted"
+  ): TypedContractMethod<
+    [_milestoneId: BigNumberish, _user: AddressLike],
+    [boolean],
+    "view"
+  >;
   getFunction(
     nameOrSignature: "hasVoted"
   ): TypedContractMethod<
@@ -356,15 +635,20 @@ export interface Project extends BaseContract {
     nameOrSignature: "isDonor"
   ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
   getFunction(
+    nameOrSignature: "isVerifier"
+  ): TypedContractMethod<[arg0: AddressLike], [boolean], "view">;
+  getFunction(
     nameOrSignature: "milestoneProofs"
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [string, bigint, string, string] & {
-        ipfsHash: string;
+      [string, string, string, bigint, string, bigint] & {
+        beforeImageHash: string;
+        afterImageHash: string;
+        gpsCoordinates: string;
         timestamp: bigint;
-        location: string;
         submitter: string;
+        status: bigint;
       }
     ],
     "view"
@@ -374,13 +658,15 @@ export interface Project extends BaseContract {
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
-      [string, bigint, boolean, boolean, bigint, bigint] & {
+      [string, string, bigint, boolean, boolean, bigint, bigint, bigint] & {
+        title: string;
         description: string;
-        amount: bigint;
+        requiredApprovals: bigint;
         isCompleted: boolean;
         isApproved: boolean;
         approvalCount: bigint;
         rejectionCount: bigint;
+        createdAt: bigint;
       }
     ],
     "view"
@@ -389,15 +675,26 @@ export interface Project extends BaseContract {
     nameOrSignature: "organizer"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "removeVerifier"
+  ): TypedContractMethod<[_verifier: AddressLike], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "submitProof"
   ): TypedContractMethod<
-    [_milestoneId: BigNumberish, _ipfsHash: string, _location: string],
+    [
+      _milestoneId: BigNumberish,
+      _beforeImageHash: BytesLike,
+      _afterImageHash: BytesLike,
+      _gpsCoordinates: string
+    ],
     [void],
     "nonpayable"
   >;
   getFunction(
     nameOrSignature: "title"
   ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "verifierCount"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "voteOnProof"
   ): TypedContractMethod<
@@ -442,6 +739,20 @@ export interface Project extends BaseContract {
     ProofSubmittedEvent.OutputObject
   >;
   getEvent(
+    key: "VerifierAdded"
+  ): TypedContractEvent<
+    VerifierAddedEvent.InputTuple,
+    VerifierAddedEvent.OutputTuple,
+    VerifierAddedEvent.OutputObject
+  >;
+  getEvent(
+    key: "VerifierRemoved"
+  ): TypedContractEvent<
+    VerifierRemovedEvent.InputTuple,
+    VerifierRemovedEvent.OutputTuple,
+    VerifierRemovedEvent.OutputObject
+  >;
+  getEvent(
     key: "VoteCast"
   ): TypedContractEvent<
     VoteCastEvent.InputTuple,
@@ -450,7 +761,7 @@ export interface Project extends BaseContract {
   >;
 
   filters: {
-    "DonorAdded(address)": TypedContractEvent<
+    "DonorAdded(address,uint256)": TypedContractEvent<
       DonorAddedEvent.InputTuple,
       DonorAddedEvent.OutputTuple,
       DonorAddedEvent.OutputObject
@@ -461,7 +772,7 @@ export interface Project extends BaseContract {
       DonorAddedEvent.OutputObject
     >;
 
-    "MilestoneApproved(uint256)": TypedContractEvent<
+    "MilestoneApproved(uint256,uint256,uint256)": TypedContractEvent<
       MilestoneApprovedEvent.InputTuple,
       MilestoneApprovedEvent.OutputTuple,
       MilestoneApprovedEvent.OutputObject
@@ -472,7 +783,7 @@ export interface Project extends BaseContract {
       MilestoneApprovedEvent.OutputObject
     >;
 
-    "MilestoneCreated(uint256,string,uint256)": TypedContractEvent<
+    "MilestoneCreated(uint256,string,string,uint256)": TypedContractEvent<
       MilestoneCreatedEvent.InputTuple,
       MilestoneCreatedEvent.OutputTuple,
       MilestoneCreatedEvent.OutputObject
@@ -483,7 +794,7 @@ export interface Project extends BaseContract {
       MilestoneCreatedEvent.OutputObject
     >;
 
-    "MilestoneRejected(uint256)": TypedContractEvent<
+    "MilestoneRejected(uint256,uint256,uint256)": TypedContractEvent<
       MilestoneRejectedEvent.InputTuple,
       MilestoneRejectedEvent.OutputTuple,
       MilestoneRejectedEvent.OutputObject
@@ -494,7 +805,7 @@ export interface Project extends BaseContract {
       MilestoneRejectedEvent.OutputObject
     >;
 
-    "ProofSubmitted(uint256,string,address)": TypedContractEvent<
+    "ProofSubmitted(uint256,bytes32,bytes32,string,address)": TypedContractEvent<
       ProofSubmittedEvent.InputTuple,
       ProofSubmittedEvent.OutputTuple,
       ProofSubmittedEvent.OutputObject
@@ -505,7 +816,29 @@ export interface Project extends BaseContract {
       ProofSubmittedEvent.OutputObject
     >;
 
-    "VoteCast(uint256,address,bool)": TypedContractEvent<
+    "VerifierAdded(address)": TypedContractEvent<
+      VerifierAddedEvent.InputTuple,
+      VerifierAddedEvent.OutputTuple,
+      VerifierAddedEvent.OutputObject
+    >;
+    VerifierAdded: TypedContractEvent<
+      VerifierAddedEvent.InputTuple,
+      VerifierAddedEvent.OutputTuple,
+      VerifierAddedEvent.OutputObject
+    >;
+
+    "VerifierRemoved(address)": TypedContractEvent<
+      VerifierRemovedEvent.InputTuple,
+      VerifierRemovedEvent.OutputTuple,
+      VerifierRemovedEvent.OutputObject
+    >;
+    VerifierRemoved: TypedContractEvent<
+      VerifierRemovedEvent.InputTuple,
+      VerifierRemovedEvent.OutputTuple,
+      VerifierRemovedEvent.OutputObject
+    >;
+
+    "VoteCast(uint256,address,bool,string)": TypedContractEvent<
       VoteCastEvent.InputTuple,
       VoteCastEvent.OutputTuple,
       VoteCastEvent.OutputObject
