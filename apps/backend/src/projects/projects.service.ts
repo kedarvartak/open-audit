@@ -1,12 +1,25 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { ProjectStatus, MilestoneStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProjectsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private blockchainService: BlockchainService,
+    ) { }
 
     async create(createProjectDto: any, userId: string) {
+        // Step 1: Deploy smart contract
+        const contractAddress = await this.blockchainService.createProject(
+            userId, // For now, using userId as organizer address (should be wallet address)
+            createProjectDto.title,
+            createProjectDto.description,
+            createProjectDto.fundingGoal,
+        );
+
+        // Step 2: Create project in database with contract address
         const project = await this.prisma.project.create({
             data: {
                 title: createProjectDto.title,
@@ -15,6 +28,7 @@ export class ProjectsService {
                 deadline: new Date(createProjectDto.deadline),
                 status: ProjectStatus.DRAFT,
                 organizerId: userId,
+                contractAddress, // Store blockchain address
             },
             include: {
                 organizer: {
@@ -26,6 +40,9 @@ export class ProjectsService {
                 },
             },
         });
+
+        // Step 3: Start listening to events for this project
+        await this.blockchainService.listenToProjectEvents(contractAddress, project.id);
 
         return project;
     }
@@ -151,6 +168,19 @@ export class ProjectsService {
             throw new ForbiddenException('You can only create milestones for your own projects');
         }
 
+        if (!project.contractAddress) {
+            throw new Error('Project does not have a blockchain contract');
+        }
+
+        // Step 1: Create milestone on blockchain
+        const blockchainMilestoneId = await this.blockchainService.createMilestone(
+            project.contractAddress,
+            createMilestoneDto.title,
+            createMilestoneDto.description,
+            createMilestoneDto.requiredApprovals || 3,
+        );
+
+        // Step 2: Create milestone in database
         const milestone = await this.prisma.milestone.create({
             data: {
                 projectId,
@@ -158,6 +188,7 @@ export class ProjectsService {
                 description: createMilestoneDto.description,
                 requiredApprovals: createMilestoneDto.requiredApprovals || 3,
                 status: MilestoneStatus.PENDING,
+                blockchainMilestoneId, // Link to blockchain milestone
             },
         });
 

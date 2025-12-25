@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { ProofStatus, VoteType } from '@prisma/client';
 import * as crypto from 'crypto';
 
@@ -9,6 +10,7 @@ export class ProofsService {
     constructor(
         private prisma: PrismaService,
         private storageService: StorageService,
+        private blockchainService: BlockchainService,
     ) { }
 
     async createProof(
@@ -22,7 +24,33 @@ export class ProofsService {
         const beforeUpload = await this.uploadAndHash(beforeImage, 'before');
         const afterUpload = await this.uploadAndHash(afterImage, 'after');
 
-        // Create proof record
+        // Get milestone with project info
+        const milestone = await this.prisma.milestone.findUnique({
+            where: { id: createProofDto.milestoneId },
+            include: {
+                project: true,
+            },
+        });
+
+        if (!milestone) {
+            throw new NotFoundException('Milestone not found');
+        }
+
+        if (!milestone.project.contractAddress || milestone.blockchainMilestoneId === null) {
+            throw new Error('Milestone not linked to blockchain');
+        }
+
+        // Submit proof to blockchain
+        const gpsCoordinates = `${createProofDto.gpsLatitude},${createProofDto.gpsLongitude}`;
+        const txHash = await this.blockchainService.submitProof(
+            milestone.project.contractAddress,
+            milestone.blockchainMilestoneId,
+            beforeUpload.hash,
+            afterUpload.hash,
+            gpsCoordinates,
+        );
+
+        // Create proof record in database
         const proof = await this.prisma.proof.create({
             data: {
                 milestoneId: createProofDto.milestoneId,
@@ -36,6 +64,7 @@ export class ProofsService {
                 timestamp: new Date(createProofDto.timestamp || Date.now()),
                 deviceInfo: createProofDto.deviceInfo,
                 status: ProofStatus.PENDING,
+                transactionHash: txHash, // Store blockchain tx hash
             },
             include: {
                 milestone: {
@@ -152,32 +181,31 @@ export class ProofsService {
             throw new Error('You have already voted on this proof');
         }
 
-        // Create verification vote
+        // Get milestone and project info
+        const milestone = proof.milestone;
+        if (!milestone.project.contractAddress || milestone.blockchainMilestoneId === null) {
+            throw new Error('Milestone not linked to blockchain');
+        }
+
+        // Cast vote on blockchain
+        const txHash = await this.blockchainService.voteOnProof(
+            milestone.project.contractAddress,
+            milestone.blockchainMilestoneId,
+            verifyDto.vote === 'APPROVE',
+        );
+
+        // Create verification vote in database
         const verification = await this.prisma.verification.create({
             data: {
                 proofId,
                 verifierId,
                 vote: verifyDto.vote as VoteType,
                 comment: verifyDto.comment,
+                transactionHash: txHash,
             },
         });
 
         // Check if milestone approval threshold is met
-        const milestone = await this.prisma.milestone.findUnique({
-            where: { id: proof.milestoneId },
-            include: {
-                proofs: {
-                    include: {
-                        verifications: true,
-                    },
-                },
-            },
-        });
-
-        if (!milestone) {
-            throw new NotFoundException('Milestone not found');
-        }
-
         const approvalCount = await this.prisma.verification.count({
             where: {
                 proofId,
@@ -185,16 +213,8 @@ export class ProofsService {
             },
         });
 
-        // Update proof status based on votes
-        if (approvalCount >= milestone.requiredApprovals) {
-            await this.prisma.proof.update({
-                where: { id: proofId },
-                data: { status: ProofStatus.VERIFIED },
-            });
-
-            // TODO: Trigger blockchain milestone approval
-            // TODO: Emit event for fund release
-        }
+        // Note: Actual status update will happen via blockchain event listener
+        // when MilestoneApproved event is emitted
 
         return verification;
     }
