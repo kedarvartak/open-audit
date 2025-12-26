@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home,
@@ -35,8 +35,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     };
 
     const menuItems = [
-        { icon: Home, path: '/', label: 'Home' },
-        { icon: LayoutDashboard, path: '/dashboard', label: 'Dashboard' },
+        { icon: Home, path: '/dashboard', label: 'Dashboard' },
+        { icon: LayoutDashboard, path: '/my-tasks', label: 'My Tasks' },
         { icon: Grid3x3, path: '/projects', label: 'Projects' },
         { icon: FileText, path: '/documents', label: 'Documents' },
         { icon: Trophy, path: '/achievements', label: 'Achievements' },
@@ -71,7 +71,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                             <Link
                                 key={item.path}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all ${isActive
                                     ? theme === 'dark' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'
                                     : theme === 'dark' ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                     } ${!isSidebarExpanded ? 'justify-center' : ''}`}
@@ -89,7 +89,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <div className="px-3 space-y-2">
                     <button
                         onClick={toggleTheme}
-                        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-md transition-all ${theme === 'dark' ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                             } ${!isSidebarExpanded ? 'justify-center' : ''}`}
                     >
                         {theme === 'dark' ? <Sun size={20} className="flex-shrink-0" /> : <Moon size={20} className="flex-shrink-0" />}
@@ -100,7 +100,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         )}
                     </button>
                     <button
-                        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all ${theme === 'dark' ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-md transition-all ${theme === 'dark' ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                             } ${!isSidebarExpanded ? 'justify-center' : ''}`}
                     >
                         <Settings size={20} className="flex-shrink-0" />
@@ -120,11 +120,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     </h1>
 
                     <div className="flex items-center gap-4">
-                        <span className={`px-4 py-1.5 ${theme === 'dark' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'} rounded-lg text-sm font-semibold`}>
+                        <span className={`px-4 py-1.5 ${theme === 'dark' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'} rounded-md text-sm font-semibold`}>
                             Super Admin
                         </span>
 
-                        <button className={`w-9 h-9 rounded-full ${theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-200 hover:bg-slate-300'} flex items-center justify-center transition-colors`}>
+                        <button className={`w-9 h-9 rounded-sm ${theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-200 hover:bg-slate-300'} flex items-center justify-center transition-colors`}>
                             <User size={18} className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} />
                         </button>
 

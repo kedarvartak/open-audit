@@ -95,7 +95,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                     key={day}
                     type="button"
                     onClick={() => handleDateClick(day)}
-                    className={`h-10 rounded-lg text-sm font-medium transition-colors ${isSelected
+                    className={`h-10 rounded-md text-sm font-medium transition-colors ${isSelected
                             ? 'bg-blue-600 text-white'
                             : isToday
                                 ? theme === 'dark'
@@ -119,7 +119,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex h-12 w-full items-center justify-between rounded-lg border px-4 py-3 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${theme === 'dark'
+                className={`flex h-12 w-full items-center justify-between rounded-md border px-4 py-3 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${theme === 'dark'
                         ? 'border-slate-600 bg-slate-700 text-slate-100 focus-visible:border-blue-500'
                         : 'border-slate-300 bg-white text-slate-900 focus-visible:border-blue-500'
                     }`}
@@ -131,7 +131,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
             </button>
 
             {isOpen && (
-                <div className={`absolute z-50 mt-2 w-80 rounded-xl border shadow-lg p-4 ${theme === 'dark'
+                <div className={`absolute z-50 mt-2 w-80 rounded-md border shadow-lg p-4 ${theme === 'dark'
                         ? 'bg-slate-800 border-slate-700'
                         : 'bg-white border-slate-200'
                     }`}>
@@ -140,7 +140,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                         <button
                             type="button"
                             onClick={previousMonth}
-                            className={`p-2 rounded-lg transition-colors ${theme === 'dark'
+                            className={`p-2 rounded-md transition-colors ${theme === 'dark'
                                     ? 'hover:bg-slate-700 text-slate-300'
                                     : 'hover:bg-slate-100 text-slate-600'
                                 }`}
@@ -153,7 +153,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                         <button
                             type="button"
                             onClick={nextMonth}
-                            className={`p-2 rounded-lg transition-colors ${theme === 'dark'
+                            className={`p-2 rounded-md transition-colors ${theme === 'dark'
                                     ? 'hover:bg-slate-700 text-slate-300'
                                     : 'hover:bg-slate-100 text-slate-600'
                                 }`}

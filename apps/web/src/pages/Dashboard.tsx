@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Search, Plus, MoreVertical, Briefcase } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
 import { Modal } from '../components/ui/Modal';
 import { CreateProjectModal } from '../components/modals/CreateProjectModal';
+import { TaskDetailsModal } from '../components/modals/TaskDetailsModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI } from '../services/api';
 import type { Task } from '../services/api';
@@ -17,6 +17,7 @@ export const Dashboard = () => {
     const [filterBy, setFilterBy] = useState('all');
     const [sortBy, setSortBy] = useState('newest');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const { theme } = useTheme();
 
     const fetchTasks = async () => {
@@ -124,7 +125,7 @@ export const Dashboard = () => {
                                 placeholder="Search..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className={`w-full pl-10 pr-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${theme === 'dark'
+                                className={`w-full pl-10 pr-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${theme === 'dark'
                                     ? 'bg-slate-700 border border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
                                     : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
                                     }`}
@@ -144,7 +145,7 @@ export const Dashboard = () => {
                 </p>
 
                 {filteredTasks.length === 0 ? (
-                    <div className={`flex-1 flex items-center justify-center rounded-2xl border ${theme === 'dark'
+                    <div className={`flex-1 flex items-center justify-center rounded-md border ${theme === 'dark'
                         ? 'bg-slate-700/50 border-slate-600'
                         : 'bg-slate-100 border-slate-200'
                         }`}>
@@ -158,26 +159,32 @@ export const Dashboard = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredTasks.map((task) => {
                             return (
-                                <Link
+                                <button
                                     key={task.id}
-                                    to={`/tasks/${task.id}`}
-                                    className="block group"
+                                    onClick={() => setSelectedTaskId(task.id)}
+                                    className="block group text-left w-full"
                                 >
-                                    <div className={`rounded-2xl border p-6 hover:shadow-lg transition-all duration-200 ${theme === 'dark'
+                                    <div className={`rounded-md border p-6 hover:shadow-lg transition-all duration-200 ${theme === 'dark'
                                         ? 'bg-slate-700 border-slate-600 hover:border-blue-500'
                                         : 'bg-white border-slate-200 hover:border-blue-400'
                                         }`}>
                                         <div className="flex items-start justify-between mb-4">
-                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${theme === 'dark'
+                                            <div className={`w-10 h-10 rounded-md flex items-center justify-center ${theme === 'dark'
                                                 ? 'bg-blue-600 text-white'
                                                 : 'bg-blue-500 text-white'
                                                 }`}>
                                                 <Briefcase size={20} />
                                             </div>
-                                            <button className={`p-1 rounded-lg transition-colors ${theme === 'dark'
-                                                ? 'hover:bg-slate-600 text-slate-400'
-                                                : 'hover:bg-slate-100 text-slate-500'
-                                                }`}>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    // Handle more options
+                                                }}
+                                                className={`p-1 rounded-md transition-colors ${theme === 'dark'
+                                                    ? 'hover:bg-slate-600 text-slate-400'
+                                                    : 'hover:bg-slate-100 text-slate-500'
+                                                    }`}
+                                            >
                                                 <MoreVertical size={18} />
                                             </button>
                                         </div>
@@ -225,7 +232,7 @@ export const Dashboard = () => {
                                             </p>
                                         </div>
                                     </div>
-                                </Link>
+                                </button>
                             );
                         })}
                     </div>
@@ -242,6 +249,15 @@ export const Dashboard = () => {
                     onSuccess={handleCreateSuccess}
                 />
             </Modal>
+
+            {selectedTaskId && (
+                <TaskDetailsModal
+                    taskId={selectedTaskId}
+                    isOpen={!!selectedTaskId}
+                    onClose={() => setSelectedTaskId(null)}
+                    onTaskUpdated={fetchTasks}
+                />
+            )}
         </DashboardLayout>
     );
 };

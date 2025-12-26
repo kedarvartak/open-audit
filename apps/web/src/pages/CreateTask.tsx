@@ -52,7 +52,7 @@ export default function CreateTask() {
                     <p className="mt-2 text-gray-600">Create a task and find workers to complete it</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
+                <form onSubmit={handleSubmit} className="bg-white rounded-md shadow-lg p-8">
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Task Title *

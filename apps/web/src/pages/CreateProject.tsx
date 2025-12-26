@@ -98,7 +98,7 @@ export const CreateProject = () => {
                             <textarea
                                 required
                                 rows={5}
-                                className="flex w-full rounded-2xl bg-[#e0e5ec] px-4 py-3 text-slate-700 font-medium placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 disabled:cursor-not-allowed disabled:opacity-50 neu-pressed border-none outline-none transition-all resize-none"
+                                className="flex w-full rounded-md bg-[#e0e5ec] px-4 py-3 text-slate-700 font-medium placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 disabled:cursor-not-allowed disabled:opacity-50 neu-pressed border-none outline-none transition-all resize-none"
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 placeholder="Describe the impact of this project..."
@@ -150,7 +150,7 @@ export const CreateProject = () => {
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => removeMilestone(index)}
-                                        className="mt-8 text-red-400 hover:text-red-500 rounded-full hover:neu-pressed"
+                                        className="mt-8 text-red-400 hover:text-red-500 rounded-sm hover:neu-pressed"
                                     >
                                         <Trash2 size={20} />
                                     </Button>

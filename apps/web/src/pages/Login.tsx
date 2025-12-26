@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { AuthLayout } from '../components/auth/AuthLayout';
@@ -15,6 +16,24 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const { theme } = useTheme();
 
+    // Decode JWT to extract user data
+    const decodeJWT = (token: string) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (error) {
+            console.error('Failed to decode JWT:', error);
+            return null;
+        }
+    };
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -22,20 +41,35 @@ export default function Login() {
             const response = await authAPI.login(email, password);
             console.log('Login response:', response.data);
 
-            const { access_token, user } = response.data;
+            const { access_token } = response.data;
+
+            if (!access_token) {
+                throw new Error('No access token received');
+            }
 
             localStorage.setItem('token', access_token);
 
-            if (user) {
-                localStorage.setItem('userId', user.id);
-                localStorage.setItem('userRole', user.role);
-                localStorage.setItem('userName', user.name);
+            // Decode JWT to get user data
+            const decoded = decodeJWT(access_token);
+            console.log('Decoded JWT:', decoded);
+
+            if (decoded) {
+                localStorage.setItem('userId', decoded.sub); // 'sub' is the user ID
+                localStorage.setItem('userRole', decoded.role);
+                localStorage.setItem('userName', decoded.email || decoded.name || 'User');
+
+                console.log('Saved to localStorage:', {
+                    userId: decoded.sub,
+                    userRole: decoded.role,
+                    userName: decoded.email
+                });
             }
 
+            toast.success('Login successful! Welcome back.');
             navigate('/dashboard');
         } catch (error: any) {
             console.error('Login failed:', error);
-            alert(error.response?.data?.message || 'Invalid credentials');
+            toast.error(error.response?.data?.message || 'Invalid credentials. Please try again.');
         } finally {
             setLoading(false);
         }

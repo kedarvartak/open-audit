@@ -49,7 +49,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark'
+                className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark'
                         ? 'bg-slate-700 border border-slate-600 text-slate-100 hover:border-slate-500 focus:border-blue-500'
                         : 'bg-white border border-slate-300 text-slate-700 hover:border-slate-400 focus:border-blue-500'
                     }`}
@@ -63,7 +63,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             </button>
 
             {isOpen && (
-                <div className={`absolute z-50 w-full mt-1 rounded-lg shadow-lg overflow-hidden border ${theme === 'dark'
+                <div className={`absolute z-50 w-full mt-1 rounded-md shadow-lg overflow-hidden border ${theme === 'dark'
                         ? 'bg-slate-700 border-slate-600'
                         : 'bg-white border-slate-200'
                     }`}>

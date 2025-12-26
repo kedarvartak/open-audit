@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }
             {/* Modal */}
             <div
                 ref={modalRef}
-                className={`relative w-full max-w-2xl rounded-2xl shadow-2xl ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+                className={`relative w-full max-w-2xl rounded-md shadow-2xl ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
                     }`}
             >
                 {/* Header */}
@@ -53,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }
                     </h2>
                     <button
                         onClick={onClose}
-                        className={`p-2 rounded-lg transition-colors ${theme === 'dark'
+                        className={`p-2 rounded-md transition-colors ${theme === 'dark'
                             ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200'
                             : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'
                             }`}

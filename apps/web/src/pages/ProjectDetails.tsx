@@ -83,8 +83,8 @@ export const ProjectDetails = () => {
                                 {project.description}
                             </p>
                         </div>
-                        <div className="px-6 py-3 rounded-2xl neu-pressed flex items-center gap-3">
-                            <div className={cn("w-3 h-3 rounded-full shadow-[0_0_10px_rgba(0,255,0,0.5)]", project.contractAddress ? "bg-green-400" : "bg-slate-300")}></div>
+                        <div className="px-6 py-3 rounded-md neu-pressed flex items-center gap-3">
+                            <div className={cn("w-3 h-3 rounded-sm shadow-[0_0_10px_rgba(0,255,0,0.5)]", project.contractAddress ? "bg-green-400" : "bg-slate-300")}></div>
                             <span className="font-mono text-sm font-bold text-slate-600">
                                 {project.contractAddress ?
                                     `${project.contractAddress.slice(0, 6)}...${project.contractAddress.slice(-4)}` :
@@ -103,7 +103,7 @@ export const ProjectDetails = () => {
                             <CardContent className="p-8 flex flex-col md:flex-row gap-8 items-center">
                                 <div className="flex-shrink-0">
                                     <div className={cn(
-                                        "w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl neu-pressed",
+                                        "w-16 h-16 rounded-sm flex items-center justify-center font-bold text-xl neu-pressed",
                                         milestone.status === 'COMPLETED' ? "text-green-500" :
                                             milestone.status === 'IN_PROGRESS' ? "text-blue-500" :
                                                 "text-slate-400"
@@ -115,7 +115,7 @@ export const ProjectDetails = () => {
                                     <div className="flex justify-between items-start w-full">
                                         <h3 className="text-xl font-bold text-slate-700">{milestone.description}</h3>
                                         <span className={cn(
-                                            "px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider neu-flat",
+                                            "px-4 py-1 rounded-sm text-xs font-bold uppercase tracking-wider neu-flat",
                                             milestone.status === 'COMPLETED' ? "text-green-500" :
                                                 milestone.status === 'IN_PROGRESS' ? "text-blue-500" :
                                                     "text-slate-400"
@@ -124,7 +124,7 @@ export const ProjectDetails = () => {
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <p className="text-slate-600 font-mono text-lg font-bold px-4 py-1 rounded-xl neu-pressed">
+                                        <p className="text-slate-600 font-mono text-lg font-bold px-4 py-1 rounded-md neu-pressed">
                                             ${milestone.amount}
                                         </p>
                                     </div>

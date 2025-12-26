@@ -100,7 +100,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                     value={formData.description}
                     onChange={handleChange}
                     required
-                    className={`flex w-full rounded-lg border px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 resize-none ${theme === 'dark'
+                    className={`flex w-full rounded-md border px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 resize-none ${theme === 'dark'
                             ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-500'
                             : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-blue-500'
                         }`}
@@ -148,7 +148,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                 </div>
             </div>
 
-            <div className={`p-4 rounded-lg border ${theme === 'dark'
+            <div className={`p-4 rounded-md border ${theme === 'dark'
                     ? 'bg-blue-900/20 border-blue-800/30 text-blue-300'
                     : 'bg-blue-50 border-blue-200 text-blue-700'
                 }`}>

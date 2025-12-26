@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Dropdown } from '../components/ui/Dropdown';
@@ -23,6 +24,24 @@ export default function Register() {
         { value: 'CLIENT', label: 'Client (Post Tasks)' }
     ];
 
+    // Decode JWT to extract user data
+    const decodeJWT = (token: string) => {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            return JSON.parse(jsonPayload);
+        } catch (error) {
+            console.error('Failed to decode JWT:', error);
+            return null;
+        }
+    };
+
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -34,17 +53,28 @@ export default function Register() {
                 role
             });
 
-            const { access_token, user } = response.data;
+            const { access_token } = response.data;
+
+            if (!access_token) {
+                throw new Error('No access token received');
+            }
 
             localStorage.setItem('token', access_token);
-            localStorage.setItem('userId', user.id);
-            localStorage.setItem('userRole', user.role);
-            localStorage.setItem('userName', user.name);
 
+            // Decode JWT to get user data
+            const decoded = decodeJWT(access_token);
+
+            if (decoded) {
+                localStorage.setItem('userId', decoded.sub);
+                localStorage.setItem('userRole', decoded.role);
+                localStorage.setItem('userName', decoded.name || decoded.email || name);
+            }
+
+            toast.success('Account created successfully! Welcome aboard.');
             navigate('/dashboard');
         } catch (error: any) {
             console.error('Registration failed:', error);
-            alert(error.response?.data?.message || 'Registration failed');
+            toast.error(error.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
             setLoading(false);
         }

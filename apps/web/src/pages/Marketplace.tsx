@@ -42,7 +42,7 @@ export default function Marketplace() {
                     <p className="mt-2 text-gray-600">Browse available tasks and start earning</p>
                 </div>
 
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <div className="bg-white rounded-md shadow p-6 mb-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -92,11 +92,11 @@ export default function Marketplace() {
 
                 {loading ? (
                     <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <div className="inline-block animate-spin rounded-sm h-12 w-12 border-b-2 border-blue-600"></div>
                         <p className="mt-4 text-gray-600">Loading tasks...</p>
                     </div>
                 ) : tasks.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-lg shadow">
+                    <div className="text-center py-12 bg-white rounded-md shadow">
                         <p className="text-gray-500">No tasks available</p>
                     </div>
                 ) : (
@@ -105,10 +105,10 @@ export default function Marketplace() {
                             <div
                                 key={task.id}
                                 onClick={() => navigate(`/tasks/${task.id}`)}
-                                className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-6"
+                                className="bg-white rounded-md shadow hover:shadow-lg transition-shadow cursor-pointer p-6"
                             >
                                 <div className="flex items-start justify-between mb-4">
-                                    <span className="inline-block px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
+                                    <span className="inline-block px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-sm">
                                         {task.category}
                                     </span>
                                     <span className="text-lg font-bold text-green-600">

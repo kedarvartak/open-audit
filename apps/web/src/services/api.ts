@@ -91,6 +91,10 @@ export const tasksAPI = {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 
+    approveWork: (id: string) => api.post(`/tasks/${id}/approve`),
+
+    rejectWork: (id: string, reason: string) => api.post(`/tasks/${id}/reject`, { reason }),
+
     disputeTask: (id: string, reason: string) =>
         api.post(`/tasks/${id}/dispute`, { reason }),
 };

@@ -111,7 +111,7 @@ export const RippleBackground = ({ isDark = false }: RippleBackgroundProps) => {
             {/* GSAP controlled blob 1 */}
             <div
                 ref={blob1Ref}
-                className="absolute w-[700px] h-[700px] rounded-full opacity-60"
+                className="absolute w-[700px] h-[700px] rounded-sm opacity-60"
                 style={{
                     background: isDark
                         ? 'radial-gradient(circle, rgba(224, 242, 254, 0.8) 0%, rgba(147, 197, 253, 0.4) 50%, transparent 70%)'
@@ -125,7 +125,7 @@ export const RippleBackground = ({ isDark = false }: RippleBackgroundProps) => {
             {/* GSAP controlled blob 2 */}
             <div
                 ref={blob2Ref}
-                className="absolute w-[600px] h-[600px] rounded-full opacity-70"
+                className="absolute w-[600px] h-[600px] rounded-sm opacity-70"
                 style={{
                     background: isDark
                         ? 'radial-gradient(circle, rgba(147, 197, 253, 0.9) 0%, rgba(96, 165, 250, 0.5) 50%, transparent 70%)'
@@ -139,7 +139,7 @@ export const RippleBackground = ({ isDark = false }: RippleBackgroundProps) => {
             {/* GSAP controlled blob 3 */}
             <div
                 ref={blob3Ref}
-                className="absolute w-[550px] h-[550px] rounded-full opacity-60"
+                className="absolute w-[550px] h-[550px] rounded-sm opacity-60"
                 style={{
                     background: isDark
                         ? 'radial-gradient(circle, rgba(196, 181, 253, 0.8) 0%, rgba(221, 214, 254, 0.4) 50%, transparent 70%)'
@@ -153,7 +153,7 @@ export const RippleBackground = ({ isDark = false }: RippleBackgroundProps) => {
             {/* GSAP controlled blob 4 */}
             <div
                 ref={blob4Ref}
-                className="absolute w-[500px] h-[500px] rounded-full opacity-50"
+                className="absolute w-[500px] h-[500px] rounded-sm opacity-50"
                 style={{
                     background: isDark
                         ? 'radial-gradient(circle, rgba(221, 214, 254, 0.7) 0%, rgba(243, 232, 255, 0.3) 50%, transparent 70%)'
@@ -167,7 +167,7 @@ export const RippleBackground = ({ isDark = false }: RippleBackgroundProps) => {
             {/* GSAP controlled blob 5 */}
             <div
                 ref={blob5Ref}
-                className="absolute w-[400px] h-[400px] rounded-full opacity-40"
+                className="absolute w-[400px] h-[400px] rounded-sm opacity-40"
                 style={{
                     background: isDark
                         ? 'radial-gradient(circle, rgba(147, 197, 253, 0.6) 0%, transparent 60%)'
@@ -180,7 +180,7 @@ export const RippleBackground = ({ isDark = false }: RippleBackgroundProps) => {
 
             {/* Framer Motion water ripple effect overlays */}
             <motion.div
-                className="absolute w-[800px] h-[800px] rounded-full"
+                className="absolute w-[800px] h-[800px] rounded-sm"
                 style={{
                     background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
                     filter: 'blur(40px)',

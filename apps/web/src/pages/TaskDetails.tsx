@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, MapPin, Briefcase } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
@@ -42,10 +43,10 @@ export default function TaskDetails() {
         try {
             setAccepting(true);
             await tasksAPI.acceptTask(id);
-            alert('Task accepted successfully!');
+            toast.success('Task accepted successfully!');
             fetchTask();
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to accept task');
+            toast.error(error.response?.data?.message || 'Failed to accept task');
         } finally {
             setAccepting(false);
         }
@@ -79,6 +80,15 @@ export default function TaskDetails() {
     const canAccept = userRole === 'WORKER' && task.status === 'OPEN' && task.client.id !== userId;
     const isMyTask = task.client.id === userId || task.worker?.id === userId;
 
+    console.log('TaskDetails Debug:', {
+        userRole,
+        userId,
+        taskStatus: task.status,
+        clientId: task.client.id,
+        canAccept,
+        isMyTask
+    });
+
     return (
         <DashboardLayout>
             <div className="p-8 space-y-6">
@@ -90,7 +100,7 @@ export default function TaskDetails() {
                     <span className="font-medium">Back to Dashboard</span>
                 </button>
 
-                <div className={`rounded-2xl border p-8 ${theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200'}`}>
+                <div className={`rounded-md border p-8 ${theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-white border-slate-200'}`}>
                     <div className="flex items-start justify-between mb-6">
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-4">
@@ -98,8 +108,8 @@ export default function TaskDetails() {
                                     {task.category.toUpperCase()}
                                 </span>
                                 <span className={`px-3 py-1 rounded text-xs font-semibold ${task.status === 'OPEN' ?
-                                        theme === 'dark' ? 'bg-purple-600 text-white' : 'bg-purple-500 text-white'
-                                        : theme === 'dark' ? 'bg-orange-600 text-white' : 'bg-orange-500 text-white'
+                                    theme === 'dark' ? 'bg-purple-600 text-white' : 'bg-purple-500 text-white'
+                                    : theme === 'dark' ? 'bg-orange-600 text-white' : 'bg-orange-500 text-white'
                                     }`}>
                                     {task.status}
                                 </span>
@@ -138,9 +148,9 @@ export default function TaskDetails() {
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div className={`rounded-xl border p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
+                        <div className={`rounded-md border p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
                             <div className="flex items-center gap-3 mb-2">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-blue-600' : 'bg-blue-500'}`}>
+                                <div className={`w-8 h-8 rounded-md flex items-center justify-center ${theme === 'dark' ? 'bg-blue-600' : 'bg-blue-500'}`}>
                                     <User size={16} className="text-white" />
                                 </div>
                                 <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -159,9 +169,9 @@ export default function TaskDetails() {
                         </div>
 
                         {task.worker && (
-                            <div className={`rounded-xl border p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
+                            <div className={`rounded-md border p-4 ${theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-green-600' : 'bg-green-500'}`}>
+                                    <div className={`w-8 h-8 rounded-md flex items-center justify-center ${theme === 'dark' ? 'bg-green-600' : 'bg-green-500'}`}>
                                         <Briefcase size={16} className="text-white" />
                                     </div>
                                     <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
