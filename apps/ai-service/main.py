@@ -55,28 +55,48 @@ def image_to_base64(img: Image.Image) -> str:
     return "data:image/jpeg;base64," + base64.b64encode(buffered.getvalue()).decode()
 
 
-def phase1_detect_defect(image: Image.Image) -> Dict:
+def phase1_detect_defect(before_img: Image.Image, after_img: Image.Image) -> Dict:
     """
-    Phase 1: Use Groq Vision to detect defect location
+    Phase 1: Use Groq Vision to detect defect by comparing before and after
     Returns: defect description and bounding box coordinates
     """
-    # Convert image to base64
-    img_base64 = image_to_base64(image).split(',')[1]
+    # Convert both images to base64
+    before_b64 = image_to_base64(before_img).split(',')[1]
+    after_b64 = image_to_base64(after_img).split(',')[1]
     
-    # Ask Groq to identify defect
-    prompt = """Analyze this infrastructure image for defects (rust, cracks, damage, corrosion).
+    # Compare both images to find defects
+    prompt = """You are an expert inspector. Compare these TWO images:
+- Image 1: BEFORE (showing the defect/damage)
+- Image 2: AFTER (potentially repaired)
 
-If you see ANY defect:
-1. Describe the defect briefly (one sentence)
-2. Estimate its location as percentage from top-left corner
-   Format: x,y,width,height (as percentages 0-100)
-   Example: 45,30,15,20 means: 45% from left, 30% from top, 15% wide, 20% tall
+YOUR TASK:
+Look at the BEFORE image and identify ANY defect, damage, or abnormality:
+- Broken parts (chair legs, pipes, structures)
+- Cracks, fractures, breaks
+- Rust, corrosion, discoloration
+- Missing pieces, holes
+- Worn surfaces, damage
+- Bent, deformed items
+- ANY visible problem
 
-If NO defect: Say "NO_DEFECT"
+By comparing with the AFTER image, you can see what changed.
 
-Response format:
-DEFECT: [description]
-LOCATION: x,y,width,height"""
+INSTRUCTIONS:
+1. Identify the MAIN defect visible in the BEFORE image
+2. Describe it clearly in ONE sentence
+3. Estimate its location in the BEFORE image as percentages from top-left
+   Format: x,y,width,height (each 0-100)
+   Example: "20,50,30,40" means 20% from left, 50% from top, 30% wide, 40% tall
+
+RESPONSE FORMAT:
+```
+DEFECT: [describe what's broken/damaged in BEFORE image]
+LOCATION: x,y,width,height
+```
+
+If truly NO defect visible, respond: "NO_DEFECT"
+
+Now compare the images:"""
 
     try:
         response = groq_client.chat.completions.create(
@@ -85,38 +105,56 @@ LOCATION: x,y,width,height"""
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"}}
+                    {"type": "text", "text": "BEFORE image:"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{before_b64}"}},
+                    {"type": "text", "text": "AFTER image:"},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{after_b64}"}}
                 ]
             }],
-            temperature=0.1,
-            max_tokens=150
+            temperature=0.2,
+            max_tokens=250
         )
         
         result_text = response.choices[0].message.content
+        print(f"Groq response: {result_text[:300]}")
         
         # Parse response
         if "NO_DEFECT" in result_text.upper():
             return {"has_defect": False, "description": "No defect found"}
         
         # Extract defect info
-        description = ""
+        description = None
         bbox = None
         
-        for line in result_text.split('\n'):
-            if 'DEFECT:' in line:
-                description = line.split('DEFECT:')[1].strip()
-            elif 'LOCATION:' in line:
-                coords = line.split('LOCATION:')[1].strip()
-                # Parse x,y,w,h percentages
-                parts = [float(x.strip()) for x in coords.split(',')]
-                if len(parts) == 4:
-                    bbox = parts
+        lines = result_text.strip().split('\n')
+        for line in lines:
+            line = line.strip()
+            
+            if 'DEFECT:' in line.upper():
+                description = line.split(':', 1)[1].strip()
+            elif 'LOCATION:' in line.upper():
+                coords_str = line.split(':', 1)[1].strip()
+                coords_str = coords_str.replace('```', '').strip()
+                try:
+                    # Handle both "x,y,w,h" and "x y w h" formats
+                    parts = [float(x.strip()) for x in coords_str.replace(',', ' ').split()]
+                    if len(parts) >= 4:
+                        bbox = parts[:4]
+                except Exception as e:
+                    print(f"Failed to parse coords '{coords_str}': {e}")
         
-        return {
-            "has_defect": True,
-            "description": description or "Defect detected",
-            "bbox_percent": bbox or [20, 20, 60, 60]  # Default if parsing fails
-        }
+        if description:
+            return {
+                "has_defect": True,
+                "description": description,
+                "bbox_percent": bbox or [25, 25, 50, 50]  # Default center region
+            }
+        else:
+            return {
+                "has_defect": False,
+                "description": "Could not identify defect",
+                "raw_response": result_text
+            }
         
     except Exception as e:
         print(f"Groq error: {e}")
@@ -236,9 +274,9 @@ async def analyze(
         before_cv = cv2.cvtColor(np.array(before_pil), cv2.COLOR_RGB2BGR)
         after_cv = cv2.cvtColor(np.array(after_pil), cv2.COLOR_RGB2BGR)
         
-        # PHASE 1: Groq Vision detects defect
-        print("Phase 1: Groq detecting defect...")
-        phase1_result = phase1_detect_defect(before_pil)
+        # PHASE 1: Groq Vision detects defect by comparing before and after
+        print("Phase 1: Groq comparing images to detect defect...")
+        phase1_result = phase1_detect_defect(before_pil, after_pil)
         
         if not phase1_result.get("has_defect"):
             return {

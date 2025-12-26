@@ -5,8 +5,8 @@ import requests
 import traceback
 
 url = "http://localhost:8003/analyze"
-before = "/home/shashank/Desktop/side pros/gdg/images/pole_before.png"
-after = "/home/shashank/Desktop/side pros/gdg/images/pole_after.png"
+before = "/home/shashank/Desktop/side pros/gdg/images/chair_before.png"
+after = "/home/shashank/Desktop/side pros/gdg/images/fixed_chair.png"
 
 print("Testing Two-Phase AI Defect Detection")
 print("=" * 60)
