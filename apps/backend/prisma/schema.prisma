@@ -10,169 +10,111 @@ datasource db {
 // ==================== ENUMS ====================
 
 enum Role {
-  ADMIN
-  ORGANIZER
-  VERIFIER
-  DONOR
+  CLIENT  // Posts tasks and pays
+  WORKER  // Completes tasks
+  ADMIN   // Resolves disputes
 }
 
-enum ProjectStatus {
-  DRAFT
-  FUNDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum MilestoneStatus {
-  PENDING
-  IN_PROGRESS
-  SUBMITTED
-  VERIFIED
-  APPROVED
-  REJECTED
-}
-
-enum ProofStatus {
-  PENDING
-  AI_ANALYZING
-  AI_APPROVED
-  AI_FLAGGED
-  HUMAN_REVIEW
-  VERIFIED
-  REJECTED
-}
-
-enum VoteType {
-  APPROVE
-  REJECT
+enum TaskStatus {
+  OPEN           // Posted, awaiting worker
+  ACCEPTED       // Worker claimed it
+  IN_PROGRESS    // Before image uploaded, work started
+  SUBMITTED      // After image uploaded, AI verifying
+  VERIFIED       // AI approved
+  PAID           // Funds released to worker
+  DISPUTED       // Client disputed
+  CANCELLED      // Task cancelled
 }
 
 // ==================== MODELS ====================
 
 model User {
-  id              String          @id @default(uuid())
-  email           String          @unique
+  id              String   @id @default(uuid())
+  email           String   @unique
   password        String
   name            String
-  role            Role            @default(DONOR)
+  role            Role
+  
+  // Wallet & Payment
+  walletAddress   String?  @unique  // For blockchain audit trail
+  stripeAccountId String?  @unique  // For receiving payments (workers)
+  
+  // Reputation
+  rating          Float    @default(0)
+  completedTasks  Int      @default(0)
   
   // Relations
-  organizedProjects Project[]       @relation("Organizer")
-  verifications     Verification[]
+  clientTasks     Task[]   @relation("ClientTasks")
+  workerTasks     Task[]   @relation("WorkerTasks")
   
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([email])
   @@index([role])
+  @@index([stripeAccountId])
 }
 
-model Project {
-  id                String         @id @default(uuid())
-  title             String
-  description       String
-  fundingGoal       Float          // Amount in INR
-  deadline          DateTime
-  status            ProjectStatus  @default(DRAFT)
+model Task {
+  id              String     @id @default(uuid())
+  title           String
+  description     String
+  category        String     // "repair", "cleaning", "delivery", etc.
+  budget          Float      // Amount in INR
   
-  // Blockchain
-  contractAddress   String?        // Deployed smart contract address
-  
-  // Relations
-  organizerId       String
-  organizer         User           @relation("Organizer", fields: [organizerId], references: [id])
-  milestones        Milestone[]
-  
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-
-  @@index([organizerId])
-  @@index([status])
-}
-
-model Milestone {
-  id                String            @id @default(uuid())
-  projectId         String
-  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
-  title             String
-  description       String
-  requiredApprovals Int               @default(3) // N-of-M voting threshold
-  status            MilestoneStatus   @default(PENDING)
-  
-  // Blockchain
-  blockchainMilestoneId Int?         // ID from smart contract
-  
-  // Relations
-  proofs            Proof[]
-  
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  @@index([projectId])
-  @@index([status])
-}
-
-model Proof {
-  id                String          @id @default(uuid())
-  milestoneId       String
-  milestone         Milestone       @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
-  
-  // Before Image
-  beforeImageUrl    String
-  beforeImageHash   String          // SHA-256 hash
-  
-  // After Image
-  afterImageUrl     String
-  afterImageHash    String          // SHA-256 hash
-  
-  // Metadata
-  gpsLatitude       Float
-  gpsLongitude      Float
-  location          String?         // Human-readable address
-  timestamp         DateTime
-  deviceInfo        String?
+  // Parties
+  clientId        String
+  client          User       @relation("ClientTasks", fields: [clientId], references: [id])
+  workerId        String?
+  worker          User?      @relation("WorkerTasks", fields: [workerId], references: [id])
   
   // Status
-  status            ProofStatus     @default(PENDING)
+  status          TaskStatus @default(OPEN)
   
-  // AI Analysis
-  aiAnalysis        Json?           // Stores AI verification result
-  aiConfidence      Float?
-  aiStatus          String?         // "PASS", "FLAG", "FAIL"
+  // Blockchain (Audit Trail Only - No Crypto)
+  contractAddress String?    // Not used for payments, just audit
+  blockchainTaskId String?   // Task ID hash on blockchain
   
-  // Blockchain
-  blockchainProofId Int?            // ID from smart contract
-  transactionHash   String?         // Blockchain tx hash
+  // Payment (Stripe - Real INR)
+  stripePaymentIntentId String?  // Stripe escrow
+  stripeTransferId      String?  // Stripe payment to worker
   
-  // Relations
-  verifications     Verification[]
+  // Work Evidence
+  beforeImageUrl  String?
+  beforeImageHash String?    // SHA-256 for blockchain verification
+  afterImageUrl   String?
+  afterImageHash  String?    // SHA-256 for blockchain verification
   
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  // AI Verification
+  aiVerification  Json?      // Full AI result (confidence, verdict, etc.)
+  aiConfidence    Float?
+  aiVerdict       String?    // "FIXED" or "NOT_FIXED"
+  
+  // Location Verification (Google Maps)
+  requiresLocation Boolean   @default(false)
+  locationLat      Float?
+  locationLng      Float?
+  locationRadius   Int?      // meters
+  locationName     String?   // "123 Main St, City"
+  workerStartLat   Float?    // Worker's location when starting
+  workerStartLng   Float?
+  locationVerified Boolean   @default(false)
+  
+  // Dispute
+  disputed        Boolean    @default(false)
+  disputeReason   String?
+  disputedAt      DateTime?
+  disputeDeadline DateTime?  // 24h from completion
+  
+  // Timestamps
+  createdAt       DateTime   @default(now())
+  acceptedAt      DateTime?
+  completedAt     DateTime?
+  paidAt          DateTime?
+  updatedAt       DateTime   @updatedAt
 
-  @@index([milestoneId])
+  @@index([clientId])
+  @@index([workerId])
   @@index([status])
-}
-
-model Verification {
-  id            String      @id @default(uuid())
-  proofId       String
-  proof         Proof       @relation(fields: [proofId], references: [id], onDelete: Cascade)
-  
-  verifierId    String
-  verifier      User        @relation(fields: [verifierId], references: [id])
-  
-  vote          VoteType
-  comment       String?
-  
-  // Blockchain
-  transactionHash String?   // Blockchain vote tx hash
-  
-  createdAt     DateTime    @default(now())
-
-  @@unique([proofId, verifierId]) // One vote per verifier per proof
-  @@index([proofId])
-  @@index([verifierId])
+  @@index([category])
 }

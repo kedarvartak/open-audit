@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ProofsService } from './proofs.service';
+import { AiVerificationService } from './ai-verification.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -22,7 +23,10 @@ import { CreateProofDto, VerifyProofDto } from './dto/proof.dto';
 
 @Controller('proofs')
 export class ProofsController {
-    constructor(private readonly proofsService: ProofsService) { }
+    constructor(
+        private readonly proofsService: ProofsService,
+        private readonly aiVerificationService: AiVerificationService,
+    ) { }
 
     @Post('upload')
     @HttpCode(HttpStatus.CREATED)
@@ -64,4 +68,22 @@ export class ProofsController {
     ) {
         return this.proofsService.verifyProof(id, req.user.userId, verifyDto);
     }
+
+    @Post(':id/ai-verify')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard)
+    async aiVerifyProof(@Param('id') id: string) {
+        const proof = await this.proofsService.getProofById(id);
+
+        if (!proof.beforeImageUrl || !proof.afterImageUrl) {
+            throw new BadRequestException('Proof must have both before and after images');
+        }
+
+        return this.aiVerificationService.verifyRepair(
+            id,
+            proof.beforeImageUrl,
+            proof.afterImageUrl,
+        );
+    }
 }
+
