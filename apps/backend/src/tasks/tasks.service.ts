@@ -2,7 +2,9 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { AiVerificationService } from './ai-verification.service';
+import { BlockchainService } from '../blockchain/blockchain.service';
 import { TaskStatus } from '@prisma/client';
+import { ethers } from 'ethers';
 
 @Injectable()
 export class TasksService {
@@ -10,6 +12,7 @@ export class TasksService {
         private prisma: PrismaService,
         private storage: StorageService,
         private aiVerification: AiVerificationService,
+        private blockchain: BlockchainService,
     ) { }
 
     // CLIENT: Create a new task
@@ -40,6 +43,18 @@ export class TasksService {
                 },
             },
         });
+
+        // Record on blockchain (async, non-blocking)
+        // Generate a deterministic address from email for blockchain identity
+        const clientAddressHash = ethers.keccak256(ethers.toUtf8Bytes(task.client.email));
+        const clientAddress = '0x' + clientAddressHash.slice(2, 42); // Take first 20 bytes
+
+        this.blockchain.recordTaskCreation(
+            task.id,
+            clientAddress,
+            task.budget,
+            'stripe_pending' // Will be updated when Stripe is integrated
+        ).catch(err => console.error('Blockchain recording failed:', err));
 
         return task;
     }
@@ -116,7 +131,7 @@ export class TasksService {
             throw new BadRequestException('Cannot accept your own task');
         }
 
-        return this.prisma.task.update({
+        const updatedTask = await this.prisma.task.update({
             where: { id: taskId },
             data: {
                 workerId,
@@ -128,6 +143,19 @@ export class TasksService {
                 worker: true,
             },
         });
+
+        // Record on blockchain
+        if (updatedTask.worker) {
+            const workerAddressHash = ethers.keccak256(ethers.toUtf8Bytes(updatedTask.worker.email));
+            const workerAddress = '0x' + workerAddressHash.slice(2, 42);
+
+            this.blockchain.recordTaskAcceptance(
+                taskId,
+                workerAddress
+            ).catch(err => console.error('Blockchain recording failed:', err));
+        }
+
+        return updatedTask;
     }
 
     // WORKER: Upload before image and start work
@@ -176,7 +204,7 @@ export class TasksService {
         const imageUrl = await this.storage.uploadFile(beforeImage, 'tasks');
         const imageHash = await this.storage.getFileHash(beforeImage.buffer);
 
-        return this.prisma.task.update({
+        const updatedTask = await this.prisma.task.update({
             where: { id: taskId },
             data: {
                 status: TaskStatus.IN_PROGRESS,
@@ -187,6 +215,9 @@ export class TasksService {
                 locationVerified: task.requiresLocation ? true : false,
             },
         });
+
+        // Record work submission would happen in submitWork
+        return updatedTask;
     }
 
     // WORKER: Submit completed work
@@ -244,8 +275,21 @@ export class TasksService {
             },
         });
 
+        // Record work submission on blockchain
+        this.blockchain.recordWorkSubmission(
+            taskId,
+            task.beforeImageHash!,
+            imageHash
+        ).catch(err => console.error('Blockchain recording failed:', err));
+
+        // Record AI verification on blockchain
+        this.blockchain.recordAIVerification(
+            taskId,
+            aiResult.confidence,
+            aiResult.verdict === 'FIXED'
+        ).catch(err => console.error('Blockchain recording failed:', err));
+
         // TODO: If AI confidence >= 90%, trigger Stripe payment release
-        // TODO: Record on blockchain
         // TODO: Send Firebase notification
 
         return {

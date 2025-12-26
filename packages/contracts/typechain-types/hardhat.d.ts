@@ -21,6 +21,10 @@ declare module "hardhat/types/runtime" {
       name: "ProjectFactory",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.ProjectFactory__factory>;
+    getContractFactory(
+      name: "TaskEscrow",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.TaskEscrow__factory>;
 
     getContractAt(
       name: "Project",
@@ -32,6 +36,11 @@ declare module "hardhat/types/runtime" {
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.ProjectFactory>;
+    getContractAt(
+      name: "TaskEscrow",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.TaskEscrow>;
 
     deployContract(
       name: "Project",
@@ -41,6 +50,10 @@ declare module "hardhat/types/runtime" {
       name: "ProjectFactory",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ProjectFactory>;
+    deployContract(
+      name: "TaskEscrow",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TaskEscrow>;
 
     deployContract(
       name: "Project",
@@ -52,6 +65,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.ProjectFactory>;
+    deployContract(
+      name: "TaskEscrow",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.TaskEscrow>;
 
     // default types
     getContractFactory(

@@ -3,3 +3,4 @@
 /* eslint-disable */
 export { Project__factory } from "./Project__factory";
 export { ProjectFactory__factory } from "./ProjectFactory__factory";
+export { TaskEscrow__factory } from "./TaskEscrow__factory";

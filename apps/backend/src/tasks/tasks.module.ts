@@ -4,9 +4,10 @@ import { TasksService } from './tasks.service';
 import { AiVerificationService } from './ai-verification.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { StorageModule } from '../storage/storage.module';
+import { BlockchainModule } from '../blockchain/blockchain.module';
 
 @Module({
-    imports: [PrismaModule, StorageModule],
+    imports: [PrismaModule, StorageModule, BlockchainModule],
     controllers: [TasksController],
     providers: [TasksService, AiVerificationService],
     exports: [TasksService],

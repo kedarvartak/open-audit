@@ -74,6 +74,42 @@
       "artifacts": [
         "ProjectFactory"
       ]
+    },
+    "/home/shashank/Desktop/side pros/gdg/packages/contracts/contracts/TaskEscrow.sol": {
+      "lastModificationDate": 1766765477196,
+      "contentHash": "0d50bfa94b4b670b182ae9ac370d1509",
+      "sourceName": "contracts/TaskEscrow.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "TaskEscrow"
+      ]
     }
   }
 }

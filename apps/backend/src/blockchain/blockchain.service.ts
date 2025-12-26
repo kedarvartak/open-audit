@@ -1,12 +1,34 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ethers } from 'ethers';
+import * as path from 'path';
+import * as fs from 'fs';
+
+// Load TaskEscrow ABI - try multiple locations
+const findABI = () => {
+    const locations = [
+        path.join(__dirname, 'abi', 'TaskEscrow.json'),  // Production
+        path.join(__dirname, '..', '..', 'src', 'contracts', 'abi', 'TaskEscrow.json'),  // Development
+        path.join(process.cwd(), 'src', 'contracts', 'abi', 'TaskEscrow.json'),  // Fallback
+    ];
+
+    for (const loc of locations) {
+        if (fs.existsSync(loc)) {
+            return JSON.parse(fs.readFileSync(loc, 'utf-8'));
+        }
+    }
+
+    throw new Error('TaskEscrow.json ABI not found');
+};
+
+const TaskEscrowABI = findABI();
 
 @Injectable()
 export class BlockchainService {
     private readonly logger = new Logger(BlockchainService.name);
     private provider: ethers.JsonRpcProvider;
     private wallet: ethers.Wallet;
+    private taskEscrowContract: ethers.Contract;
 
     constructor(private configService: ConfigService) {
         const rpcUrl = this.configService.get<string>('BLOCKCHAIN_RPC_URL', 'http://localhost:8545');
@@ -14,42 +36,213 @@ export class BlockchainService {
             'BLOCKCHAIN_PRIVATE_KEY',
             '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
         );
+        const contractAddress = this.configService.get<string>('TASKESCROW_CONTRACT_ADDRESS');
 
         this.provider = new ethers.JsonRpcProvider(rpcUrl);
         this.wallet = new ethers.Wallet(privateKey, this.provider);
 
-        this.logger.log('Blockchain service initialized (audit trail only)');
-        this.logger.log(`Wallet address: ${this.wallet.address}`);
+        if (contractAddress) {
+            this.taskEscrowContract = new ethers.Contract(
+                contractAddress,
+                TaskEscrowABI.abi,
+                this.wallet
+            );
+            this.logger.log('Blockchain service initialized');
+            this.logger.log(`Contract address: ${contractAddress}`);
+            this.logger.log(`Wallet address: ${this.wallet.address}`);
+        } else {
+            this.logger.warn('TASKESCROW_CONTRACT_ADDRESS not configured - blockchain recording disabled');
+        }
     }
 
-    // TODO: Phase 3 - Implement TaskEscrow contract integration
-    // This will record task creation, AI verification, and payment release
-    // For now, blockchain service is minimal to allow build to succeed
-
+    // Record task creation on blockchain
     async recordTaskCreation(
         taskId: string,
         clientAddress: string,
         amountINR: number,
         stripePaymentIntentId: string,
-    ): Promise<void> {
-        // TODO: Call TaskEscrow.recordTaskCreation()
-        this.logger.log(`Record task creation: ${taskId} (${amountINR} INR)`);
+    ): Promise<string | null> {
+        if (!this.taskEscrowContract) {
+            this.logger.warn('Blockchain recording skipped - contract not configured');
+            return null;
+        }
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+
+            this.logger.log(`Recording task creation: ${taskId}`);
+
+            const tx = await this.taskEscrowContract.recordTaskCreation(
+                taskIdHash,
+                clientAddress || this.wallet.address, // Use wallet address if no client address
+                amountINR,
+                stripePaymentIntentId || ''
+            );
+
+            const receipt = await tx.wait();
+            this.logger.log(`Task created on blockchain. Tx: ${receipt.hash}`);
+
+            return receipt.hash;
+        } catch (error) {
+            this.logger.error('Failed to record task creation', error);
+            return null;
+        }
     }
 
+    // Record task acceptance
+    async recordTaskAcceptance(
+        taskId: string,
+        workerAddress: string,
+    ): Promise<string | null> {
+        if (!this.taskEscrowContract) return null;
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+
+            const tx = await this.taskEscrowContract.recordTaskAcceptance(
+                taskIdHash,
+                workerAddress || this.wallet.address
+            );
+
+            const receipt = await tx.wait();
+            this.logger.log(`Task acceptance recorded. Tx: ${receipt.hash}`);
+
+            return receipt.hash;
+        } catch (error) {
+            this.logger.error('Failed to record task acceptance', error);
+            return null;
+        }
+    }
+
+    // Record work submission with image hashes
+    async recordWorkSubmission(
+        taskId: string,
+        beforeImageHash: string,
+        afterImageHash: string,
+    ): Promise<string | null> {
+        if (!this.taskEscrowContract) return null;
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+
+            const tx = await this.taskEscrowContract.recordWorkSubmission(
+                taskIdHash,
+                beforeImageHash,
+                afterImageHash
+            );
+
+            const receipt = await tx.wait();
+            this.logger.log(`Work submission recorded. Tx: ${receipt.hash}`);
+
+            return receipt.hash;
+        } catch (error) {
+            this.logger.error('Failed to record work submission', error);
+            return null;
+        }
+    }
+
+    // Record AI verification
     async recordAIVerification(
         taskId: string,
         confidence: number,
         approved: boolean,
-    ): Promise<void> {
-        // TODO: Call TaskEscrow.recordAIVerification()
-        this.logger.log(`Record AI verification: ${taskId} (${confidence}% confidence)`);
+    ): Promise<string | null> {
+        if (!this.taskEscrowContract) return null;
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+            const confidenceUint8 = Math.min(Math.max(Math.floor(confidence * 100), 0), 100);
+
+            const tx = await this.taskEscrowContract.recordAIVerification(
+                taskIdHash,
+                confidenceUint8,
+                approved
+            );
+
+            const receipt = await tx.wait();
+            this.logger.log(`AI verification recorded (${confidenceUint8}%). Tx: ${receipt.hash}`);
+
+            return receipt.hash;
+        } catch (error) {
+            this.logger.error('Failed to record AI verification', error);
+            return null;
+        }
     }
 
+    // Record payment release
     async recordPaymentRelease(
         taskId: string,
         stripeTransferId: string,
-    ): Promise<void> {
-        // TODO: Call TaskEscrow.recordPaymentRelease()
-        this.logger.log(`Record payment release: ${taskId}`);
+    ): Promise<string | null> {
+        if (!this.taskEscrowContract) return null;
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+
+            const tx = await this.taskEscrowContract.recordPaymentRelease(
+                taskIdHash,
+                stripeTransferId || ''
+            );
+
+            const receipt = await tx.wait();
+            this.logger.log(`Payment release recorded. Tx: ${receipt.hash}`);
+
+            return receipt.hash;
+        } catch (error) {
+            this.logger.error('Failed to record payment release', error);
+            return null;
+        }
+    }
+
+    // Record dispute
+    async recordDispute(
+        taskId: string,
+        reason: string,
+    ): Promise<string | null> {
+        if (!this.taskEscrowContract) return null;
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+
+            const tx = await this.taskEscrowContract.recordDispute(
+                taskIdHash,
+                reason
+            );
+
+            const receipt = await tx.wait();
+            this.logger.log(`Dispute recorded. Tx: ${receipt.hash}`);
+
+            return receipt.hash;
+        } catch (error) {
+            this.logger.error('Failed to record dispute', error);
+            return null;
+        }
+    }
+
+    // Get task audit from blockchain (public function)
+    async getTaskAudit(taskId: string): Promise<any> {
+        if (!this.taskEscrowContract) return null;
+
+        try {
+            const taskIdHash = ethers.keccak256(ethers.toUtf8Bytes(taskId));
+            const audit = await this.taskEscrowContract.getTaskAudit(taskIdHash);
+
+            return {
+                client: audit[0],
+                worker: audit[1],
+                amountINR: Number(audit[2]),
+                status: Number(audit[3]),
+                createdAt: Number(audit[4]),
+                completedAt: Number(audit[5]),
+                beforeImageHash: audit[6],
+                afterImageHash: audit[7],
+                aiConfidence: Number(audit[8]),
+                stripePaymentIntentId: audit[9],
+                stripeTransferId: audit[10],
+            };
+        } catch (error) {
+            this.logger.error('Failed to get task audit', error);
+            return null;
+        }
     }
 }
