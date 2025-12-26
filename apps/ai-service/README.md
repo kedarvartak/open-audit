@@ -1,47 +1,50 @@
-# AI Defect Detection Service
+# AI Defect Detection - Two Phase Approach
 
-Simple service to compare before/after images and detect changes.
+Clean and simple defect detection service.
+
+## How It Works
+
+**Phase 1**: Groq Vision Model
+- Analyzes the "before" image
+- Detects defect location
+- Returns coordinates and description
+
+**Phase 2**: Deep Learning (ResNet50)
+- Compares defect region in before vs after
+- Determines if defect is fixed
+- Returns verdict with confidence
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
-```
-
-## Run
-
-```bash
+export GROQ_API_KEY="your-key-here"
 python3 main.py
 ```
 
-Service starts on http://localhost:8000
-
 ## Usage
 
-**Endpoint**: `POST /analyze`
-
-**Files**:
-- `before_image`: Image showing defect
-- `after_image`: Image after repair
-
-**Returns**:
-- Similarity score
-- Number of changes detected
-- Annotated images with bounding boxes
-
-## Example
-
 ```bash
-curl -X POST http://localhost:8000/analyze \
+curl -X POST http://localhost:8003/analyze \
   -F "before_image=@before.jpg" \
   -F "after_image=@after.jpg"
 ```
 
-## What it does
+## Response
 
-1. Compares the two images using SSIM (Structural Similarity)
-2. Finds regions that changed
-3. Draws bounding boxes around changes
-4. Returns annotated images
+```json
+{
+  "status": "success",
+  "phase1_groq": {
+    "description": "Rust on metal surface",
+    "location_pixels": [120, 80, 340, 260]
+  },
+  "phase2_deep_learning": {
+    "verdict": "FIXED",
+    "confidence": 0.85,
+    "feature_distance": 8.5
+  }
+}
+```
 
-Simple and clean!
+Clean. Simple. Effective.
