@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 import { StorageModule } from './storage/storage.module';
 import { TasksModule } from './tasks/tasks.module';
+import { FirebaseModule } from './firebase/firebase.module';
 
 @Module({
   imports: [
@@ -16,8 +17,10 @@ import { TasksModule } from './tasks/tasks.module';
     BlockchainModule,
     StorageModule,
     TasksModule,
+    FirebaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule { }
+

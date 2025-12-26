@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { AiVerificationService } from './ai-verification.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
+import { FirebaseService } from '../firebase/firebase.service';
 import { TaskStatus } from '@prisma/client';
 import { ethers } from 'ethers';
 
@@ -13,6 +14,7 @@ export class TasksService {
         private storage: StorageService,
         private aiVerification: AiVerificationService,
         private blockchain: BlockchainService,
+        private firebase: FirebaseService,
     ) { }
 
     // CLIENT: Create a new task

@@ -1,31 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, MoreVertical, FileText } from 'lucide-react';
+import { Search, Plus, MoreVertical, Briefcase } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
 import { Modal } from '../components/ui/Modal';
 import { CreateProjectModal } from '../components/modals/CreateProjectModal';
 import { useTheme } from '../contexts/ThemeContext';
-
-interface Project {
-    id: string;
-    title: string;
-    description: string;
-    contractAddress: string;
-    organizer: {
-        name: string;
-    };
-    createdAt: string;
-    updatedAt: string;
-    milestones?: Array<{
-        status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'APPROVED' | 'REJECTED';
-    }>;
-}
+import { tasksAPI } from '../services/api';
+import type { Task } from '../services/api';
 
 export const Dashboard = () => {
-    const [projects, setProjects] = useState<Project[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterBy, setFilterBy] = useState('all');
@@ -33,47 +19,40 @@ export const Dashboard = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { theme } = useTheme();
 
-    const fetchProjects = async () => {
+    const fetchTasks = async () => {
         try {
-            const response = await axios.get('http://localhost:3000/projects');
-            setProjects(response.data);
+            const response = await tasksAPI.getMarketplace();
+            setTasks(response.data);
         } catch (error) {
-            console.error('Failed to fetch projects:', error);
+            console.error('Failed to fetch tasks:', error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchProjects();
+        fetchTasks();
     }, []);
 
-    // Filter and sort projects
-    const filteredProjects = projects
-        .filter(project => {
-            const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                project.description?.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesSearch;
+    const filteredTasks = tasks
+        .filter(task => {
+            const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+            const matchesFilter = filterBy === 'all' ||
+                (filterBy === 'active' && task.status === 'OPEN') ||
+                (filterBy === 'completed' && task.status === 'PAID');
+
+            return matchesSearch && matchesFilter;
         })
         .sort((a, b) => {
             if (sortBy === 'newest') {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             } else if (sortBy === 'oldest') {
                 return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            } else if (sortBy === 'updated') {
-                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
             }
             return 0;
         });
-
-    const getStatusCounts = (project: Project) => {
-        const milestones = project.milestones || [];
-        return {
-            pending: milestones.filter(m => m.status === 'PENDING').length,
-            inProgress: milestones.filter(m => m.status === 'IN_PROGRESS').length,
-            completed: milestones.filter(m => m.status === 'COMPLETED').length,
-        };
-    };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -95,18 +74,17 @@ export const Dashboard = () => {
 
     const filterOptions = [
         { value: 'all', label: 'Show All' },
-        { value: 'active', label: 'Active' },
-        { value: 'completed', label: 'Completed' },
+        { value: 'active', label: 'Active Tasks' },
+        { value: 'completed', label: 'Completed Tasks' },
     ];
 
     const sortOptions = [
         { value: 'newest', label: 'Sort By: Newest' },
         { value: 'oldest', label: 'Sort By: Oldest' },
-        { value: 'updated', label: 'Sort By: Recently Updated' },
     ];
 
     const handleCreateSuccess = () => {
-        fetchProjects(); // Refresh the projects list
+        fetchTasks();
     };
 
     if (loading) {
@@ -162,29 +140,27 @@ export const Dashboard = () => {
 
                 {/* Results Count */}
                 <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                    Showing {filteredProjects.length} of {projects.length} Projects
+                    Showing {filteredTasks.length} of {tasks.length} Tasks
                 </p>
 
-                {/* Projects Grid or Empty State */}
-                {filteredProjects.length === 0 ? (
+                {filteredTasks.length === 0 ? (
                     <div className={`flex-1 flex items-center justify-center rounded-2xl border ${theme === 'dark'
                         ? 'bg-slate-700/50 border-slate-600'
                         : 'bg-slate-100 border-slate-200'
                         }`}>
                         <div className="text-center">
                             <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                No projects found.
+                                No tasks found.
                             </p>
                         </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredProjects.map((project) => {
-                            const statusCounts = getStatusCounts(project);
+                        {filteredTasks.map((task) => {
                             return (
                                 <Link
-                                    key={project.id}
-                                    to={`/projects/${project.id}`}
+                                    key={task.id}
+                                    to={`/tasks/${task.id}`}
                                     className="block group"
                                 >
                                     <div className={`rounded-2xl border p-6 hover:shadow-lg transition-all duration-200 ${theme === 'dark'
@@ -193,10 +169,10 @@ export const Dashboard = () => {
                                         }`}>
                                         <div className="flex items-start justify-between mb-4">
                                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${theme === 'dark'
-                                                ? 'bg-blue-600/20 text-blue-400'
-                                                : 'bg-blue-100 text-blue-600'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-blue-500 text-white'
                                                 }`}>
-                                                <FileText size={20} />
+                                                <Briefcase size={20} />
                                             </div>
                                             <button className={`p-1 rounded-lg transition-colors ${theme === 'dark'
                                                 ? 'hover:bg-slate-600 text-slate-400'
@@ -210,47 +186,42 @@ export const Dashboard = () => {
                                             ? 'text-slate-100 group-hover:text-blue-400'
                                             : 'text-slate-900 group-hover:text-blue-600'
                                             }`}>
-                                            {project.title}
+                                            {task.title}
                                         </h3>
 
                                         <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            Last Updated<br />
-                                            <span className={`font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                                                {getTimeSince(project.updatedAt)}
-                                            </span>
+                                            {task.description.length > 80 ? task.description.substring(0, 80) + '...' : task.description}
                                         </p>
 
                                         <div className="flex flex-wrap gap-2 mb-4">
                                             <span className={`px-2 py-1 rounded text-xs font-semibold ${theme === 'dark'
-                                                ? 'bg-green-600/20 text-green-400 border border-green-600/30'
-                                                : 'bg-green-100 text-green-700 border border-green-200'
+                                                ? 'bg-green-600 text-white'
+                                                : 'bg-green-500 text-white'
                                                 }`}>
-                                                PENDING: {statusCounts.pending}
+                                                Rs.{task.budget}
                                             </span>
                                             <span className={`px-2 py-1 rounded text-xs font-semibold ${theme === 'dark'
-                                                ? 'bg-red-600/20 text-red-400 border border-red-600/30'
-                                                : 'bg-red-100 text-red-700 border border-red-200'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'bg-blue-500 text-white'
                                                 }`}>
-                                                PROGRESS: {statusCounts.inProgress}
+                                                {task.category.toUpperCase()}
                                             </span>
-                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${theme === 'dark'
-                                                ? 'bg-orange-600/20 text-orange-400 border border-orange-600/30'
-                                                : 'bg-orange-100 text-orange-700 border border-orange-200'
+                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${task.status === 'OPEN' ?
+                                                theme === 'dark' ? 'bg-purple-600 text-white' : 'bg-purple-500 text-white'
+                                                : theme === 'dark' ? 'bg-orange-600 text-white' : 'bg-orange-500 text-white'
                                                 }`}>
-                                                DONE: {statusCounts.completed}
+                                                {task.status}
                                             </span>
                                         </div>
 
                                         <div className={`pt-4 border-t space-y-1 ${theme === 'dark' ? 'border-slate-600' : 'border-slate-200'}`}>
                                             <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                Created by: <span className={`font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                                                    {project.organizer?.name || 'Unknown'}
+                                                Posted by: <span className={`font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
+                                                    {task.client?.name || 'Unknown'}
                                                 </span>
                                             </p>
                                             <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                Created on: <span className={`font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                                                    {formatDate(project.createdAt)}
-                                                </span>
+                                                {getTimeSince(task.createdAt)}
                                             </p>
                                         </div>
                                     </div>
@@ -261,11 +232,10 @@ export const Dashboard = () => {
                 )}
             </div>
 
-            {/* Create Project Modal */}
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                title="Create New Project"
+                title="Create New Task"
             >
                 <CreateProjectModal
                     onClose={() => setIsCreateModalOpen(false)}

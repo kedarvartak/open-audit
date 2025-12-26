@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { useTheme } from '../contexts/ThemeContext';
-import axios from 'axios';
+import { authAPI } from '../services/api';
 
-export const Login = () => {
+export default function Login() {
     const navigate = useNavigate();
-    const [email, setEmail] = useState('test@example.com');
+    const [email, setEmail] = useState('client@test.com');
     const [password, setPassword] = useState('password123');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -19,15 +19,23 @@ export const Login = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            const response = await axios.post('http://localhost:3000/auth/login', {
-                email,
-                password
-            });
-            localStorage.setItem('token', response.data.access_token);
-            navigate('/');
-        } catch (error) {
+            const response = await authAPI.login(email, password);
+            console.log('Login response:', response.data);
+
+            const { access_token, user } = response.data;
+
+            localStorage.setItem('token', access_token);
+
+            if (user) {
+                localStorage.setItem('userId', user.id);
+                localStorage.setItem('userRole', user.role);
+                localStorage.setItem('userName', user.name);
+            }
+
+            navigate('/dashboard');
+        } catch (error: any) {
             console.error('Login failed:', error);
-            alert('Invalid credentials');
+            alert(error.response?.data?.message || 'Invalid credentials');
         } finally {
             setLoading(false);
         }
@@ -104,7 +112,7 @@ export const Login = () => {
                 </Button>
 
                 <p className={`text-center text-sm pt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                    Have an account?{' '}
+                    Don't have an account?{' '}
                     <Link to="/register" className={`font-semibold transition-colors ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
                         }`}>
                         Sign up
@@ -113,4 +121,4 @@ export const Login = () => {
             </form>
         </AuthLayout>
     );
-};
+}

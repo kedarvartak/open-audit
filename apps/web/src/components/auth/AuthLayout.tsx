@@ -35,7 +35,7 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
     return (
         <div className={`min-h-screen w-full flex ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
             {/* Left Side - Visuals */}
-            <div className="hidden lg:flex w-2/5 relative flex-col justify-between p-14 text-white overflow-hidden">
+            <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-14 text-white overflow-hidden">
                 <RippleBackground isDark={theme === 'dark'} />
 
                 {/* Header */}
@@ -66,12 +66,11 @@ export const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
                 <div className="relative z-10"></div>
             </div>
 
-            {/* Right Side - Form */}
             <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className={`w-full lg:w-3/5 px-16 py-12 flex flex-col justify-center ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'}`}
+                className={`w-full lg:w-1/2 px-16 py-12 flex flex-col justify-center ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'}`}
             >
                 <div className="max-w-md mx-auto w-full space-y-8">
                     <motion.div variants={itemVariants} className="space-y-2">

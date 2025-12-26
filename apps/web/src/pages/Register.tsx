@@ -1,34 +1,50 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Dropdown } from '../components/ui/Dropdown';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { useTheme } from '../contexts/ThemeContext';
-import axios from 'axios';
+import { authAPI } from '../services/api';
 
-export const Register = () => {
+export default function Register() {
     const navigate = useNavigate();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('WORKER');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const { theme } = useTheme();
+
+    const roleOptions = [
+        { value: 'WORKER', label: 'Worker (Find Work)' },
+        { value: 'CLIENT', label: 'Client (Post Tasks)' }
+    ];
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post('http://localhost:3000/auth/register', {
+            const response = await authAPI.register({
                 name,
                 email,
-                password
+                password,
+                role
             });
-            navigate('/login');
-        } catch (error) {
+
+            const { access_token, user } = response.data;
+
+            localStorage.setItem('token', access_token);
+            localStorage.setItem('userId', user.id);
+            localStorage.setItem('userRole', user.role);
+            localStorage.setItem('userName', user.name);
+
+            navigate('/dashboard');
+        } catch (error: any) {
             console.error('Registration failed:', error);
-            alert('Registration failed');
+            alert(error.response?.data?.message || 'Registration failed');
         } finally {
             setLoading(false);
         }
@@ -37,7 +53,7 @@ export const Register = () => {
     return (
         <AuthLayout
             title="Create an Account"
-            subtitle="Join us to start managing your projects."
+            subtitle="Join us to start managing your tasks."
         >
             <form onSubmit={handleRegister} className="space-y-5">
                 <div className="space-y-2">
@@ -66,6 +82,18 @@ export const Register = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label className={`block text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                        }`} htmlFor="role">
+                        Account Type
+                    </label>
+                    <Dropdown
+                        value={role}
+                        onChange={setRole}
+                        options={roleOptions}
+                        placeholder="Select account type"
                     />
                 </div>
                 <div className="space-y-2">
@@ -108,4 +136,4 @@ export const Register = () => {
             </form>
         </AuthLayout>
     );
-};
+}
