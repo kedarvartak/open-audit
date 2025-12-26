@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class StorageService implements OnModuleInit {
@@ -42,16 +43,19 @@ export class StorageService implements OnModuleInit {
         }
     }
 
+    // Upload file from Multer (Express.Multer.File)
     async uploadFile(
-        fileName: string,
-        fileBuffer: Buffer,
-        contentType: string,
+        file: Express.Multer.File,
+        folder: string,
     ): Promise<string> {
+        const fileName = `${folder}/${Date.now()}-${file.originalname}`;
+        const contentType = file.mimetype;
+
         await this.minioClient.putObject(
             this.bucketName,
             fileName,
-            fileBuffer,
-            fileBuffer.length,
+            file.buffer,
+            file.buffer.length,
             {
                 'Content-Type': contentType,
             },
@@ -64,6 +68,11 @@ export class StorageService implements OnModuleInit {
         const protocol = useSSL ? 'https' : 'http';
 
         return `${protocol}://${endpoint}:${port}/${this.bucketName}/${fileName}`;
+    }
+
+    // Get SHA-256 hash of file buffer
+    async getFileHash(buffer: Buffer): Promise<string> {
+        return crypto.createHash('sha256').update(buffer).digest('hex');
     }
 
     async deleteFile(fileName: string): Promise<void> {

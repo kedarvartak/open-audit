@@ -154,6 +154,10 @@ export class TasksService {
                 throw new BadRequestException('Location required for this task');
             }
 
+            if (task.locationLat === null || task.locationLng === null || task.locationRadius === null) {
+                throw new BadRequestException('Task location not properly configured');
+            }
+
             const distance = this.calculateDistance(
                 workerLat,
                 workerLng,
@@ -199,6 +203,10 @@ export class TasksService {
 
         if (task.status !== TaskStatus.IN_PROGRESS) {
             throw new BadRequestException('Work not started');
+        }
+
+        if (!task.beforeImageUrl) {
+            throw new BadRequestException('Before image not found');
         }
 
         // Upload after image
@@ -256,6 +264,10 @@ export class TasksService {
 
         if (task.status !== TaskStatus.VERIFIED) {
             throw new BadRequestException('Task not verified yet');
+        }
+
+        if (!task.disputeDeadline) {
+            throw new BadRequestException('Dispute deadline not set');
         }
 
         if (new Date() > task.disputeDeadline) {
