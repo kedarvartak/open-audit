@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 const buttonVariants = {
-    default: "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-600/20 active:scale-[0.98]",
+    default: "bg-[#464ace] text-white hover:bg-[#3d42b8] active:scale-[0.98]",
     destructive: "bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/20 active:scale-[0.98]",
     outline: "border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 active:scale-[0.98]",
     secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200 active:scale-[0.98]",

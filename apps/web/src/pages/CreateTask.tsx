@@ -38,7 +38,7 @@ export default function CreateTask() {
             alert('Task created successfully!');
             navigate('/marketplace');
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Failed to create task');
+            alert(error.response?.data?.message || 'Failed to Create Task');
         } finally {
             setLoading(false);
         }

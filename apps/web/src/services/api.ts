@@ -35,6 +35,7 @@ export interface Task {
     status: string;
     requiresLocation: boolean;
     locationName?: string;
+    beforeImage?: string;
     createdAt: string;
     client: {
         id: string;
@@ -50,19 +51,19 @@ export interface Task {
 
 export const authAPI = {
     register: (data: { email: string; password: string; name: string; role: string }) =>
-        api.post('/auth/register', data),
+        api.post('/v0/auth/register', data),
 
     login: (email: string, password: string) =>
-        api.post('/auth/login', { email, password }),
+        api.post('/v0/auth/login', { email, password }),
 
-    getProfile: () => api.get('/auth/profile'),
+    getProfile: () => api.get('/v0/auth/profile'),
 };
 
 export const tasksAPI = {
     getMarketplace: (filters?: { category?: string; minBudget?: number; maxBudget?: number }) =>
-        api.get('/tasks', { params: filters }),
+        api.get('/v0/tasks', { params: filters }),
 
-    getTask: (id: string) => api.get(`/tasks/${id}`),
+    getTask: (id: string) => api.get(`/v0/tasks/${id}`),
 
     createTask: (data: {
         title: string;
@@ -74,29 +75,29 @@ export const tasksAPI = {
         locationLng?: number;
         locationRadius?: number;
         locationName?: string;
-    }) => api.post('/tasks', data),
+    }) => api.post('/v0/tasks', data),
 
-    acceptTask: (id: string) => api.post(`/tasks/${id}/accept`),
+    acceptTask: (id: string) => api.post(`/v0/tasks/${id}/accept`),
 
     getMyTasks: (role: 'client' | 'worker') =>
-        api.get('/tasks/my-tasks', { params: { role } }),
+        api.get('/v0/tasks/my-tasks', { params: { role } }),
 
     startWork: (id: string, formData: FormData) =>
-        api.post(`/tasks/${id}/start`, formData, {
+        api.post(`/v0/tasks/${id}/start`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 
     submitWork: (id: string, formData: FormData) =>
-        api.post(`/tasks/${id}/submit`, formData, {
+        api.post(`/v0/tasks/${id}/submit`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 
-    approveWork: (id: string) => api.post(`/tasks/${id}/approve`),
+    approveWork: (id: string) => api.post(`/v0/tasks/${id}/approve`),
 
-    rejectWork: (id: string, reason: string) => api.post(`/tasks/${id}/reject`, { reason }),
+    rejectWork: (id: string, reason: string) => api.post(`/v0/tasks/${id}/reject`, { reason }),
 
     disputeTask: (id: string, reason: string) =>
-        api.post(`/tasks/${id}/dispute`, { reason }),
+        api.post(`/v0/tasks/${id}/dispute`, { reason }),
 };
 
 export default api;

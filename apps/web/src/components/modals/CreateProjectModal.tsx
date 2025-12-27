@@ -27,12 +27,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         try {
             const token = localStorage.getItem('token');
             await axios.post(
-                'http://localhost:3000/projects',
+                'http://localhost:3001/v0/tasks',
                 {
                     title: formData.title,
                     description: formData.description,
-                    fundingGoal: parseFloat(formData.fundingGoal),
-                    deadline: new Date(formData.deadline).toISOString(),
+                    category: 'general', // Default category
+                    budget: parseFloat(formData.fundingGoal),
                 },
                 {
                     headers: {
@@ -44,8 +44,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             onSuccess();
             onClose();
         } catch (error) {
-            console.error('Failed to create project:', error);
-            alert('Failed to create project');
+            console.error('Failed to Create Task:', error);
+            alert('Failed to Create Task');
         } finally {
             setLoading(false);
         }
@@ -101,8 +101,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                     onChange={handleChange}
                     required
                     className={`flex w-full rounded-md border px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 resize-none ${theme === 'dark'
-                            ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-500'
-                            : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-blue-500'
+                        ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-500'
+                        : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-blue-500'
                         }`}
                 />
             </div>
@@ -149,8 +149,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             </div>
 
             <div className={`p-4 rounded-md border ${theme === 'dark'
-                    ? 'bg-blue-900/20 border-blue-800/30 text-blue-300'
-                    : 'bg-blue-50 border-blue-200 text-blue-700'
+                ? 'bg-blue-900/20 border-blue-800/30 text-blue-300'
+                : 'bg-blue-50 border-blue-200 text-blue-700'
                 }`}>
                 <p className="text-sm">
                     <span className="font-semibold">Note:</span> All fund transactions are processed in INR through secure payment gateways.
@@ -168,7 +168,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                     Cancel
                 </Button>
                 <Button type="submit" disabled={loading}>
-                    {loading ? 'Creating...' : 'Create Project'}
+                    {loading ? 'Creating...' : 'Create Task'}
                 </Button>
             </div>
         </form>

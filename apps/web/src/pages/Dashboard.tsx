@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, MoreVertical, Briefcase } from 'lucide-react';
+import { Search, Plus, MoreVertical } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
@@ -100,7 +100,7 @@ export const Dashboard = () => {
 
     return (
         <DashboardLayout>
-            <div className="p-8 space-y-6 h-full flex flex-col">
+            <div className={`p-8 space-y-6 h-full flex flex-col ${theme === 'dark' ? '' : 'bg-slate-50'}`}>
                 {/* Filter Bar */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
@@ -127,7 +127,7 @@ export const Dashboard = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${theme === 'dark'
                                     ? 'bg-slate-700 border border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
-                                    : 'bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                                    : 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
                                     }`}
                             />
                         </div>
@@ -135,7 +135,7 @@ export const Dashboard = () => {
 
                     <Button className="gap-2 shadow-md" onClick={() => setIsCreateModalOpen(true)}>
                         <Plus size={18} />
-                        <span className="font-semibold">CREATE PROJECT</span>
+                        <span className="font-semibold">Create Task</span>
                     </Button>
                 </div>
 
@@ -147,7 +147,7 @@ export const Dashboard = () => {
                 {filteredTasks.length === 0 ? (
                     <div className={`flex-1 flex items-center justify-center rounded-md border ${theme === 'dark'
                         ? 'bg-slate-700/50 border-slate-600'
-                        : 'bg-slate-100 border-slate-200'
+                        : 'bg-white border-slate-200'
                         }`}>
                         <div className="text-center">
                             <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -156,85 +156,96 @@ export const Dashboard = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredTasks.map((task) => {
-                            return (
-                                <button
-                                    key={task.id}
-                                    onClick={() => setSelectedTaskId(task.id)}
-                                    className="block group text-left w-full"
-                                >
-                                    <div className={`rounded-md border p-6 hover:shadow-lg transition-all duration-200 ${theme === 'dark'
-                                        ? 'bg-slate-700 border-slate-600 hover:border-blue-500'
-                                        : 'bg-white border-slate-200 hover:border-blue-400'
-                                        }`}>
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className={`w-10 h-10 rounded-md flex items-center justify-center ${theme === 'dark'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-blue-500 text-white'
-                                                }`}>
-                                                <Briefcase size={20} />
-                                            </div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    // Handle more options
-                                                }}
-                                                className={`p-1 rounded-md transition-colors ${theme === 'dark'
-                                                    ? 'hover:bg-slate-600 text-slate-400'
-                                                    : 'hover:bg-slate-100 text-slate-500'
-                                                    }`}
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
-                                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        {filteredTasks.map((task) => (
+                            <button
+                                key={task.id}
+                                onClick={() => setSelectedTaskId(task.id)}
+                                className="block text-left w-full"
+                            >
+                                <div className={`rounded-lg border p-5 transition-shadow duration-200 ${theme === 'dark'
+                                    ? 'bg-slate-900 border-slate-700'
+                                    : 'bg-white border-slate-200 shadow-sm'
+                                    }`}>
 
-                                        <h3 className={`text-lg font-bold mb-2 transition-colors ${theme === 'dark'
-                                            ? 'text-slate-100 group-hover:text-blue-400'
-                                            : 'text-slate-900 group-hover:text-blue-600'
+                                    {/* Header with Logo */}
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${theme === 'dark'
+                                            ? 'bg-slate-800'
+                                            : 'bg-slate-100'
                                             }`}>
-                                            {task.title}
-                                        </h3>
-
-                                        <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            {task.description.length > 80 ? task.description.substring(0, 80) + '...' : task.description}
-                                        </p>
-
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${theme === 'dark'
-                                                ? 'bg-green-600 text-white'
-                                                : 'bg-green-500 text-white'
-                                                }`}>
-                                                Rs.{task.budget}
-                                            </span>
-                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${theme === 'dark'
-                                                ? 'bg-blue-600 text-white'
-                                                : 'bg-blue-500 text-white'
-                                                }`}>
-                                                {task.category.toUpperCase()}
-                                            </span>
-                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${task.status === 'OPEN' ?
-                                                theme === 'dark' ? 'bg-purple-600 text-white' : 'bg-purple-500 text-white'
-                                                : theme === 'dark' ? 'bg-orange-600 text-white' : 'bg-orange-500 text-white'
-                                                }`}>
-                                                {task.status}
-                                            </span>
+                                            <svg width="24" height="20" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
+                                                <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
+                                            </svg>
                                         </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                            }}
+                                            className={`p-1.5 rounded-md transition-colors ${theme === 'dark'
+                                                ? 'hover:bg-slate-700 text-slate-500'
+                                                : 'hover:bg-slate-100 text-slate-400'
+                                                }`}
+                                        >
+                                            <MoreVertical size={16} />
+                                        </button>
+                                    </div>
 
-                                        <div className={`pt-4 border-t space-y-1 ${theme === 'dark' ? 'border-slate-600' : 'border-slate-200'}`}>
-                                            <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                Posted by: <span className={`font-medium ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                                                    {task.client?.name || 'Unknown'}
-                                                </span>
-                                            </p>
-                                            <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                {getTimeSince(task.createdAt)}
-                                            </p>
+                                    {/* Title */}
+                                    <h3 className={`text-base font-semibold mb-2 line-clamp-1 ${theme === 'dark'
+                                        ? 'text-slate-100'
+                                        : 'text-slate-900'
+                                        }`}>
+                                        {task.title}
+                                    </h3>
+
+                                    {/* Description */}
+                                    <p className={`text-sm mb-4 line-clamp-2 leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                        {task.description}
+                                    </p>
+
+                                    {/* Badges */}
+                                    <div className="flex flex-wrap gap-2 mb-4">
+                                        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500 text-white">
+                                            ₹{task.budget.toLocaleString()}
+                                        </span>
+                                        <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${task.status === 'OPEN'
+                                            ? 'bg-purple-500 text-white'
+                                            : 'bg-amber-500 text-white'
+                                            }`}>
+                                            {task.status}
+                                        </span>
+                                        <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${theme === 'dark'
+                                            ? 'bg-[#464ace]/20 text-[#8b94ff]'
+                                            : 'bg-[#464ace]/10 text-[#464ace]'
+                                            }`}>
+                                            {task.category.charAt(0).toUpperCase() + task.category.slice(1).toLowerCase()}
+                                        </span>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className={`pt-4 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                    {task.client?.name || 'Unknown Client'}
+                                                </p>
+                                                <p className={`text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`}>
+                                                    {getTimeSince(task.createdAt)}
+                                                </p>
+                                            </div>
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark'
+                                                ? 'bg-slate-700 text-slate-400'
+                                                : 'bg-slate-100 text-slate-600'
+                                                }`}>
+                                                {task.client?.name?.charAt(0).toUpperCase() || '?'}
+                                            </div>
                                         </div>
                                     </div>
-                                </button>
-                            );
-                        })}
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 )}
             </div>
@@ -250,14 +261,16 @@ export const Dashboard = () => {
                 />
             </Modal>
 
-            {selectedTaskId && (
-                <TaskDetailsModal
-                    taskId={selectedTaskId}
-                    isOpen={!!selectedTaskId}
-                    onClose={() => setSelectedTaskId(null)}
-                    onTaskUpdated={fetchTasks}
-                />
-            )}
-        </DashboardLayout>
+            {
+                selectedTaskId && (
+                    <TaskDetailsModal
+                        taskId={selectedTaskId}
+                        isOpen={!!selectedTaskId}
+                        onClose={() => setSelectedTaskId(null)}
+                        onTaskUpdated={fetchTasks}
+                    />
+                )
+            }
+        </DashboardLayout >
     );
 };

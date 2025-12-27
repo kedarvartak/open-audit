@@ -50,8 +50,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${theme === 'dark'
-                        ? 'bg-slate-700 border border-slate-600 text-slate-100 hover:border-slate-500 focus:border-blue-500'
-                        : 'bg-white border border-slate-300 text-slate-700 hover:border-slate-400 focus:border-blue-500'
+                    ? 'bg-slate-700 border border-slate-600 text-slate-100 hover:border-slate-500 focus:border-blue-500'
+                    : 'bg-white border border-slate-200 text-slate-700 hover:border-slate-300 focus:border-blue-500'
                     }`}
             >
                 <span className="truncate">{selectedOption?.label || placeholder}</span>
@@ -64,8 +64,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
             {isOpen && (
                 <div className={`absolute z-50 w-full mt-1 rounded-md shadow-lg overflow-hidden border ${theme === 'dark'
-                        ? 'bg-slate-700 border-slate-600'
-                        : 'bg-white border-slate-200'
+                    ? 'bg-slate-700 border-slate-600'
+                    : 'bg-white border-slate-200'
                     }`}>
                     {options.map((option) => (
                         <button
@@ -73,10 +73,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
                             type="button"
                             onClick={() => handleSelect(option.value)}
                             className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${option.value === value
-                                    ? 'bg-blue-600 text-white font-medium'
-                                    : theme === 'dark'
-                                        ? 'text-slate-100 hover:bg-slate-600'
-                                        : 'text-slate-700 hover:bg-slate-100'
+                                ? 'bg-[#464ace] text-white font-medium'
+                                : theme === 'dark'
+                                    ? 'text-slate-100 hover:bg-slate-600'
+                                    : 'text-slate-700 hover:bg-slate-200'
                                 }`}
                         >
                             {option.label}

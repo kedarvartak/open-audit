@@ -60,8 +60,8 @@ export const CreateProject = () => {
 
             navigate('/');
         } catch (error) {
-            console.error('Failed to create project:', error);
-            alert('Failed to create project.');
+            console.error('Failed to Create Task:', error);
+            alert('Failed to Create Task.');
         } finally {
             setLoading(false);
         }
@@ -167,7 +167,7 @@ export const CreateProject = () => {
                         disabled={loading}
                         className="w-full md:w-auto text-lg text-[#6d5dfc] font-bold"
                     >
-                        {loading ? 'Creating Project...' : 'Create Project'}
+                        {loading ? 'Creating Project...' : 'Create Task'}
                     </Button>
                 </div>
             </form>

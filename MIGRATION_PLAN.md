@@ -174,7 +174,7 @@ export class TasksService {
   
   // CLIENT: Create a new task
   async createTask(clientId: string, dto: CreateTaskDto) {
-    // 1. Create task in DB (OPEN)
+    // 1. Create Task in DB (OPEN)
     // 2. Deploy escrow contract
     // 3. Return task
   }
@@ -228,7 +228,7 @@ export class TasksService {
 @Controller('tasks')
 export class TasksController {
 
-  @Post()                    // Create task (CLIENT)
+  @Post()                    // Create Task (CLIENT)
   @Get()                     // List open tasks
   @Get(':id')                // Get task details
   @Post(':id/accept')        // Accept task (WORKER)
@@ -783,7 +783,7 @@ export class StripeService {
 
 ```typescript
 async createTask(clientId: string, dto: CreateTaskDto) {
-  // 1. Create task in database
+  // 1. Create Task in database
   const task = await this.prisma.task.create({ ... });
   
   // 2. Create Stripe escrow (real INR payment)
@@ -903,7 +903,7 @@ components/
 
 | Method | Endpoint | Role | Action |
 |--------|----------|------|--------|
-| POST | `/tasks` | CLIENT | Create task + deploy escrow |
+| POST | `/tasks` | CLIENT | Create Task + deploy escrow |
 | GET | `/tasks` | PUBLIC | List open tasks |
 | GET | `/tasks/:id` | PUBLIC | Get task details |
 | POST | `/tasks/:id/accept` | WORKER | Accept task |
