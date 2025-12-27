@@ -124,17 +124,17 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     </h1>
 
                     <div className="flex items-center gap-4">
-                        <button className={`w-9 h-9 rounded-sm ${theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-200 hover:bg-slate-300'} flex items-center justify-center transition-colors`}>
+                        <button className={`w-10 h-10 rounded-full ${theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-200 hover:bg-slate-300'} flex items-center justify-center transition-colors`}>
                             <User size={18} className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} />
                         </button>
 
                         {token && (
                             <button
                                 onClick={handleLogout}
-                                className={`p-2 ${theme === 'dark' ? 'text-slate-400 hover:text-red-400' : 'text-slate-500 hover:text-red-600'} transition-colors`}
+                                className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors"
                                 title="Logout"
                             >
-                                <LogOut size={20} />
+                                <LogOut size={18} className="text-white" />
                             </button>
                         )}
                     </div>
