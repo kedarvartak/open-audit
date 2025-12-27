@@ -19,9 +19,18 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         deadline: '',
     });
     const [loading, setLoading] = useState(false);
+    const [descriptionError, setDescriptionError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate description word count before submitting
+        const wordCount = formData.description.trim().split(/\s+/).filter(word => word.length > 0).length;
+        if (wordCount < 10) {
+            setDescriptionError(`Description must be at least 10 words (currently ${wordCount} words)`);
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -56,6 +65,16 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             ...formData,
             [e.target.name]: e.target.value,
         });
+
+        // Validate description word count
+        if (e.target.name === 'description') {
+            const wordCount = e.target.value.trim().split(/\s+/).filter(word => word.length > 0).length;
+            if (wordCount < 10) {
+                setDescriptionError(`Description must be at least 10 words (currently ${wordCount} words)`);
+            } else {
+                setDescriptionError('');
+            }
+        }
     };
 
     const handleDateChange = (date: string) => {
@@ -86,25 +105,35 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             </div>
 
             <div className="space-y-2">
-                <label
-                    htmlFor="description"
-                    className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}
-                >
-                    Description
-                </label>
+                <div className="flex items-center justify-between">
+                    <label
+                        htmlFor="description"
+                        className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}
+                    >
+                        Description
+                    </label>
+                    <span className={`text-xs ${formData.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 10
+                        ? theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                        : theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {formData.description.trim().split(/\s+/).filter(word => word.length > 0).length} / 10 words
+                    </span>
+                </div>
                 <textarea
                     id="description"
                     name="description"
                     rows={4}
-                    placeholder="Describe your project"
+                    placeholder="Describe your project in detail (minimum 10 words)"
                     value={formData.description}
                     onChange={handleChange}
                     required
                     className={`flex w-full rounded-md border px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 resize-none ${theme === 'dark'
                         ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-500'
                         : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-blue-500'
-                        }`}
+                        } ${descriptionError ? 'border-red-500' : ''}`}
                 />
+                {descriptionError && (
+                    <p className="text-xs text-red-500">{descriptionError}</p>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

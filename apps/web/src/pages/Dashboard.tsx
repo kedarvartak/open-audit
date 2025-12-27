@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, MoreVertical } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
@@ -42,7 +42,10 @@ export const Dashboard = () => {
 
             const matchesFilter = filterBy === 'all' ||
                 (filterBy === 'active' && task.status === 'OPEN') ||
-                (filterBy === 'completed' && task.status === 'PAID');
+                (filterBy === 'completed' && task.status === 'PAID') ||
+                (filterBy === 'general' && task.category.toLowerCase() === 'general') ||
+                (filterBy === 'design' && task.category.toLowerCase() === 'design') ||
+                (filterBy === 'development' && task.category.toLowerCase() === 'development');
 
             return matchesSearch && matchesFilter;
         })
@@ -51,6 +54,10 @@ export const Dashboard = () => {
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             } else if (sortBy === 'oldest') {
                 return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            } else if (sortBy === 'budget-high') {
+                return b.budget - a.budget;
+            } else if (sortBy === 'budget-low') {
+                return a.budget - b.budget;
             }
             return 0;
         });
@@ -77,11 +84,16 @@ export const Dashboard = () => {
         { value: 'all', label: 'Show All' },
         { value: 'active', label: 'Active Tasks' },
         { value: 'completed', label: 'Completed Tasks' },
+        { value: 'general', label: 'General' },
+        { value: 'design', label: 'Design' },
+        { value: 'development', label: 'Development' },
     ];
 
     const sortOptions = [
         { value: 'newest', label: 'Sort By: Newest' },
         { value: 'oldest', label: 'Sort By: Oldest' },
+        { value: 'budget-high', label: 'Sort By: Highest Budget' },
+        { value: 'budget-low', label: 'Sort By: Lowest Budget' },
     ];
 
     const handleCreateSuccess = () => {
@@ -163,83 +175,85 @@ export const Dashboard = () => {
                                 onClick={() => setSelectedTaskId(task.id)}
                                 className="block text-left w-full"
                             >
-                                <div className={`rounded-lg border p-5 transition-shadow duration-200 ${theme === 'dark'
-                                    ? 'bg-slate-900 border-slate-700'
-                                    : 'bg-white border-slate-200 shadow-sm'
+                                <div className={`rounded-lg overflow-hidden ${theme === 'dark'
+                                    ? 'bg-slate-900'
+                                    : 'bg-white'
                                     }`}>
 
-                                    {/* Header with Logo */}
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${theme === 'dark'
-                                            ? 'bg-slate-800'
-                                            : 'bg-slate-100'
-                                            }`}>
-                                            <svg width="24" height="20" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
-                                                <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
-                                            </svg>
+                                    {/* Image Banner - With Gap */}
+                                    <div className="p-3">
+                                        <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                            {task.beforeImage ? (
+                                                <img
+                                                    src={task.beforeImage}
+                                                    alt={task.title}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <svg width="48" height="36" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.2">
+                                                        <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
+                                                        <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
+                                                    </svg>
+                                                </div>
+                                            )}
                                         </div>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                            }}
-                                            className={`p-1.5 rounded-md transition-colors ${theme === 'dark'
-                                                ? 'hover:bg-slate-700 text-slate-500'
-                                                : 'hover:bg-slate-100 text-slate-400'
-                                                }`}
-                                        >
-                                            <MoreVertical size={16} />
-                                        </button>
                                     </div>
 
-                                    {/* Title */}
-                                    <h3 className={`text-base font-semibold mb-2 line-clamp-1 ${theme === 'dark'
-                                        ? 'text-slate-100'
-                                        : 'text-slate-900'
-                                        }`}>
-                                        {task.title}
-                                    </h3>
-
-                                    {/* Description */}
-                                    <p className={`text-sm mb-4 line-clamp-2 leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                        {task.description}
-                                    </p>
-
-                                    {/* Badges */}
-                                    <div className="flex flex-wrap gap-2 mb-4">
-                                        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-500 text-white">
-                                            ₹{task.budget.toLocaleString()}
-                                        </span>
-                                        <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${task.status === 'OPEN'
-                                            ? 'bg-purple-500 text-white'
-                                            : 'bg-amber-500 text-white'
-                                            }`}>
-                                            {task.status}
-                                        </span>
-                                        <span className={`px-2.5 py-1 rounded-md text-xs font-medium ${theme === 'dark'
-                                            ? 'bg-[#464ace]/20 text-[#8b94ff]'
-                                            : 'bg-[#464ace]/10 text-[#464ace]'
-                                            }`}>
-                                            {task.category.charAt(0).toUpperCase() + task.category.slice(1).toLowerCase()}
-                                        </span>
-                                    </div>
-
-                                    {/* Footer */}
-                                    <div className={`pt-4 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1 min-w-0">
-                                                <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
-                                                    {task.client?.name || 'Unknown Client'}
-                                                </p>
-                                                <p className={`text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`}>
-                                                    {getTimeSince(task.createdAt)}
-                                                </p>
+                                    {/* Card Content Below Image */}
+                                    <div className="p-4">
+                                        {/* Title with Budget inline */}
+                                        <div className="mb-3">
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <h3 className={`text-base font-bold leading-snug line-clamp-1 ${theme === 'dark'
+                                                    ? 'text-slate-100'
+                                                    : 'text-slate-900'
+                                                    }`}>
+                                                    {task.title}
+                                                </h3>
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white">
+                                                    ₹{task.budget.toLocaleString()}
+                                                </span>
                                             </div>
+                                        </div>
+
+                                        {/* Description with better truncation */}
+                                        <div className="mb-4">
+                                            <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                {task.description && task.description.length > 100
+                                                    ? `${task.description.slice(0, 100)}...`
+                                                    : task.description}
+                                            </p>
+                                        </div>
+
+                                        {/* Status & Category Badges */}
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${task.status === 'OPEN'
+                                                ? 'bg-amber-400 text-slate-900'
+                                                : 'bg-amber-500 text-white'
+                                                }`}>
+                                                {task.status}
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
+                                                {task.category.toUpperCase()}
+                                            </span>
+                                        </div>
+
+                                        {/* Footer with Avatar */}
+                                        <div className="flex items-center gap-2">
                                             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark'
-                                                ? 'bg-slate-700 text-slate-400'
+                                                ? 'bg-slate-800 text-slate-400'
                                                 : 'bg-slate-100 text-slate-600'
                                                 }`}>
                                                 {task.client?.name?.charAt(0).toUpperCase() || '?'}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                    {task.client?.name || 'Unknown Client'}
+                                                </p>
+                                                <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                    {getTimeSince(task.createdAt)}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>

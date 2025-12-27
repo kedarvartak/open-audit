@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, User, Calendar, MapPin, Briefcase } from 'lucide-react';
+import { X, Calendar, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -96,112 +96,110 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                             Task not found
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            <div className="flex items-start justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <span className={`px-3 py-1 rounded text-xs font-semibold ${theme === 'dark' ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}>
-                                            {task.category.toUpperCase()}
-                                        </span>
-                                        <span className={`px-3 py-1 rounded text-xs font-semibold ${task.status === 'OPEN' ?
-                                            theme === 'dark' ? 'bg-purple-600 text-white' : 'bg-purple-500 text-white'
-                                            : theme === 'dark' ? 'bg-orange-600 text-white' : 'bg-orange-500 text-white'
-                                            }`}>
-                                            {task.status}
-                                        </span>
-                                    </div>
-                                    <h1 className={`text-2xl font-bold mb-4 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                        {task.title}
-                                    </h1>
-                                </div>
-                                <div className="text-right ml-6">
-                                    <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Budget</p>
-                                    <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
-                                        Rs.{task.budget}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className={`pb-6 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                <h2 className={`text-base font-semibold mb-3 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                                    Description
-                                </h2>
-                                <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                                    {task.description}
-                                </p>
-                            </div>
-
-                            {task.locationName && (
-                                <div className={`pb-6 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                    <h2 className={`text-base font-semibold mb-3 ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                                        Location
-                                    </h2>
-                                    <div className={`flex items-center gap-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                                        <MapPin size={18} />
-                                        <span>{task.locationName}</span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className={`rounded-md border p-4 ${theme === 'dark' ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className={`w-8 h-8 rounded-md flex items-center justify-center ${theme === 'dark' ? 'bg-blue-600' : 'bg-blue-500'}`}>
-                                            <User size={16} className="text-white" />
-                                        </div>
-                                        <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            Client
-                                        </h3>
-                                    </div>
-                                    <p className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                        {task.client.name}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Rating:</span>
-                                        <span className={`text-sm font-semibold ${theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                                            {task.client.rating.toFixed(1)} / 5.0
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {task.worker && (
-                                    <div className={`rounded-md border p-4 ${theme === 'dark' ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className={`w-8 h-8 rounded-md flex items-center justify-center ${theme === 'dark' ? 'bg-green-600' : 'bg-green-500'}`}>
-                                                <Briefcase size={16} className="text-white" />
-                                            </div>
-                                            <h3 className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                Worker
-                                            </h3>
-                                        </div>
-                                        <p className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                            {task.worker.name}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Rating:</span>
-                                            <span className={`text-sm font-semibold ${theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600'}`}>
-                                                {task.worker.rating.toFixed(1)} / 5.0
-                                            </span>
-                                        </div>
+                        <div className="space-y-5">
+                            {/* Image Section */}
+                            <div className={`w-full aspect-video rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                                {task.beforeImage ? (
+                                    <img
+                                        src={task.beforeImage}
+                                        alt={task.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                        <svg width="64" height="48" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.2">
+                                            <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
+                                            <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
+                                        </svg>
                                     </div>
                                 )}
                             </div>
 
-                            <div className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                <Calendar size={16} />
-                                <span>Posted on {formatDate(task.createdAt)}</span>
+                            {/* Tags & Budget Row */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-400 text-slate-900">
+                                        {task.status}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
+                                        {task.category.toUpperCase()}
+                                    </span>
+                                </div>
+                                <span className="px-2.5 py-1 rounded text-sm font-semibold bg-emerald-500 text-white">
+                                    ₹{task.budget.toLocaleString()}
+                                </span>
                             </div>
 
-                            {canAccept && (
-                                <div className="pt-4">
-                                    <Button
-                                        onClick={handleAccept}
-                                        disabled={accepting}
-                                        className="w-full"
-                                    >
-                                        {accepting ? 'Accepting...' : 'Accept Task'}
-                                    </Button>
+                            {/* Title */}
+                            <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                {task.title}
+                            </h1>
+
+                            {/* Description */}
+                            <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                {task.description}
+                            </p>
+
+                            {/* Location Section - Clickable */}
+                            {task.locationName && (
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationName)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${theme === 'dark' ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-50 hover:bg-slate-100'}`}
+                                >
+                                    <MapPin size={18} className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} />
+                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                                        {task.locationName}
+                                    </p>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                        <polyline points="15 3 21 3 21 9" />
+                                        <line x1="10" y1="14" x2="21" y2="3" />
+                                    </svg>
+                                </a>
+                            )}
+
+                            {/* Divider */}
+                            <div className={`border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
+
+                            {/* Client & Date Row - Minimalist */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
+                                        {task.client.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                                        {task.client.name}
+                                    </p>
                                 </div>
+                                <div className={`flex items-center gap-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                    <Calendar size={14} />
+                                    <span>{formatDate(task.createdAt)}</span>
+                                </div>
+                            </div>
+
+                            {/* Worker Info (if assigned) */}
+                            {task.worker && (
+                                <div className={`flex items-center gap-3 p-3 rounded-lg ${theme === 'dark' ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark' ? 'bg-green-700 text-white' : 'bg-green-600 text-white'}`}>
+                                        {task.worker.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-green-300' : 'text-green-800'}`}>
+                                        Assigned to: {task.worker.name}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Accept Button */}
+                            {canAccept && (
+                                <Button
+                                    onClick={handleAccept}
+                                    disabled={accepting}
+                                    className="w-full"
+                                >
+                                    {accepting ? 'Accepting...' : 'Accept Task'}
+                                </Button>
                             )}
                         </div>
                     )}
