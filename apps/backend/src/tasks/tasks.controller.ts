@@ -2,6 +2,8 @@ import {
     Controller,
     Post,
     Get,
+    Put,
+    Delete,
     Body,
     Param,
     UseGuards,
@@ -28,8 +30,13 @@ export class TasksController {
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.CLIENT, Role.ADMIN)
-    async createTask(@Body() body: any, @Request() req: any) {
-        return this.tasksService.createTask(req.user.userId, body);
+    @UseInterceptors(FileInterceptor('beforeImage'))
+    async createTask(
+        @Body() body: any,
+        @UploadedFile() beforeImage: Express.Multer.File,
+        @Request() req: any,
+    ) {
+        return this.tasksService.createTask(req.user.userId, body, beforeImage);
     }
 
     @Get()
@@ -144,5 +151,27 @@ export class TasksController {
             verdict: task.aiVerdict,
             aiVerification: task.aiVerification,
         };
+    }
+
+    @Put(':id')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.CLIENT, Role.ADMIN)
+    @UseInterceptors(FileInterceptor('beforeImage'))
+    async updateTask(
+        @Param('id') id: string,
+        @Body() body: any,
+        @UploadedFile() beforeImage: Express.Multer.File,
+        @Request() req: any,
+    ) {
+        return this.tasksService.updateTask(id, req.user.userId, body, beforeImage);
+    }
+
+    @Delete(':id')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.CLIENT, Role.ADMIN)
+    async deleteTask(@Param('id') id: string, @Request() req: any) {
+        return this.tasksService.deleteTask(id, req.user.userId);
     }
 }

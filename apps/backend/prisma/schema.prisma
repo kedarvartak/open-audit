@@ -114,6 +114,7 @@ model Task {
   acceptedAt      DateTime?
   completedAt     DateTime?
   paidAt          DateTime?
+  deadline        DateTime?  // Task deadline set by client
   updatedAt       DateTime   @updatedAt
 
   @@index([clientId])

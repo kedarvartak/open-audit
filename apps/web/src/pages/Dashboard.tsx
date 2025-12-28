@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus } from 'lucide-react';
+import { Search, Plus, MoreVertical } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
@@ -9,6 +9,7 @@ import { TaskDetailsModal } from '../components/modals/TaskDetailsModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI } from '../services/api';
 import type { Task } from '../services/api';
+import toast from 'react-hot-toast';
 
 export const Dashboard = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -18,6 +19,9 @@ export const Dashboard = () => {
     const [sortBy, setSortBy] = useState('newest');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
     const { theme } = useTheme();
 
     const fetchTasks = async () => {
@@ -34,6 +38,29 @@ export const Dashboard = () => {
     useEffect(() => {
         fetchTasks();
     }, []);
+
+    const handleDeleteTask = async (taskId: string) => {
+        if (!window.confirm('Are you sure you want to delete this task?')) {
+            return;
+        }
+
+        try {
+            await tasksAPI.deleteTask(taskId);
+            toast.success('Task deleted successfully');
+            fetchTasks();
+            setOpenMenuId(null);
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to delete task');
+        }
+    };
+
+    const handleEditTask = (task: Task) => {
+        setEditingTask(task);
+        setOpenMenuId(null);
+    };
+
+    const currentUserId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
 
     const filteredTasks = tasks
         .filter(task => {
@@ -181,11 +208,11 @@ export const Dashboard = () => {
                                     }`}>
 
                                     {/* Image Banner - With Gap */}
-                                    <div className="p-3">
+                                    <div className="p-3 relative">
                                         <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                                            {task.beforeImage ? (
+                                            {task.beforeImageUrl ? (
                                                 <img
-                                                    src={task.beforeImage}
+                                                    src={task.beforeImageUrl}
                                                     alt={task.title}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -198,6 +225,57 @@ export const Dashboard = () => {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Three-dot menu for task owner */}
+                                        {userRole === 'CLIENT' && task.client.id === currentUserId && task.status === 'OPEN' && (
+                                            <div className="absolute top-5 right-5">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(openMenuId === task.id ? null : task.id);
+                                                    }}
+                                                    className={`p-1.5 rounded-full transition-colors ${theme === 'dark'
+                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300'
+                                                        : 'bg-white/80 hover:bg-slate-100 text-slate-600'
+                                                        }`}
+                                                >
+                                                    <MoreVertical size={18} />
+                                                </button>
+
+                                                {/* Dropdown menu */}
+                                                {openMenuId === task.id && (
+                                                    <div className={`absolute right-0 mt-2 w-36 rounded-lg shadow-lg ${theme === 'dark'
+                                                        ? 'bg-slate-800 border border-slate-700'
+                                                        : 'bg-white border border-slate-200'
+                                                        } z-10`}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleEditTask(task);
+                                                            }}
+                                                            className={`w-full px-4 py-2 text-left text-sm rounded-t-lg transition-colors ${theme === 'dark'
+                                                                ? 'hover:bg-slate-700 text-slate-300'
+                                                                : 'hover:bg-slate-50 text-slate-700'
+                                                                }`}
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteTask(task.id);
+                                                            }}
+                                                            className={`w-full px-4 py-2 text-left text-sm rounded-b-lg transition-colors text-red-500 ${theme === 'dark'
+                                                                ? 'hover:bg-slate-700'
+                                                                : 'hover:bg-red-50'
+                                                                }`}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Card Content Below Image */}
@@ -275,6 +353,7 @@ export const Dashboard = () => {
                 />
             </Modal>
 
+
             {
                 selectedTaskId && (
                     <TaskDetailsModal
@@ -285,6 +364,23 @@ export const Dashboard = () => {
                     />
                 )
             }
+
+            {editingTask && (
+                <Modal
+                    isOpen={!!editingTask}
+                    onClose={() => setEditingTask(null)}
+                    title="Edit Task"
+                >
+                    <CreateProjectModal
+                        onClose={() => setEditingTask(null)}
+                        onSuccess={() => {
+                            setEditingTask(null);
+                            fetchTasks();
+                        }}
+                        editTask={editingTask}
+                    />
+                </Modal>
+            )}
         </DashboardLayout >
     );
 };

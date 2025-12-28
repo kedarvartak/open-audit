@@ -18,22 +18,59 @@ export class TasksService {
     ) { }
 
     // CLIENT: Create a new task
-    async createTask(clientId: string, dto: any) {
+    async createTask(clientId: string, dto: any, beforeImage?: Express.Multer.File) {
+        // Validate required fields
+        if (!dto.title?.trim()) {
+            throw new BadRequestException('Title is required');
+        }
+        if (!dto.description?.trim()) {
+            throw new BadRequestException('Description is required');
+        }
+        if (!dto.budget) {
+            throw new BadRequestException('Budget is required');
+        }
+        if (!dto.locationName?.trim()) {
+            throw new BadRequestException('Location is required');
+        }
+        if (!dto.deadline) {
+            throw new BadRequestException('Deadline is required');
+        }
+        if (!beforeImage) {
+            throw new BadRequestException('Task image is required');
+        }
+
+        // Upload image
+        const beforeImageUrl = await this.storage.uploadFile(beforeImage, 'tasks');
+        const beforeImageHash = await this.storage.getFileHash(beforeImage.buffer);
+
+        // Parse deadline
+        const deadline = new Date(dto.deadline);
+
+        // Parse budget (it might come as string from FormData)
+        const budget = typeof dto.budget === 'string' ? parseFloat(dto.budget) : dto.budget;
+
         const task = await this.prisma.task.create({
             data: {
                 title: dto.title,
                 description: dto.description,
-                category: dto.category,
-                budget: dto.budget,
+                category: dto.category || 'general',
+                budget,
                 clientId,
                 status: TaskStatus.OPEN,
 
+                // Image (if provided by client)
+                beforeImageUrl,
+                beforeImageHash,
+
                 // Location (if provided)
                 requiresLocation: dto.requiresLocation || false,
-                locationLat: dto.locationLat,
-                locationLng: dto.locationLng,
-                locationRadius: dto.locationRadius || 50, // Default 50m
+                locationLat: dto.locationLat ? parseFloat(dto.locationLat) : undefined,
+                locationLng: dto.locationLng ? parseFloat(dto.locationLng) : undefined,
+                locationRadius: dto.locationRadius ? parseInt(dto.locationRadius) : 50,
                 locationName: dto.locationName,
+
+                // Deadline
+                deadline,
             },
             include: {
                 client: {
@@ -371,5 +408,72 @@ export class TasksService {
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c; // Distance in meters
+    }
+
+    // CLIENT: Update a task (only if OPEN)
+    async updateTask(taskId: string, clientId: string, dto: any, beforeImage?: Express.Multer.File) {
+        const task = await this.getTaskById(taskId);
+
+        // Validate ownership
+        if (task.clientId !== clientId) {
+            throw new BadRequestException('Not your task');
+        }
+
+        // Validate status - can only update if OPEN
+        if (task.status !== TaskStatus.OPEN) {
+            throw new BadRequestException('Cannot update task after it has been accepted');
+        }
+
+        // Prepare update data
+        const updateData: any = {};
+
+        if (dto.title?.trim()) updateData.title = dto.title;
+        if (dto.description?.trim()) updateData.description = dto.description;
+        if (dto.budget) {
+            updateData.budget = typeof dto.budget === 'string' ? parseFloat(dto.budget) : dto.budget;
+        }
+        if (dto.locationName) updateData.locationName = dto.locationName;
+        if (dto.deadline) updateData.deadline = new Date(dto.deadline);
+
+        // Handle image update
+        if (beforeImage) {
+            const imageUrl = await this.storage.uploadFile(beforeImage, 'tasks');
+            const imageHash = await this.storage.getFileHash(beforeImage.buffer);
+            updateData.beforeImageUrl = imageUrl;
+            updateData.beforeImageHash = imageHash;
+        }
+
+        return this.prisma.task.update({
+            where: { id: taskId },
+            data: updateData,
+            include: {
+                client: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+            },
+        });
+    }
+
+    // CLIENT: Delete a task (only if OPEN)
+    async deleteTask(taskId: string, clientId: string) {
+        const task = await this.getTaskById(taskId);
+
+        // Validate ownership
+        if (task.clientId !== clientId) {
+            throw new BadRequestException('Not your task');
+        }
+
+        // Validate status - can only delete if OPEN
+        if (task.status !== TaskStatus.OPEN) {
+            throw new BadRequestException('Cannot delete task after it has been accepted');
+        }
+
+        return this.prisma.task.delete({
+            where: { id: taskId },
+        });
     }
 }

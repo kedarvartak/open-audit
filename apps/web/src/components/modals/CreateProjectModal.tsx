@@ -4,27 +4,29 @@ import { Input } from '../ui/Input';
 import { DatePicker } from '../ui/DatePicker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MapPin, Trash2, Check } from 'lucide-react';
+import type { Task } from '../../services/api';
 import axios from 'axios';
 
 interface CreateProjectModalProps {
     onClose: () => void;
     onSuccess: () => void;
+    editTask?: Task;
 }
 
-export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose, onSuccess }) => {
+export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose, onSuccess, editTask }) => {
     const { theme } = useTheme();
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        fundingGoal: '',
-        deadline: '',
-        locationName: '',
+        title: editTask?.title || '',
+        description: editTask?.description || '',
+        fundingGoal: editTask?.budget?.toString() || '',
+        deadline: editTask?.deadline?.split('T')[0] || '',
+        locationName: editTask?.locationName || '',
     });
     const [loading, setLoading] = useState(false);
     const [descriptionError, setDescriptionError] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string>('');
+    const [imagePreview, setImagePreview] = useState<string>(editTask?.beforeImageUrl || '');
     const [gettingLocation, setGettingLocation] = useState(false);
 
     const steps = [
@@ -46,7 +48,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                 return;
             }
         } else if (currentStep === 2) {
-            if (!imageFile) {
+            if (!imageFile && !editTask?.beforeImageUrl) {
                 alert('Please upload an image');
                 return;
             }
@@ -76,7 +78,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             return;
         }
 
+        if (!formData.deadline) {
+            alert('Please select a deadline');
+            return;
+        }
+
         setLoading(true);
+
 
         try {
             const token = localStorage.getItem('token');
@@ -87,12 +95,21 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             submitData.append('category', 'general');
             submitData.append('budget', formData.fundingGoal);
             submitData.append('locationName', formData.locationName);
+            if (formData.deadline) {
+                submitData.append('deadline', formData.deadline);
+            }
             if (imageFile) {
                 submitData.append('beforeImage', imageFile);
             }
 
-            await axios.post(
-                'http://localhost:3001/v0/tasks',
+            const url = editTask
+                ? `http://localhost:3001/v0/tasks/${editTask.id}`
+                : 'http://localhost:3001/v0/tasks';
+
+            const method = editTask ? 'put' : 'post';
+
+            await axios[method](
+                url,
                 submitData,
                 {
                     headers: {

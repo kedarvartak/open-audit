@@ -35,7 +35,9 @@ export interface Task {
     status: string;
     requiresLocation: boolean;
     locationName?: string;
-    beforeImage?: string;
+    beforeImageUrl?: string;  // Image uploaded by client during creation
+    afterImageUrl?: string;   // Image uploaded by worker during completion
+    deadline?: string;        // Task deadline
     createdAt: string;
     client: {
         id: string;
@@ -98,6 +100,13 @@ export const tasksAPI = {
 
     disputeTask: (id: string, reason: string) =>
         api.post(`/v0/tasks/${id}/dispute`, { reason }),
+
+    updateTask: (id: string, formData: FormData) =>
+        api.put(`/v0/tasks/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
+
+    deleteTask: (id: string) => api.delete(`/v0/tasks/${id}`),
 };
 
 export default api;

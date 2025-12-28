@@ -19,7 +19,7 @@ const Navbar = () => {
                         <span className="font-bold text-2xl">G</span>
                     </div>
                     <span className="text-2xl font-bold tracking-tight text-slate-700 neu-text">
-                        GeoFund
+                        Open Audit
                     </span>
                 </div>
                 <div className="flex items-center gap-6">

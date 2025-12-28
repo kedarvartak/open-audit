@@ -99,9 +99,9 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                         <div className="space-y-5">
                             {/* Image Section */}
                             <div className={`w-full aspect-video rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                                {task.beforeImage ? (
+                                {task.beforeImageUrl ? (
                                     <img
-                                        src={task.beforeImage}
+                                        src={task.beforeImageUrl}
                                         alt={task.title}
                                         className="w-full h-full object-cover"
                                     />
