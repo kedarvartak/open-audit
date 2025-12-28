@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home,
     LayoutDashboard,
-    Grid3x3,
+    CalendarDays,
     FileText,
     Trophy,
     Users,
@@ -59,7 +59,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const menuItems = [
         { icon: Home, path: '/dashboard', label: 'Dashboard' },
         { icon: LayoutDashboard, path: '/my-tasks', label: 'My Tasks' },
-        { icon: Grid3x3, path: '/projects', label: 'Projects' },
+        { icon: CalendarDays, path: '/calendar', label: 'Calendar' },
         { icon: FileText, path: '/documents', label: 'Documents' },
         { icon: Trophy, path: '/achievements', label: 'Achievements' },
         { icon: Users, path: '/team', label: 'Team' },
