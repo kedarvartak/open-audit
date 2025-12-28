@@ -166,10 +166,13 @@ export const Dashboard = () => {
                         </div>
                     </div>
 
-                    <Button className="gap-2 shadow-md" onClick={() => setIsCreateModalOpen(true)}>
-                        <Plus size={18} />
-                        <span className="font-semibold">Create Task</span>
-                    </Button>
+
+                    {userRole === 'CLIENT' && (
+                        <Button className="gap-2 shadow-md" onClick={() => setIsCreateModalOpen(true)}>
+                            <Plus size={18} />
+                            <span className="font-semibold">Create Task</span>
+                        </Button>
+                    )}
                 </div>
 
                 {/* Results Count */}
