@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -6,9 +7,42 @@ import TaskDetails from './pages/TaskDetails';
 import MyTasks from './pages/MyTasks';
 import TaskWorkspace from './pages/TaskWorkspace';
 import TaskReview from './pages/TaskReview';
+import { requestForToken, onMessageListener } from './lib/firebase';
+import { authAPI } from './services/api';
+import toast from 'react-hot-toast';
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const initFirebase = async () => {
+        try {
+          const token = await requestForToken();
+          if (token) {
+            await authAPI.updateFcmToken(token);
+            console.log('FCM Token updated');
+          }
+        } catch (error) {
+          console.error('Error initializing Firebase:', error);
+        }
+      };
+
+      initFirebase();
+
+      onMessageListener()
+        .then((payload: any) => {
+          toast.success(
+            <div>
+              <p className="font-bold">{payload?.notification?.title}</p>
+              <p className="text-sm">{payload?.notification?.body}</p>
+            </div>,
+            { duration: 5000 }
+          );
+        })
+        .catch((err) => console.log('failed: ', err));
+    }
+  }, [isAuthenticated]);
 
   return (
     <Router>

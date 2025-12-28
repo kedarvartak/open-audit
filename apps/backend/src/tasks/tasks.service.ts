@@ -241,6 +241,15 @@ export class TasksService {
             ).catch(err => console.error('Blockchain recording failed:', err));
         }
 
+        // Send Firebase Notification to Client
+        if (updatedTask.client.fcmToken && updatedTask.worker) {
+            this.firebase.notifyTaskAccepted(
+                updatedTask.client.fcmToken,
+                updatedTask.worker.name,
+                updatedTask.title
+            ).catch(err => console.error('Failed to send Firebase notification:', err));
+        }
+
         return updatedTask;
     }
 

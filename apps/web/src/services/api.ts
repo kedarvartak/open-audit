@@ -59,6 +59,8 @@ export const authAPI = {
         api.post('/v0/auth/login', { email, password }),
 
     getProfile: () => api.get('/v0/auth/profile'),
+
+    updateFcmToken: (token: string) => api.post('/v0/auth/fcm-token', { token }),
 };
 
 export const tasksAPI = {

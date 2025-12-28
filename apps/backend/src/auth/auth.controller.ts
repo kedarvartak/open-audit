@@ -25,4 +25,10 @@ export class AuthController {
     getProfile(@Request() req: any) {
         return req.user;
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('fcm-token')
+    async updateFcmToken(@Request() req: any, @Body('token') token: string) {
+        return this.authService.updateFcmToken(req.user.userId, token);
+    }
 }

@@ -45,4 +45,11 @@ export class AuthService {
         // returns jwt token
         return this.login(user);
     }
+
+    async updateFcmToken(userId: string, token: string) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { fcmToken: token },
+        });
+    }
 }
