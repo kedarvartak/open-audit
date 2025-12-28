@@ -61,6 +61,13 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
         return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     };
 
+    const formatDateTime = (dateString: string) => {
+        const date = new Date(dateString);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        return `${dateStr} at ${timeStr}`;
+    };
+
     if (!isOpen) return null;
 
     const canAccept = userRole === 'WORKER' && task?.status === 'OPEN' && task?.client.id !== userId;
@@ -163,13 +170,18 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
 
                             {/* Tags & Budget Row */}
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-400 text-slate-900">
                                         {task.status}
                                     </span>
                                     <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
                                         {task.category.toUpperCase()}
                                     </span>
+                                    {task.worker && (
+                                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-green-600 text-white">
+                                            Assigned: {task.worker.name}
+                                        </span>
+                                    )}
                                 </div>
                                 <span className="px-2.5 py-1 rounded text-sm font-semibold bg-emerald-500 text-white">
                                     ₹{task.budget.toLocaleString()}
@@ -186,25 +198,45 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                 {task.description}
                             </p>
 
-                            {/* Location Section - Clickable */}
-                            {task.locationName && (
-                                <a
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationName)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${theme === 'dark' ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-50 hover:bg-slate-100'}`}
-                                >
-                                    <img src="/map.svg" alt="Location" className="w-5 h-5" />
-                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                                        {task.locationName}
-                                    </p>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                                        <polyline points="15 3 21 3 21 9" />
-                                        <line x1="10" y1="14" x2="21" y2="3" />
-                                    </svg>
-                                </a>
-                            )}
+                            {/* Location & Scheduled Deadline - Single Row */}
+                            <div className="flex gap-3">
+                                {/* Location Section - Clickable */}
+                                {task.locationName && (
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.locationName)}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`flex items-center gap-2 p-3 rounded-lg transition-colors flex-1 min-w-0 ${theme === 'dark' ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-50 hover:bg-slate-100'}`}
+                                    >
+                                        <img src="/map.svg" alt="Location" className="w-5 h-5 flex-shrink-0" />
+                                        <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                                            {task.locationName}
+                                        </p>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`ml-auto flex-shrink-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                                            <polyline points="15 3 21 3 21 9" />
+                                            <line x1="10" y1="14" x2="21" y2="3" />
+                                        </svg>
+                                    </a>
+                                )}
+
+                                {/* Scheduled Deadline */}
+                                {task.deadline && (
+                                    <div className="p-3 rounded-lg bg-[#464ace] flex-shrink-0">
+                                        <div className="flex items-center gap-2">
+                                            <Calendar size={16} className="text-white" />
+                                            <div>
+                                                <p className="text-xs font-medium text-white/80 whitespace-nowrap">
+                                                    Scheduled Deadline
+                                                </p>
+                                                <p className="text-sm font-semibold text-white whitespace-nowrap">
+                                                    {formatDateTime(task.deadline)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Divider */}
                             <div className={`border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
@@ -225,17 +257,6 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                 </div>
                             </div>
 
-                            {/* Worker Info (if assigned) */}
-                            {task.worker && (
-                                <div className={`flex items-center gap-3 p-3 rounded-lg ${theme === 'dark' ? 'bg-green-900/30 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark' ? 'bg-green-700 text-white' : 'bg-green-600 text-white'}`}>
-                                        {task.worker.name.charAt(0).toUpperCase()}
-                                    </div>
-                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-green-300' : 'text-green-800'}`}>
-                                        Assigned to: {task.worker.name}
-                                    </p>
-                                </div>
-                            )}
 
                             {/* Accept Button */}
                             {canAccept && (

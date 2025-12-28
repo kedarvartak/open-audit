@@ -101,6 +101,11 @@ export const Dashboard = () => {
         return `${Math.floor(diffDays / 30)} months ago`;
     };
 
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
     const filterOptions = [
         { value: 'all', label: 'Show All' },
         { value: 'active', label: 'Active Tasks' },
@@ -301,8 +306,8 @@ export const Dashboard = () => {
                                             </p>
                                         </div>
 
-                                        {/* Status & Category Badges */}
-                                        <div className="flex items-center gap-2 mb-4">
+                                        {/* Status, Category & Time Badges */}
+                                        <div className="flex items-center gap-2 mb-4 flex-wrap">
                                             <span className={`px-2 py-0.5 rounded text-xs font-semibold ${task.status === 'OPEN'
                                                 ? 'bg-amber-400 text-slate-900'
                                                 : 'bg-amber-500 text-white'
@@ -312,6 +317,11 @@ export const Dashboard = () => {
                                             <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
                                                 {task.category.toUpperCase()}
                                             </span>
+                                            {task.deadline && (
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
+                                                    {formatTime(task.deadline)}
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* Footer with Avatar */}

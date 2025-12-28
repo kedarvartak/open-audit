@@ -23,6 +23,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         description: editTask?.description || '',
         fundingGoal: editTask?.budget?.toString() || '',
         deadline: editTask?.deadline?.split('T')[0] || '',
+        scheduledTime: editTask?.deadline ? new Date(editTask.deadline).toTimeString().slice(0, 5) : '',
         locationName: editTask?.locationName || '',
     });
     const [loading, setLoading] = useState(false);
@@ -86,7 +87,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         }
 
         if (!formData.deadline) {
-            alert('Please select a deadline');
+            alert('Please select a scheduled date');
+            return;
+        }
+
+        if (!formData.scheduledTime) {
+            alert('Please select a scheduled time');
             return;
         }
 
@@ -102,8 +108,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             submitData.append('category', 'general');
             submitData.append('budget', formData.fundingGoal);
             submitData.append('locationName', formData.locationName);
-            if (formData.deadline) {
-                submitData.append('deadline', formData.deadline);
+            if (formData.deadline && formData.scheduledTime) {
+                // Combine date and time into ISO datetime string
+                const deadlineDateTime = `${formData.deadline}T${formData.scheduledTime}:00.000Z`;
+                submitData.append('deadline', deadlineDateTime);
             }
             // Append all new image files
             imageFiles.forEach((file) => {
@@ -517,13 +525,28 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
 
                             <div className="space-y-2">
                                 <label htmlFor="deadline" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                    Deadline
+                                    Scheduled Date & Time <span className="text-red-500">*</span>
                                 </label>
-                                <DatePicker
-                                    value={formData.deadline}
-                                    onChange={handleDateChange}
-                                    placeholder="Select date"
-                                />
+                                <div className="grid grid-cols-2 gap-3">
+                                    <DatePicker
+                                        value={formData.deadline}
+                                        onChange={handleDateChange}
+                                        placeholder="Select date"
+                                        required
+                                    />
+                                    <Input
+                                        id="scheduledTime"
+                                        name="scheduledTime"
+                                        type="time"
+                                        value={formData.scheduledTime}
+                                        onChange={handleChange}
+                                        placeholder="Select time"
+                                        required
+                                    />
+                                </div>
+                                <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    When should this task be completed?
+                                </p>
                             </div>
                         </div>
                     )}

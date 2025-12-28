@@ -72,6 +72,11 @@ export default function MyTasks() {
         return "Just now";
     };
 
+    const formatTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
     const filteredTasks = tasks.filter(task => {
         if (filter === 'active') {
             return ['OPEN', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED'].includes(task.status);
@@ -223,6 +228,11 @@ export default function MyTasks() {
                                                 {userRole === 'WORKER' && task.status === 'IN_PROGRESS' && (
                                                     <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500 text-white">
                                                         In Progress
+                                                    </span>
+                                                )}
+                                                {task.deadline && (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
+                                                        {formatTime(task.deadline)}
                                                     </span>
                                                 )}
                                             </div>
