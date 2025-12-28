@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, MapPin } from 'lucide-react';
+import { X, Calendar, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -17,6 +17,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
     const [task, setTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
     const [accepting, setAccepting] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { theme } = useTheme();
 
     const userRole = localStorage.getItem('userRole');
@@ -97,14 +98,62 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                         </div>
                     ) : (
                         <div className="space-y-5">
-                            {/* Image Section */}
-                            <div className={`w-full aspect-video rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                                {task.beforeImageUrl ? (
-                                    <img
-                                        src={task.beforeImageUrl}
-                                        alt={task.title}
-                                        className="w-full h-full object-contain"
-                                    />
+                            {/* Image Carousel */}
+                            <div className={`relative w-full aspect-video rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                                {task.beforeImages && task.beforeImages.length > 0 ? (
+                                    <>
+                                        <img
+                                            src={task.beforeImages[currentImageIndex]}
+                                            alt={`${task.title} - Image ${currentImageIndex + 1}`}
+                                            className="w-full h-full object-contain"
+                                        />
+
+                                        {/* Navigation Arrows */}
+                                        {task.beforeImages.length > 1 && (
+                                            <>
+                                                <button
+                                                    onClick={() => setCurrentImageIndex(prev => prev === 0 ? task.beforeImages.length - 1 : prev - 1)}
+                                                    className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${theme === 'dark'
+                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-white'
+                                                        : 'bg-white/80 hover:bg-white text-slate-700'
+                                                        }`}
+                                                >
+                                                    <ChevronLeft size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setCurrentImageIndex(prev => prev === task.beforeImages.length - 1 ? 0 : prev + 1)}
+                                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${theme === 'dark'
+                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-white'
+                                                        : 'bg-white/80 hover:bg-white text-slate-700'
+                                                        }`}
+                                                >
+                                                    <ChevronRight size={20} />
+                                                </button>
+
+                                                {/* Dots Indicator */}
+                                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                                    {task.beforeImages.map((_, index) => (
+                                                        <button
+                                                            key={index}
+                                                            onClick={() => setCurrentImageIndex(index)}
+                                                            className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
+                                                                ? 'bg-blue-500 w-4'
+                                                                : theme === 'dark' ? 'bg-slate-500' : 'bg-slate-300'
+                                                                }`}
+                                                        />
+                                                    ))}
+                                                </div>
+
+                                                {/* Image Counter */}
+                                                <div className={`absolute top-3 right-3 px-2 py-1 rounded text-xs font-medium ${theme === 'dark'
+                                                    ? 'bg-slate-800/80 text-white'
+                                                    : 'bg-white/80 text-slate-700'
+                                                    }`}>
+                                                    {currentImageIndex + 1} / {task.beforeImages.length}
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
                                         <svg width="64" height="48" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.2">

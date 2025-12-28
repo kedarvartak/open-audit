@@ -21,7 +21,6 @@ export const Dashboard = () => {
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
     const { theme } = useTheme();
 
     const fetchTasks = async () => {
@@ -88,11 +87,6 @@ export const Dashboard = () => {
             }
             return 0;
         });
-
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-    };
 
     const getTimeSince = (dateString: string) => {
         const date = new Date(dateString);
@@ -210,9 +204,9 @@ export const Dashboard = () => {
                                     {/* Image Banner - With Gap */}
                                     <div className="p-3 relative">
                                         <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                                            {task.beforeImageUrl ? (
+                                            {task.beforeImages?.length > 0 ? (
                                                 <img
-                                                    src={task.beforeImageUrl}
+                                                    src={task.beforeImages[0]}
                                                     alt={task.title}
                                                     className="w-full h-full object-contain"
                                                 />

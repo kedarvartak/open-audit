@@ -9,13 +9,14 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFile,
+    UploadedFiles,
     Request,
     HttpCode,
     HttpStatus,
     BadRequestException,
     Query,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { TasksService } from './tasks.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -30,13 +31,13 @@ export class TasksController {
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.CLIENT, Role.ADMIN)
-    @UseInterceptors(FileInterceptor('beforeImage'))
+    @UseInterceptors(FilesInterceptor('beforeImages', 10))  // Max 10 images
     async createTask(
         @Body() body: any,
-        @UploadedFile() beforeImage: Express.Multer.File,
+        @UploadedFiles() beforeImages: Express.Multer.File[],
         @Request() req: any,
     ) {
-        return this.tasksService.createTask(req.user.userId, body, beforeImage);
+        return this.tasksService.createTask(req.user.userId, body, beforeImages);
     }
 
     @Get()
@@ -82,21 +83,14 @@ export class TasksController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.WORKER, Role.ADMIN)
-    @UseInterceptors(FileInterceptor('beforeImage'))
     async startWork(
         @Param('id') id: string,
-        @UploadedFile() beforeImage: Express.Multer.File,
         @Body() body: any,
         @Request() req: any,
     ) {
-        if (!beforeImage) {
-            throw new BadRequestException('Before image required');
-        }
-
         return this.tasksService.startWork(
             id,
             req.user.userId,
-            beforeImage,
             body.lat ? parseFloat(body.lat) : undefined,
             body.lng ? parseFloat(body.lng) : undefined,
         );
@@ -139,7 +133,7 @@ export class TasksController {
         // Keep it for compatibility with existing frontend
         const task = await this.tasksService.getTaskById(id);
 
-        if (!task.beforeImageUrl || !task.afterImageUrl) {
+        if (!task.beforeImages || task.beforeImages.length === 0 || !task.afterImageUrl) {
             throw new BadRequestException('Task must have both before and after images');
         }
 
@@ -157,14 +151,14 @@ export class TasksController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.CLIENT, Role.ADMIN)
-    @UseInterceptors(FileInterceptor('beforeImage'))
+    @UseInterceptors(FilesInterceptor('beforeImages', 10))
     async updateTask(
         @Param('id') id: string,
         @Body() body: any,
-        @UploadedFile() beforeImage: Express.Multer.File,
+        @UploadedFiles() beforeImages: Express.Multer.File[],
         @Request() req: any,
     ) {
-        return this.tasksService.updateTask(id, req.user.userId, body, beforeImage);
+        return this.tasksService.updateTask(id, req.user.userId, body, beforeImages);
     }
 
     @Delete(':id')

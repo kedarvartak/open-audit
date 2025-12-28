@@ -18,7 +18,7 @@ export class TasksService {
     ) { }
 
     // CLIENT: Create a new task
-    async createTask(clientId: string, dto: any, beforeImage?: Express.Multer.File) {
+    async createTask(clientId: string, dto: any, beforeImages?: Express.Multer.File[]) {
         // Validate required fields
         if (!dto.title?.trim()) {
             throw new BadRequestException('Title is required');
@@ -35,13 +35,20 @@ export class TasksService {
         if (!dto.deadline) {
             throw new BadRequestException('Deadline is required');
         }
-        if (!beforeImage) {
-            throw new BadRequestException('Task image is required');
+        if (!beforeImages || beforeImages.length === 0) {
+            throw new BadRequestException('At least one task image is required');
         }
 
-        // Upload image
-        const beforeImageUrl = await this.storage.uploadFile(beforeImage, 'tasks');
-        const beforeImageHash = await this.storage.getFileHash(beforeImage.buffer);
+        // Upload all images
+        const imageUrls: string[] = [];
+        const imageHashes: string[] = [];
+
+        for (const image of beforeImages) {
+            const url = await this.storage.uploadFile(image, 'tasks');
+            const hash = await this.storage.getFileHash(image.buffer);
+            imageUrls.push(url);
+            imageHashes.push(hash);
+        }
 
         // Parse deadline
         const deadline = new Date(dto.deadline);
@@ -58,9 +65,9 @@ export class TasksService {
                 clientId,
                 status: TaskStatus.OPEN,
 
-                // Image (if provided by client)
-                beforeImageUrl,
-                beforeImageHash,
+                // Images (array)
+                beforeImages: imageUrls,
+                beforeImageHashes: imageHashes,
 
                 // Location (if provided)
                 requiresLocation: dto.requiresLocation || false,
@@ -197,11 +204,10 @@ export class TasksService {
         return updatedTask;
     }
 
-    // WORKER: Upload before image and start work
+    // WORKER: Start work on the task
     async startWork(
         taskId: string,
         workerId: string,
-        beforeImage: Express.Multer.File,
         workerLat?: number,
         workerLng?: number,
     ) {
@@ -239,23 +245,16 @@ export class TasksService {
             }
         }
 
-        // Upload image
-        const imageUrl = await this.storage.uploadFile(beforeImage, 'tasks');
-        const imageHash = await this.storage.getFileHash(beforeImage.buffer);
-
         const updatedTask = await this.prisma.task.update({
             where: { id: taskId },
             data: {
                 status: TaskStatus.IN_PROGRESS,
-                beforeImageUrl: imageUrl,
-                beforeImageHash: imageHash,
                 workerStartLat: workerLat,
                 workerStartLng: workerLng,
                 locationVerified: task.requiresLocation ? true : false,
             },
         });
 
-        // Record work submission would happen in submitWork
         return updatedTask;
     }
 
@@ -275,8 +274,8 @@ export class TasksService {
             throw new BadRequestException('Work not started');
         }
 
-        if (!task.beforeImageUrl) {
-            throw new BadRequestException('Before image not found');
+        if (!task.beforeImages || task.beforeImages.length === 0) {
+            throw new BadRequestException('Before images not found');
         }
 
         // Upload after image
@@ -294,10 +293,10 @@ export class TasksService {
             },
         });
 
-        // Call AI verification
+        // Call AI verification - use first image for comparison
         const aiResult = await this.aiVerification.verifyRepair(
             taskId,
-            task.beforeImageUrl,
+            task.beforeImages[0],
             imageUrl,
         );
 
@@ -314,10 +313,11 @@ export class TasksService {
             },
         });
 
-        // Record work submission on blockchain
+        // Record work submission on blockchain - use first hash
+        const beforeHashes = task.beforeImageHashes as string[] | null;
         this.blockchain.recordWorkSubmission(
             taskId,
-            task.beforeImageHash!,
+            beforeHashes?.[0] || '',
             imageHash
         ).catch(err => console.error('Blockchain recording failed:', err));
 
@@ -411,7 +411,7 @@ export class TasksService {
     }
 
     // CLIENT: Update a task (only if OPEN)
-    async updateTask(taskId: string, clientId: string, dto: any, beforeImage?: Express.Multer.File) {
+    async updateTask(taskId: string, clientId: string, dto: any, beforeImages?: Express.Multer.File[]) {
         const task = await this.getTaskById(taskId);
 
         // Validate ownership
@@ -435,12 +435,20 @@ export class TasksService {
         if (dto.locationName) updateData.locationName = dto.locationName;
         if (dto.deadline) updateData.deadline = new Date(dto.deadline);
 
-        // Handle image update
-        if (beforeImage) {
-            const imageUrl = await this.storage.uploadFile(beforeImage, 'tasks');
-            const imageHash = await this.storage.getFileHash(beforeImage.buffer);
-            updateData.beforeImageUrl = imageUrl;
-            updateData.beforeImageHash = imageHash;
+        // Handle images update
+        if (beforeImages && beforeImages.length > 0) {
+            const imageUrls: string[] = [];
+            const imageHashes: string[] = [];
+
+            for (const image of beforeImages) {
+                const url = await this.storage.uploadFile(image, 'tasks');
+                const hash = await this.storage.getFileHash(image.buffer);
+                imageUrls.push(url);
+                imageHashes.push(hash);
+            }
+
+            updateData.beforeImages = imageUrls;
+            updateData.beforeImageHashes = imageHashes;
         }
 
         return this.prisma.task.update({

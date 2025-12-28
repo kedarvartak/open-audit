@@ -35,7 +35,7 @@ export interface Task {
     status: string;
     requiresLocation: boolean;
     locationName?: string;
-    beforeImageUrl?: string;  // Image uploaded by client during creation
+    beforeImages: string[];   // Array of image URLs uploaded by client
     afterImageUrl?: string;   // Image uploaded by worker during completion
     deadline?: string;        // Task deadline
     createdAt: string;

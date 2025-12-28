@@ -25,8 +25,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
     });
     const [loading, setLoading] = useState(false);
     const [descriptionError, setDescriptionError] = useState('');
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string>(editTask?.beforeImageUrl || '');
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>(editTask?.beforeImages || []);
     const [gettingLocation, setGettingLocation] = useState(false);
 
     const steps = [
@@ -48,8 +48,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                 return;
             }
         } else if (currentStep === 2) {
-            if (!imageFile && !editTask?.beforeImageUrl) {
-                alert('Please upload an image');
+            if (imageFiles.length === 0 && (!editTask?.beforeImages || editTask.beforeImages.length === 0)) {
+                alert('Please upload at least one image');
                 return;
             }
         } else if (currentStep === 3) {
@@ -98,9 +98,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             if (formData.deadline) {
                 submitData.append('deadline', formData.deadline);
             }
-            if (imageFile) {
-                submitData.append('beforeImage', imageFile);
-            }
+            // Append all images
+            imageFiles.forEach((file) => {
+                submitData.append('beforeImages', file);
+            });
 
             const url = editTask
                 ? `http://localhost:3001/v0/tasks/${editTask.id}`
@@ -146,20 +147,25 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setImageFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const newFiles = Array.from(files);
+            setImageFiles(prev => [...prev, ...newFiles]);
+
+            // Generate previews for new files
+            newFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setImagePreviews(prev => [...prev, reader.result as string]);
+                };
+                reader.readAsDataURL(file);
+            });
         }
     };
 
-    const removeImage = () => {
-        setImageFile(null);
-        setImagePreview('');
+    const removeImage = (index: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     const getGPSLocation = () => {
@@ -349,6 +355,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                             type="file"
                                             className="hidden"
                                             accept="image/*"
+                                            multiple
                                             onChange={handleImageChange}
                                         />
                                     </label>
@@ -360,36 +367,30 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                 Only support .jpg, .png and .svg and zip files
                             </p>
 
-                            {/* Uploaded File Info */}
-                            {imageFile && (
-                                <div className={`flex items-center gap-3 p-3 rounded-lg border ${theme === 'dark'
-                                    ? 'bg-slate-800 border-slate-700'
-                                    : 'bg-white border-slate-200'
-                                    }`}>
-                                    {imagePreview ? (
-                                        <img src={imagePreview} alt="Preview" className="w-10 h-10 object-contain rounded" />
-                                    ) : (
-                                        <div className={`w-10 h-10 rounded flex items-center justify-center ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-[#464ace]">
-                                                <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                            {imageFile.name}
-                                        </p>
-                                        <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                            {(imageFile.size / (1024 * 1024)).toFixed(2)} MB
-                                        </p>
+                            {/* Uploaded Files */}
+                            {imagePreviews.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        Uploaded Images ({imagePreviews.length})
+                                    </p>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {imagePreviews.map((preview, index) => (
+                                            <div key={index} className="relative group">
+                                                <img
+                                                    src={preview}
+                                                    alt={`Preview ${index + 1}`}
+                                                    className={`w-full aspect-square object-contain rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    className="absolute top-1 right-1 p-1 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Trash2 size={12} className="text-white" />
+                                                </button>
+                                            </div>
+                                        ))}
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="p-1.5 rounded-full hover:bg-red-500/10 transition-colors"
-                                    >
-                                        <Trash2 size={18} className="text-red-500" />
-                                    </button>
                                 </div>
                             )}
                         </div>

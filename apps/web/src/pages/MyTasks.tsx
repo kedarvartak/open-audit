@@ -163,9 +163,9 @@ export default function MyTasks() {
                                         {/* Image Banner */}
                                         <div className="p-3">
                                             <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                                                {task.beforeImageUrl ? (
+                                                {task.beforeImages?.length > 0 ? (
                                                     <img
-                                                        src={task.beforeImageUrl}
+                                                        src={task.beforeImages[0]}
                                                         alt={task.title}
                                                         className="w-full h-full object-contain"
                                                     />
