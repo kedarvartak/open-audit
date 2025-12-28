@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, UnauthorizedException, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -30,5 +30,12 @@ export class AuthController {
     @Post('fcm-token')
     async updateFcmToken(@Request() req: any, @Body('token') token: string) {
         return this.authService.updateFcmToken(req.user.userId, token);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('check-user-exists')
+    async checkUserExists(@Query('email') email: string) {
+        const exists = await this.authService.checkUserExists(email);
+        return { exists };
     }
 }

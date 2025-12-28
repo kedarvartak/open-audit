@@ -61,6 +61,8 @@ export const authAPI = {
     getProfile: () => api.get('/v0/auth/profile'),
 
     updateFcmToken: (token: string) => api.post('/v0/auth/fcm-token', { token }),
+
+    checkUserExists: (email: string) => api.get<{ exists: boolean }>('/v0/auth/check-user-exists', { params: { email } }),
 };
 
 export const tasksAPI = {

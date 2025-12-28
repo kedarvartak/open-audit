@@ -106,5 +106,13 @@ export class AuthService {
             data: { fcmToken: token },
         });
     }
+
+    async checkUserExists(email: string): Promise<boolean> {
+        const user = await this.prisma.user.findUnique({
+            where: { email },
+            select: { id: true }, // Only select id for efficiency
+        });
+        return !!user;
+    }
 }
 

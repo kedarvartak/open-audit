@@ -10,9 +10,11 @@ import {
     Crown,
     Shield,
     User,
-    Pencil
+    Pencil,
+    Info
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { authAPI } from '../services/api';
 
 const Workspaces = () => {
     const { theme } = useTheme();
@@ -29,6 +31,8 @@ const Workspaces = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [invitePassword, setInvitePassword] = useState('');
     const [inviteRole, setInviteRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
+    const [userExists, setUserExists] = useState<boolean | null>(null);
+    const [checkingEmail, setCheckingEmail] = useState(false);
     const [editName, setEditName] = useState('');
     const [editDescription, setEditDescription] = useState('');
 
@@ -53,6 +57,30 @@ const Workspaces = () => {
             setLoading(false);
         }
     };
+
+    // Check if user exists when email changes (debounced)
+    useEffect(() => {
+        const checkEmail = async () => {
+            if (!inviteEmail || !inviteEmail.includes('@')) {
+                setUserExists(null);
+                return;
+            }
+
+            setCheckingEmail(true);
+            try {
+                const response = await authAPI.checkUserExists(inviteEmail);
+                setUserExists(response.data.exists);
+            } catch (error) {
+                console.error('Failed to check user:', error);
+                setUserExists(null);
+            } finally {
+                setCheckingEmail(false);
+            }
+        };
+
+        const debounceTimeout = setTimeout(checkEmail, 500);
+        return () => clearTimeout(debounceTimeout);
+    }, [inviteEmail]);
 
     const handleCreateWorkspace = async () => {
         if (!newWorkspaceName.trim()) {
@@ -83,8 +111,9 @@ const Workspaces = () => {
             return;
         }
 
-        if (!invitePassword.trim() || invitePassword.length < 6) {
-            toast.error('Please enter a password (min 6 characters)');
+        // Only require password if user doesn't exist
+        if (userExists === false && (!invitePassword.trim() || invitePassword.length < 6)) {
+            toast.error('Please enter a password (min 6 characters) for new user');
             return;
         }
 
@@ -93,15 +122,21 @@ const Workspaces = () => {
             const response = await workspacesAPI.getWorkspace(selectedWorkspace.id);
             setSelectedWorkspace(response.data);
             setWorkspaces(workspaces.map(w => w.id === selectedWorkspace.id ? response.data : w));
+            resetInviteForm();
             setShowInviteModal(false);
-            setInviteEmail('');
-            setInvitePassword('');
-            setInviteRole('MEMBER');
             toast.success('Invitation sent successfully!');
         } catch (error: any) {
             console.error('Failed to invite member:', error);
             toast.error(error.response?.data?.message || 'Failed to invite member');
         }
+    };
+
+    const resetInviteForm = () => {
+        setInviteEmail('');
+        setInvitePassword('');
+        setInviteRole('MEMBER');
+        setUserExists(null);
+        setCheckingEmail(false);
     };
 
     const handleUpdateWorkspace = async () => {
@@ -239,7 +274,7 @@ const Workspaces = () => {
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded bg-[#464ace] flex items-center justify-center text-white font-bold">
+                                        <div className="w-10 h-10 rounded-full bg-[#464ace] flex items-center justify-center text-white font-bold">
                                             {workspace.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -264,7 +299,7 @@ const Workspaces = () => {
                             {/* Header */}
                             <div className={`p-6 border-b flex items-center justify-between ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-xl bg-[#464ace] flex items-center justify-center text-white text-2xl font-bold">
+                                    <div className="w-16 h-16 rounded-full bg-[#464ace] flex items-center justify-center text-white text-2xl font-bold">
                                         {selectedWorkspace.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
@@ -305,7 +340,7 @@ const Workspaces = () => {
                                         selectedWorkspace.members?.find(m => m.userId === currentUserId)?.role === 'ADMIN') && (
                                             <button
                                                 onClick={() => setShowInviteModal(true)}
-                                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#464ace] hover:bg-[#3a3eb8] text-white text-sm font-medium transition-colors"
+                                                className="flex items-center gap-2 px-4 py-2 rounded-sm bg-[#464ace] hover:bg-[#3a3eb8] text-white text-sm font-medium transition-colors"
                                             >
                                                 <UserPlus size={16} />
                                                 Invite Member
@@ -323,7 +358,7 @@ const Workspaces = () => {
                                                 } transition-colors`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded flex items-center justify-center font-bold ${theme === 'dark' ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-700'
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${theme === 'dark' ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-700'
                                                     }`}>
                                                     {member.user.name.charAt(0).toUpperCase()}
                                                 </div>
@@ -471,11 +506,12 @@ const Workspaces = () => {
             {/* Invite Member Modal */}
             {showInviteModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className={`w-full max-w-md rounded-2xl p-6 ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
+                    <div className={`w-full max-w-md rounded-lg p-6 ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
                         <h2 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                             Invite Member
                         </h2>
                         <div className="space-y-4">
+                            {/* Email Field */}
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                                     Email Address *
@@ -485,30 +521,58 @@ const Workspaces = () => {
                                     value={inviteEmail}
                                     onChange={(e) => setInviteEmail(e.target.value)}
                                     placeholder="colleague@example.com"
-                                    className={`w-full px-4 py-3 rounded-lg border ${theme === 'dark'
+                                    className={`w-full px-4 py-2.5 rounded border ${theme === 'dark'
                                         ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
                                         : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
                                         } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
                                 />
+                                {/* User Existence Status */}
+                                {inviteEmail.includes('@') && (
+                                    <p className={`text-xs mt-1.5 ${userExists === true ? 'text-green-500' :
+                                            userExists === false ? 'text-amber-500' :
+                                                'text-slate-500'
+                                        }`}>
+                                        {checkingEmail ? 'Checking...' :
+                                            userExists === true ? '✓ User exists in system' :
+                                                userExists === false ? '⚠ User doesn\'t exist - will be created' :
+                                                    ''}
+                                    </p>
+                                )}
                             </div>
-                            <div>
-                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                    Password * <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>(for new users)</span>
-                                </label>
-                                <input
-                                    type="password"
-                                    value={invitePassword}
-                                    onChange={(e) => setInvitePassword(e.target.value)}
-                                    placeholder="Create password for new user"
-                                    className={`w-full px-4 py-3 rounded-lg border ${theme === 'dark'
-                                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
-                                        } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
-                                />
-                                <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                    If user doesn't exist, they'll be created with this password
-                                </p>
-                            </div>
+
+                            {/* Password Field - Only shown when user doesn't exist */}
+                            {userExists === false && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                            Password *
+                                        </label>
+                                        <div className="group relative">
+                                            <button
+                                                type="button"
+                                                className={`p-0.5 rounded-full ${theme === 'dark' ? 'text-slate-500 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}
+                                            >
+                                                <Info size={14} />
+                                            </button>
+                                            <div className={`absolute left-0 bottom-full mb-2 w-64 p-2 rounded text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity ${theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-slate-800 text-white'} shadow-lg z-10`}>
+                                                This password will be used to create a new account for this user. They can log in with their email and this password.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="password"
+                                        value={invitePassword}
+                                        onChange={(e) => setInvitePassword(e.target.value)}
+                                        placeholder="Create password for new user (min 6 chars)"
+                                        className={`w-full px-4 py-2.5 rounded border ${theme === 'dark'
+                                            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                                            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                                            } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Role Selection */}
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                                     Role
@@ -516,8 +580,10 @@ const Workspaces = () => {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setInviteRole('MEMBER')}
-                                        className={`flex-1 px-4 py-3 rounded-lg border font-medium transition-colors ${inviteRole === 'MEMBER'
-                                            ? 'border-[#464ace] bg-[#464ace]/10 text-[#464ace]'
+                                        className={`flex-1 px-4 py-2.5 rounded border font-medium transition-colors ${inviteRole === 'MEMBER'
+                                            ? theme === 'dark'
+                                                ? 'border-[#464ace] bg-[#464ace] text-white'
+                                                : 'border-[#464ace] bg-[#464ace] text-white'
                                             : theme === 'dark'
                                                 ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
                                                 : 'border-slate-300 text-slate-600 hover:bg-slate-50'
@@ -528,8 +594,10 @@ const Workspaces = () => {
                                     </button>
                                     <button
                                         onClick={() => setInviteRole('ADMIN')}
-                                        className={`flex-1 px-4 py-3 rounded-lg border font-medium transition-colors ${inviteRole === 'ADMIN'
-                                            ? 'border-[#464ace] bg-[#464ace]/10 text-[#464ace]'
+                                        className={`flex-1 px-4 py-2.5 rounded border font-medium transition-colors ${inviteRole === 'ADMIN'
+                                            ? theme === 'dark'
+                                                ? 'border-[#464ace] bg-[#464ace] text-white'
+                                                : 'border-[#464ace] bg-[#464ace] text-white'
                                             : theme === 'dark'
                                                 ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
                                                 : 'border-slate-300 text-slate-600 hover:bg-slate-50'
@@ -545,17 +613,16 @@ const Workspaces = () => {
                             <button
                                 onClick={() => {
                                     setShowInviteModal(false);
-                                    setInviteEmail('');
-                                    setInviteRole('MEMBER');
+                                    resetInviteForm();
                                 }}
-                                className={`px-4 py-2 rounded-lg font-medium ${theme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
-                                    }`}
+                                className={`px-4 py-2 rounded font-medium ${theme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleInviteMember}
-                                className="px-4 py-2 rounded-lg bg-[#464ace] hover:bg-[#3a3eb8] text-white font-medium"
+                                disabled={!inviteEmail || (userExists === false && !invitePassword)}
+                                className="px-4 py-2 rounded bg-[#464ace] hover:bg-[#3a3eb8] text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Send Invite
                             </button>
