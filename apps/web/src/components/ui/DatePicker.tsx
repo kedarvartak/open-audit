@@ -96,7 +96,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
                     type="button"
                     onClick={() => handleDateClick(day)}
                     className={`h-10 rounded-md text-sm font-medium transition-colors ${isSelected
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-indigo-600 text-white'
                         : isToday
                             ? theme === 'dark'
                                 ? 'bg-slate-600 text-slate-100'

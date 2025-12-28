@@ -3,7 +3,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { DatePicker } from '../ui/DatePicker';
 import { useTheme } from '../../contexts/ThemeContext';
-import { MapPin, Trash2, Check, Sparkles } from 'lucide-react';
+import { Trash2, Check, Sparkles } from 'lucide-react';
 import type { Task } from '../../services/api';
 import { tasksAPI } from '../../services/api';
 import axios from 'axios';
@@ -359,9 +359,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                     disabled={enhancing || !formData.description.trim()}
                                     className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${enhancing || !formData.description.trim()
                                         ? 'opacity-50 cursor-not-allowed'
-                                        : theme === 'dark'
-                                            ? 'bg-purple-600 hover:bg-purple-700 text-white'
-                                            : 'bg-purple-500 hover:bg-purple-600 text-white'
+                                        : 'bg-[#464ace] hover:bg-[#3d42b8] text-white'
                                         }`}
                                 >
                                     <Sparkles size={16} className={enhancing ? 'animate-spin' : ''} />
@@ -485,11 +483,11 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                         disabled={gettingLocation}
                                         className="px-4"
                                     >
-                                        <MapPin size={18} className={gettingLocation ? 'animate-pulse' : ''} />
+                                        <img src="/map.svg" alt="Map" className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} />
                                     </Button>
                                 </div>
                                 <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                    Click the pin icon to auto-detect location
+                                    Click the map icon to auto-detect location
                                 </p>
                             </div>
                         </div>

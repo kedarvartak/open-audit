@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -113,19 +113,13 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                             <>
                                                 <button
                                                     onClick={() => setCurrentImageIndex(prev => prev === 0 ? task.beforeImages.length - 1 : prev - 1)}
-                                                    className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${theme === 'dark'
-                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-white'
-                                                        : 'bg-white/80 hover:bg-white text-slate-700'
-                                                        }`}
+                                                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all bg-[#464ace] hover:bg-[#3d42b8] text-white"
                                                 >
                                                     <ChevronLeft size={20} />
                                                 </button>
                                                 <button
                                                     onClick={() => setCurrentImageIndex(prev => prev === task.beforeImages.length - 1 ? 0 : prev + 1)}
-                                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${theme === 'dark'
-                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-white'
-                                                        : 'bg-white/80 hover:bg-white text-slate-700'
-                                                        }`}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all bg-[#464ace] hover:bg-[#3d42b8] text-white"
                                                 >
                                                     <ChevronRight size={20} />
                                                 </button>
@@ -137,7 +131,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                                             key={index}
                                                             onClick={() => setCurrentImageIndex(index)}
                                                             className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex
-                                                                ? 'bg-blue-500 w-4'
+                                                                ? 'bg-[#464ace] w-4'
                                                                 : theme === 'dark' ? 'bg-slate-500' : 'bg-slate-300'
                                                                 }`}
                                                         />
@@ -145,10 +139,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                                 </div>
 
                                                 {/* Image Counter */}
-                                                <div className={`absolute top-3 right-3 px-2 py-1 rounded text-xs font-medium ${theme === 'dark'
-                                                    ? 'bg-slate-800/80 text-white'
-                                                    : 'bg-white/80 text-slate-700'
-                                                    }`}>
+                                                <div className="absolute top-3 right-3 px-2 py-1 rounded text-xs font-medium bg-[#464ace] text-white">
                                                     {currentImageIndex + 1} / {task.beforeImages.length}
                                                 </div>
                                             </>
@@ -197,7 +188,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                     rel="noopener noreferrer"
                                     className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${theme === 'dark' ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-slate-50 hover:bg-slate-100'}`}
                                 >
-                                    <MapPin size={18} className={theme === 'dark' ? 'text-blue-400' : 'text-blue-600'} />
+                                    <img src="/map.svg" alt="Location" className="w-5 h-5" />
                                     <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
                                         {task.locationName}
                                     </p>
@@ -215,7 +206,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                             {/* Client & Date Row - Minimalist */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-700'}`}>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white">
                                         {task.client.name.charAt(0).toUpperCase()}
                                     </div>
                                     <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
