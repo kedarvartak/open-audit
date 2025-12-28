@@ -214,7 +214,7 @@ const Workspaces = () => {
         switch (role) {
             case 'OWNER': return 'bg-amber-400 text-slate-900';
             case 'ADMIN': return 'bg-blue-500 text-white';
-            default: return 'bg-slate-500 text-white';
+            default: return 'bg-red-500 text-white';
         }
     };
 
@@ -348,86 +348,111 @@ const Workspaces = () => {
                                         )}
                                 </div>
 
-                                <div className="space-y-2">
-                                    {selectedWorkspace.members?.map(member => (
-                                        <div
-                                            key={member.id}
-                                            className={`p-4 border-b flex items-center justify-between ${theme === 'dark'
-                                                ? 'border-slate-700 hover:bg-slate-800/50'
-                                                : 'border-slate-200 hover:bg-slate-50'
-                                                } transition-colors`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${theme === 'dark' ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-700'
-                                                    }`}>
-                                                    {member.user.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                                                        {member.user.name}
-                                                        {member.userId === currentUserId && (
-                                                            <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                                (You)
-                                                            </span>
-                                                        )}
-                                                    </p>
-                                                    <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                        {member.user.email}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                <div className={`rounded-lg border overflow-hidden ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                                    {/* Table Header */}
+                                    <div className={`grid grid-cols-12 gap-0 divide-x border-b text-xs font-semibold uppercase tracking-wider ${theme === 'dark'
+                                            ? 'bg-slate-800/50 text-slate-400 divide-slate-700 border-slate-700'
+                                            : 'bg-slate-50 text-slate-500 divide-slate-200 border-slate-200'
+                                        }`}>
+                                        <div className="col-span-5 px-4 py-3">Member</div>
+                                        <div className="col-span-3 px-4 py-3">Role</div>
+                                        <div className="col-span-2 px-4 py-3">Status</div>
+                                        <div className="col-span-2 px-4 py-3 text-right">Actions</div>
+                                    </div>
 
-                                            <div className="flex items-center gap-3">
-                                                <span className={`px-2.5 py-1 rounded text-xs font-semibold ${getRoleBadgeColor(member.role)}`}>
-                                                    {member.role === 'OWNER' ? member.role : (
-                                                        <>
-                                                            {getRoleIcon(member.role)}
-                                                            <span className="ml-1.5">{member.role}</span>
-                                                        </>
-                                                    )}
-                                                </span>
-
-                                                {/* Invite Status Chip */}
-                                                {member.inviteStatus && member.inviteStatus !== 'ACCEPTED' && (
-                                                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${member.inviteStatus === 'PENDING'
-                                                        ? 'bg-amber-400 text-slate-900'
-                                                        : 'bg-red-500 text-white'
+                                    {/* Table Body */}
+                                    <div className={`divide-y ${theme === 'dark' ? 'divide-slate-700' : 'divide-slate-200'}`}>
+                                        {selectedWorkspace.members?.map(member => (
+                                            <div
+                                                key={member.id}
+                                                className={`grid grid-cols-12 gap-0 divide-x items-center transition-colors ${theme === 'dark'
+                                                        ? 'divide-slate-700 hover:bg-slate-800/30'
+                                                        : 'divide-slate-200 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                {/* Member Column */}
+                                                <div className="col-span-5 px-4 py-3 flex items-center gap-3 overflow-hidden">
+                                                    <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center font-bold text-xs ${theme === 'dark' ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-700'
                                                         }`}>
-                                                        {member.inviteStatus}
-                                                    </span>
-                                                )}
-
-                                                {selectedWorkspace.ownerId === currentUserId && member.role !== 'OWNER' && (
-                                                    <div className="flex items-center gap-1">
-                                                        {member.role === 'MEMBER' ? (
-                                                            <button
-                                                                onClick={() => handleUpdateMemberRole(member.userId, 'ADMIN')}
-                                                                className={`p-1.5 rounded text-xs text-blue-500 ${theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
-                                                                title="Promote to Admin"
-                                                            >
-                                                                <Shield size={14} />
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => handleUpdateMemberRole(member.userId, 'MEMBER')}
-                                                                className={`p-1.5 rounded text-xs ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}
-                                                                title="Demote to Member"
-                                                            >
-                                                                <User size={14} />
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleRemoveMember(member.userId)}
-                                                            className={`p-1.5 rounded text-xs text-red-500 ${theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
-                                                            title="Remove Member"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
+                                                        {member.user.name.charAt(0).toUpperCase()}
                                                     </div>
-                                                )}
+                                                    <div className="min-w-0">
+                                                        <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                                                            {member.user.name}
+                                                            {member.userId === currentUserId && (
+                                                                <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                    (You)
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                        <p className={`text-xs truncate ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                            {member.user.email}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Role Column */}
+                                                <div className="col-span-3 px-4 py-3">
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium ${getRoleBadgeColor(member.role)}`}>
+                                                        {member.role === 'OWNER' || member.role === 'MEMBER' ? member.role : (
+                                                            <>
+                                                                {getRoleIcon(member.role)}
+                                                                <span className="ml-1.5">{member.role}</span>
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                </div>
+
+                                                {/* Status Column */}
+                                                <div className="col-span-2 px-4 py-3">
+                                                    {member.inviteStatus && member.inviteStatus !== 'ACCEPTED' ? (
+                                                        <span className={`inline-flex px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide ${member.inviteStatus === 'PENDING'
+                                                            ? 'bg-amber-400/10 text-amber-500 border border-amber-400/20'
+                                                            : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                                                            }`}>
+                                                            {member.inviteStatus}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase tracking-wide bg-emerald-500 text-white">
+                                                            Active
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Actions Column */}
+                                                <div className="col-span-2 px-4 py-3 flex justify-end">
+                                                    {selectedWorkspace.ownerId === currentUserId && member.role !== 'OWNER' && (
+                                                        <div className="flex items-center gap-1">
+                                                            {member.role === 'MEMBER' ? (
+                                                                <button
+                                                                    onClick={() => handleUpdateMemberRole(member.userId, 'ADMIN')}
+                                                                    className={`p-1.5 rounded hover:bg-blue-500/10 text-slate-400 hover:text-blue-500 transition-colors`}
+                                                                    title="Promote to Admin"
+                                                                >
+                                                                    <Shield size={14} />
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => handleUpdateMemberRole(member.userId, 'MEMBER')}
+                                                                    className={`p-1.5 rounded hover:bg-slate-500/10 text-slate-400 hover:text-slate-500 transition-colors`}
+                                                                    title="Demote to Member"
+                                                                >
+                                                                    <User size={14} />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleRemoveMember(member.userId)}
+                                                                className={`p-1.5 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors`}
+                                                                title="Remove Member"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </>
@@ -529,8 +554,8 @@ const Workspaces = () => {
                                 {/* User Existence Status */}
                                 {inviteEmail.includes('@') && (
                                     <p className={`text-xs mt-1.5 ${userExists === true ? 'text-green-500' :
-                                            userExists === false ? 'text-amber-500' :
-                                                'text-slate-500'
+                                        userExists === false ? 'text-amber-500' :
+                                            'text-slate-500'
                                         }`}>
                                         {checkingEmail ? 'Checking...' :
                                             userExists === true ? '✓ User exists in system' :
