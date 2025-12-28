@@ -6,16 +6,56 @@ import { BlockchainService } from '../blockchain/blockchain.service';
 import { FirebaseService } from '../firebase/firebase.service';
 import { TaskStatus } from '@prisma/client';
 import { ethers } from 'ethers';
+import Groq from 'groq-sdk';
 
 @Injectable()
 export class TasksService {
+    private groq: Groq;
+
     constructor(
         private prisma: PrismaService,
         private storage: StorageService,
         private aiVerification: AiVerificationService,
         private blockchain: BlockchainService,
         private firebase: FirebaseService,
-    ) { }
+    ) {
+        // Initialize Groq with API key from environment
+        this.groq = new Groq({
+            apiKey: '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',
+        });
+    }
+
+    // LLM: Enhance task description
+    async enhanceDescription(description: string): Promise<{ enhancedDescription: string }> {
+        if (!description || description.trim().length === 0) {
+            throw new BadRequestException('Description cannot be empty');
+        }
+
+        try {
+            const chatCompletion = await this.groq.chat.completions.create({
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a helpful assistant that enhances task descriptions. Make them clear, professional, and detailed while maintaining the core meaning. Keep the enhanced description concise (2-4 sentences max). Focus on clarity, actionable details, and professional tone.',
+                    },
+                    {
+                        role: 'user',
+                        content: `Enhance this task description: "${description}"`,
+                    },
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.7,
+                max_tokens: 200,
+            });
+
+            const enhancedDescription = chatCompletion.choices[0]?.message?.content || description;
+
+            return { enhancedDescription: enhancedDescription.trim() };
+        } catch (error) {
+            console.error('Groq API error:', error);
+            throw new BadRequestException('Failed to enhance description. Please try again.');
+        }
+    }
 
     // CLIENT: Create a new task
     async createTask(clientId: string, dto: any, beforeImages?: Express.Multer.File[]) {
@@ -436,19 +476,35 @@ export class TasksService {
         if (dto.deadline) updateData.deadline = new Date(dto.deadline);
 
         // Handle images update
-        if (beforeImages && beforeImages.length > 0) {
-            const imageUrls: string[] = [];
-            const imageHashes: string[] = [];
+        // Get existing images to keep (sent as JSON string from frontend)
+        let existingImagesToKeep: string[] = [];
+        if (dto.existingImages) {
+            try {
+                existingImagesToKeep = JSON.parse(dto.existingImages);
+            } catch (e) {
+                console.error('Failed to parse existingImages:', e);
+            }
+        }
 
+        // Upload new images if provided
+        const newImageUrls: string[] = [];
+        const newImageHashes: string[] = [];
+        if (beforeImages && beforeImages.length > 0) {
             for (const image of beforeImages) {
                 const url = await this.storage.uploadFile(image, 'tasks');
                 const hash = await this.storage.getFileHash(image.buffer);
-                imageUrls.push(url);
-                imageHashes.push(hash);
+                newImageUrls.push(url);
+                newImageHashes.push(hash);
             }
+        }
 
-            updateData.beforeImages = imageUrls;
-            updateData.beforeImageHashes = imageHashes;
+        // Combine existing and new images
+        if (existingImagesToKeep.length > 0 || newImageUrls.length > 0) {
+            updateData.beforeImages = [...existingImagesToKeep, ...newImageUrls];
+            // For existing images, we keep empty hashes (already on chain)
+            // For new images, we have the new hashes
+            const existingHashes = existingImagesToKeep.map(() => '');
+            updateData.beforeImageHashes = [...existingHashes, ...newImageHashes];
         }
 
         return this.prisma.task.update({

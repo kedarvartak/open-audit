@@ -107,6 +107,9 @@ export const tasksAPI = {
         }),
 
     deleteTask: (id: string) => api.delete(`/v0/tasks/${id}`),
+
+    enhanceDescription: (description: string) =>
+        api.post('/v0/tasks/enhance-description', { description }),
 };
 
 export default api;

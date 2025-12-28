@@ -27,6 +27,14 @@ import { Role } from '@prisma/client';
 export class TasksController {
     constructor(private readonly tasksService: TasksService) { }
 
+    @Post('enhance-description')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.CLIENT, Role.ADMIN)
+    async enhanceDescription(@Body() body: { description: string }) {
+        return this.tasksService.enhanceDescription(body.description);
+    }
+
     @Post()
     @HttpCode(HttpStatus.CREATED)
     @UseGuards(JwtAuthGuard, RolesGuard)

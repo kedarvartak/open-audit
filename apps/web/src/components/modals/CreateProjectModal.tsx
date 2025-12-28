@@ -3,9 +3,11 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { DatePicker } from '../ui/DatePicker';
 import { useTheme } from '../../contexts/ThemeContext';
-import { MapPin, Trash2, Check } from 'lucide-react';
+import { MapPin, Trash2, Check, Sparkles } from 'lucide-react';
 import type { Task } from '../../services/api';
+import { tasksAPI } from '../../services/api';
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 interface CreateProjectModalProps {
     onClose: () => void;
@@ -24,9 +26,12 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         locationName: editTask?.locationName || '',
     });
     const [loading, setLoading] = useState(false);
+    const [enhancing, setEnhancing] = useState(false);
     const [descriptionError, setDescriptionError] = useState('');
+    // Track existing image URLs (from editTask) separately from new files
+    const [existingImages, setExistingImages] = useState<string[]>(editTask?.beforeImages || []);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
-    const [imagePreviews, setImagePreviews] = useState<string[]>(editTask?.beforeImages || []);
+    const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
     const [gettingLocation, setGettingLocation] = useState(false);
 
     const steps = [
@@ -48,7 +53,9 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                 return;
             }
         } else if (currentStep === 2) {
-            if (imageFiles.length === 0 && (!editTask?.beforeImages || editTask.beforeImages.length === 0)) {
+            // Check total images (existing + new)
+            const totalImages = existingImages.length + imageFiles.length;
+            if (totalImages === 0) {
                 alert('Please upload at least one image');
                 return;
             }
@@ -98,10 +105,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             if (formData.deadline) {
                 submitData.append('deadline', formData.deadline);
             }
-            // Append all images
+            // Append all new image files
             imageFiles.forEach((file) => {
                 submitData.append('beforeImages', file);
             });
+            // Send existing image URLs to keep (for edits)
+            if (editTask && existingImages.length > 0) {
+                submitData.append('existingImages', JSON.stringify(existingImages));
+            }
 
             const url = editTask
                 ? `http://localhost:3001/v0/tasks/${editTask.id}`
@@ -156,16 +167,39 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             newFiles.forEach(file => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
-                    setImagePreviews(prev => [...prev, reader.result as string]);
+                    setNewImagePreviews(prev => [...prev, reader.result as string]);
                 };
                 reader.readAsDataURL(file);
             });
         }
     };
 
-    const removeImage = (index: number) => {
+    const removeExistingImage = (index: number) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeNewImage = (index: number) => {
         setImageFiles(prev => prev.filter((_, i) => i !== index));
-        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+        setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleEnhanceDescription = async () => {
+        if (!formData.description.trim()) {
+            toast.error('Please enter a description first');
+            return;
+        }
+
+        setEnhancing(true);
+        try {
+            const response = await tasksAPI.enhanceDescription(formData.description);
+            setFormData({ ...formData, description: response.data.enhancedDescription });
+            toast.success('Description enhanced successfully!');
+        } catch (error: any) {
+            console.error('Enhancement error:', error);
+            toast.error(error.response?.data?.message || 'Failed to enhance description');
+        } finally {
+            setEnhancing(false);
+        }
     };
 
     const getGPSLocation = () => {
@@ -319,6 +353,20 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                 {descriptionError && (
                                     <p className="text-xs text-red-500">{descriptionError}</p>
                                 )}
+                                <button
+                                    type="button"
+                                    onClick={handleEnhanceDescription}
+                                    disabled={enhancing || !formData.description.trim()}
+                                    className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${enhancing || !formData.description.trim()
+                                        ? 'opacity-50 cursor-not-allowed'
+                                        : theme === 'dark'
+                                            ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                                            : 'bg-purple-500 hover:bg-purple-600 text-white'
+                                        }`}
+                                >
+                                    <Sparkles size={16} className={enhancing ? 'animate-spin' : ''} />
+                                    {enhancing ? 'Enhancing...' : 'Enhance with AI'}
+                                </button>
                             </div>
                         </div>
                     )}
@@ -368,22 +416,40 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                             </p>
 
                             {/* Uploaded Files */}
-                            {imagePreviews.length > 0 && (
+                            {(existingImages.length > 0 || newImagePreviews.length > 0) && (
                                 <div className="space-y-2">
                                     <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                        Uploaded Images ({imagePreviews.length})
+                                        Uploaded Images ({existingImages.length + newImagePreviews.length})
                                     </p>
                                     <div className="grid grid-cols-4 gap-2">
-                                        {imagePreviews.map((preview, index) => (
-                                            <div key={index} className="relative group">
+                                        {/* Existing Images */}
+                                        {existingImages.map((url: string, index: number) => (
+                                            <div key={`existing-${index}`} className="relative group">
                                                 <img
-                                                    src={preview}
-                                                    alt={`Preview ${index + 1}`}
+                                                    src={url}
+                                                    alt={`Existing ${index + 1}`}
                                                     className={`w-full aspect-square object-contain rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}
                                                 />
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeImage(index)}
+                                                    onClick={() => removeExistingImage(index)}
+                                                    className="absolute top-1 right-1 p-1 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <Trash2 size={12} className="text-white" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {/* New Images */}
+                                        {newImagePreviews.map((preview: string, index: number) => (
+                                            <div key={`new-${index}`} className="relative group">
+                                                <img
+                                                    src={preview}
+                                                    alt={`New ${index + 1}`}
+                                                    className={`w-full aspect-square object-contain rounded-lg border-2 border-dashed border-green-500 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeNewImage(index)}
                                                     className="absolute top-1 right-1 p-1 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
                                                     <Trash2 size={12} className="text-white" />

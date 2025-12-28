@@ -66,28 +66,28 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
     const canAccept = userRole === 'WORKER' && task?.status === 'OPEN' && task?.client.id !== userId;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div
-                className={`w-full max-w-4xl rounded-lg shadow-2xl ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+                className={`w-full max-w-4xl rounded-lg shadow-2xl my-4 max-h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
                     }`}
             >
                 {/* Header */}
-                <div className={`flex items-center justify-between p-6 border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                <div className={`flex items-center justify-between p-4 sm:p-6 border-b flex-shrink-0 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                     }`}>
-                    <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                    <h2 className={`text-lg sm:text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                         Task Details
                     </h2>
                     <button
                         onClick={onClose}
-                        className={`p-2 rounded-full transition-colors ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-600'
+                        className={`p-2 rounded-full transition-colors flex-shrink-0 ${theme === 'dark' ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-600'
                             }`}
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="p-6">
+                {/* Content - scrollable */}
+                <div className="p-4 sm:p-6 overflow-y-auto flex-1">
                     {loading ? (
                         <div className={`flex justify-center items-center h-64 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                             Loading task...
@@ -99,7 +99,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                     ) : (
                         <div className="space-y-5">
                             {/* Image Carousel */}
-                            <div className={`relative w-full aspect-video rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                            <div className={`relative w-full h-48 sm:h-64 md:h-72 max-h-[40vh] rounded-lg overflow-hidden ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
                                 {task.beforeImages && task.beforeImages.length > 0 ? (
                                     <>
                                         <img
