@@ -8,6 +8,15 @@ export class WorkspacesService {
 
     // Create a new workspace
     async createWorkspace(userId: string, name: string, description?: string) {
+        // First verify the user exists
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found. Please log out and log in again.');
+        }
+
         // Create workspace with owner as first member
         const workspace = await this.prisma.workspace.create({
             data: {
@@ -160,23 +169,40 @@ export class WorkspacesService {
         });
     }
 
-    // Invite a member to workspace
-    async inviteMember(workspaceId: string, inviterId: string, email: string, role: WorkspaceRole = WorkspaceRole.MEMBER) {
+    // Invite a member to workspace (creates user if not exists)
+    async inviteMember(
+        workspaceId: string,
+        inviterId: string,
+        email: string,
+        password: string,
+        role: WorkspaceRole = WorkspaceRole.MEMBER
+    ) {
         const workspace = await this.getWorkspace(workspaceId, inviterId);
 
         // Check if inviter has permission
-        const inviter = workspace.members.find(m => m.userId === inviterId);
+        const inviter = workspace.members.find((m: { userId: string; role: WorkspaceRole }) => m.userId === inviterId);
         if (!inviter || (inviter.role !== WorkspaceRole.OWNER && inviter.role !== WorkspaceRole.ADMIN)) {
             throw new ForbiddenException('You do not have permission to invite members');
         }
 
-        // Find user by email
-        const userToInvite = await this.prisma.user.findUnique({
+        // Find or create user by email
+        let userToInvite = await this.prisma.user.findUnique({
             where: { email },
         });
 
         if (!userToInvite) {
-            throw new NotFoundException('User not found with this email');
+            // Create new user with provided password
+            const bcrypt = await import('bcrypt');
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            userToInvite = await this.prisma.user.create({
+                data: {
+                    email,
+                    password: hashedPassword,
+                    name: email.split('@')[0], // Default name from email
+                    role: 'WORKER', // Default role
+                },
+            });
         }
 
         // Check if already a member
@@ -190,15 +216,17 @@ export class WorkspacesService {
         });
 
         if (existingMember) {
-            throw new BadRequestException('User is already a member of this workspace');
+            throw new BadRequestException('User is already a member or has a pending invitation to this workspace');
         }
 
-        // Create membership
+        // Create membership with PENDING status
         return this.prisma.workspaceMember.create({
             data: {
                 userId: userToInvite.id,
                 workspaceId,
                 role,
+                inviteStatus: 'PENDING',
+                invitedById: inviterId,
             },
             include: {
                 user: {
@@ -208,6 +236,99 @@ export class WorkspacesService {
                         email: true,
                     },
                 },
+            },
+        });
+    }
+
+    // Get pending invitations for a user
+    async getPendingInvitations(userId: string) {
+        return this.prisma.workspaceMember.findMany({
+            where: {
+                userId,
+                inviteStatus: 'PENDING',
+            },
+            include: {
+                workspace: {
+                    include: {
+                        owner: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    // Accept an invitation
+    async acceptInvitation(userId: string, workspaceId: string) {
+        const membership = await this.prisma.workspaceMember.findUnique({
+            where: {
+                userId_workspaceId: {
+                    userId,
+                    workspaceId,
+                },
+            },
+        });
+
+        if (!membership) {
+            throw new NotFoundException('Invitation not found');
+        }
+
+        if (membership.inviteStatus !== 'PENDING') {
+            throw new BadRequestException('This invitation has already been responded to');
+        }
+
+        return this.prisma.workspaceMember.update({
+            where: {
+                userId_workspaceId: {
+                    userId,
+                    workspaceId,
+                },
+            },
+            data: {
+                inviteStatus: 'ACCEPTED',
+                joinedAt: new Date(),
+                respondedAt: new Date(),
+            },
+            include: {
+                workspace: true,
+            },
+        });
+    }
+
+    // Reject an invitation
+    async rejectInvitation(userId: string, workspaceId: string) {
+        const membership = await this.prisma.workspaceMember.findUnique({
+            where: {
+                userId_workspaceId: {
+                    userId,
+                    workspaceId,
+                },
+            },
+        });
+
+        if (!membership) {
+            throw new NotFoundException('Invitation not found');
+        }
+
+        if (membership.inviteStatus !== 'PENDING') {
+            throw new BadRequestException('This invitation has already been responded to');
+        }
+
+        return this.prisma.workspaceMember.update({
+            where: {
+                userId_workspaceId: {
+                    userId,
+                    workspaceId,
+                },
+            },
+            data: {
+                inviteStatus: 'REJECTED',
+                respondedAt: new Date(),
             },
         });
     }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { WorkspaceRole } from '@prisma/client';
+import { WorkspaceRole, InviteStatus } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -80,6 +80,7 @@ export class AuthService {
                         create: {
                             userId: user.id,
                             role: WorkspaceRole.OWNER,
+                            inviteStatus: InviteStatus.ACCEPTED,
                             joinedAt: new Date(),
                         },
                     },

@@ -27,6 +27,7 @@ const Workspaces = () => {
     const [newWorkspaceName, setNewWorkspaceName] = useState('');
     const [newWorkspaceDescription, setNewWorkspaceDescription] = useState('');
     const [inviteEmail, setInviteEmail] = useState('');
+    const [invitePassword, setInvitePassword] = useState('');
     const [inviteRole, setInviteRole] = useState<'ADMIN' | 'MEMBER'>('MEMBER');
     const [editName, setEditName] = useState('');
     const [editDescription, setEditDescription] = useState('');
@@ -82,15 +83,21 @@ const Workspaces = () => {
             return;
         }
 
+        if (!invitePassword.trim() || invitePassword.length < 6) {
+            toast.error('Please enter a password (min 6 characters)');
+            return;
+        }
+
         try {
-            await workspacesAPI.inviteMember(selectedWorkspace.id, inviteEmail, inviteRole);
+            await workspacesAPI.inviteMember(selectedWorkspace.id, inviteEmail, invitePassword, inviteRole);
             const response = await workspacesAPI.getWorkspace(selectedWorkspace.id);
             setSelectedWorkspace(response.data);
             setWorkspaces(workspaces.map(w => w.id === selectedWorkspace.id ? response.data : w));
             setShowInviteModal(false);
             setInviteEmail('');
+            setInvitePassword('');
             setInviteRole('MEMBER');
-            toast.success('Member invited successfully!');
+            toast.success('Invitation sent successfully!');
         } catch (error: any) {
             console.error('Failed to invite member:', error);
             toast.error(error.response?.data?.message || 'Failed to invite member');
@@ -170,9 +177,9 @@ const Workspaces = () => {
 
     const getRoleBadgeColor = (role: string) => {
         switch (role) {
-            case 'OWNER': return 'bg-amber-500/20 text-amber-500';
-            case 'ADMIN': return 'bg-blue-500/20 text-blue-500';
-            default: return theme === 'dark' ? 'bg-slate-700 text-slate-300' : 'bg-slate-200 text-slate-600';
+            case 'OWNER': return 'bg-amber-400 text-slate-900';
+            case 'ADMIN': return 'bg-blue-500 text-white';
+            default: return 'bg-slate-500 text-white';
         }
     };
 
@@ -188,14 +195,14 @@ const Workspaces = () => {
         <DashboardLayout>
             <div className="p-6 h-full flex gap-6">
                 {/* Workspaces List */}
-                <div className={`w-80 flex-shrink-0 rounded-xl border ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} flex flex-col`}>
+                <div className={`w-80 flex-shrink-0 rounded-lg border ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} flex flex-col`}>
                     <div className={`p-4 border-b flex items-center justify-between ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
                         <h2 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                             My Workspaces
                         </h2>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="p-2 rounded-lg bg-[#464ace] hover:bg-[#3a3eb8] text-white transition-colors"
+                            className="p-2 rounded bg-[#464ace] hover:bg-[#3a3eb8] text-white transition-colors"
                         >
                             <Plus size={18} />
                         </button>
@@ -222,15 +229,17 @@ const Workspaces = () => {
                                 <button
                                     key={workspace.id}
                                     onClick={() => setSelectedWorkspace(workspace)}
-                                    className={`w-full p-3 rounded-lg text-left transition-all ${selectedWorkspace?.id === workspace.id
-                                            ? 'bg-[#464ace]/10 border border-[#464ace]'
-                                            : theme === 'dark'
-                                                ? 'hover:bg-slate-800 border border-transparent'
-                                                : 'hover:bg-slate-50 border border-transparent'
+                                    className={`w-full p-3 rounded text-left transition-all ${selectedWorkspace?.id === workspace.id
+                                        ? theme === 'dark'
+                                            ? 'bg-slate-700 border-l-4 border-l-[#464ace]'
+                                            : 'bg-slate-200 border-l-4 border-l-[#464ace]'
+                                        : theme === 'dark'
+                                            ? 'hover:bg-slate-800 border-l-4 border-l-transparent'
+                                            : 'hover:bg-slate-50 border-l-4 border-l-transparent'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-[#464ace] flex items-center justify-center text-white font-bold">
+                                        <div className="w-10 h-10 rounded bg-[#464ace] flex items-center justify-center text-white font-bold">
                                             {workspace.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -249,7 +258,7 @@ const Workspaces = () => {
                 </div>
 
                 {/* Workspace Details */}
-                <div className={`flex-1 rounded-xl border ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} flex flex-col overflow-hidden`}>
+                <div className={`flex-1 rounded-lg border ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} flex flex-col overflow-hidden`}>
                     {selectedWorkspace ? (
                         <>
                             {/* Header */}
@@ -272,13 +281,13 @@ const Workspaces = () => {
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={openEditModal}
-                                            className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-600'}`}
+                                            className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white transition-colors"
                                         >
                                             <Pencil size={18} />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteWorkspace(selectedWorkspace.id)}
-                                            className={`p-2 rounded-lg transition-colors text-red-500 ${theme === 'dark' ? 'hover:bg-red-500/20' : 'hover:bg-red-50'}`}
+                                            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -308,13 +317,13 @@ const Workspaces = () => {
                                     {selectedWorkspace.members?.map(member => (
                                         <div
                                             key={member.id}
-                                            className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark'
-                                                    ? 'bg-slate-800 border-slate-700'
-                                                    : 'bg-slate-50 border-slate-200'
-                                                }`}
+                                            className={`p-4 border-b flex items-center justify-between ${theme === 'dark'
+                                                ? 'border-slate-700 hover:bg-slate-800/50'
+                                                : 'border-slate-200 hover:bg-slate-50'
+                                                } transition-colors`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${theme === 'dark' ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-700'
+                                                <div className={`w-10 h-10 rounded flex items-center justify-center font-bold ${theme === 'dark' ? 'bg-slate-700 text-white' : 'bg-slate-300 text-slate-700'
                                                     }`}>
                                                     {member.user.name.charAt(0).toUpperCase()}
                                                 </div>
@@ -334,17 +343,31 @@ const Workspaces = () => {
                                             </div>
 
                                             <div className="flex items-center gap-3">
-                                                <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(member.role)}`}>
-                                                    {getRoleIcon(member.role)}
-                                                    {member.role}
+                                                <span className={`px-2.5 py-1 rounded text-xs font-semibold ${getRoleBadgeColor(member.role)}`}>
+                                                    {member.role === 'OWNER' ? member.role : (
+                                                        <>
+                                                            {getRoleIcon(member.role)}
+                                                            <span className="ml-1.5">{member.role}</span>
+                                                        </>
+                                                    )}
                                                 </span>
+
+                                                {/* Invite Status Chip */}
+                                                {member.inviteStatus && member.inviteStatus !== 'ACCEPTED' && (
+                                                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${member.inviteStatus === 'PENDING'
+                                                        ? 'bg-amber-400 text-slate-900'
+                                                        : 'bg-red-500 text-white'
+                                                        }`}>
+                                                        {member.inviteStatus}
+                                                    </span>
+                                                )}
 
                                                 {selectedWorkspace.ownerId === currentUserId && member.role !== 'OWNER' && (
                                                     <div className="flex items-center gap-1">
                                                         {member.role === 'MEMBER' ? (
                                                             <button
                                                                 onClick={() => handleUpdateMemberRole(member.userId, 'ADMIN')}
-                                                                className="p-1.5 rounded text-xs text-blue-500 hover:bg-blue-500/10"
+                                                                className={`p-1.5 rounded text-xs text-blue-500 ${theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
                                                                 title="Promote to Admin"
                                                             >
                                                                 <Shield size={14} />
@@ -352,7 +375,7 @@ const Workspaces = () => {
                                                         ) : (
                                                             <button
                                                                 onClick={() => handleUpdateMemberRole(member.userId, 'MEMBER')}
-                                                                className="p-1.5 rounded text-xs text-slate-400 hover:bg-slate-500/10"
+                                                                className={`p-1.5 rounded text-xs ${theme === 'dark' ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-200'}`}
                                                                 title="Demote to Member"
                                                             >
                                                                 <User size={14} />
@@ -360,7 +383,7 @@ const Workspaces = () => {
                                                         )}
                                                         <button
                                                             onClick={() => handleRemoveMember(member.userId)}
-                                                            className="p-1.5 rounded text-xs text-red-500 hover:bg-red-500/10"
+                                                            className={`p-1.5 rounded text-xs text-red-500 ${theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}
                                                             title="Remove Member"
                                                         >
                                                             <Trash2 size={14} />
@@ -401,8 +424,8 @@ const Workspaces = () => {
                                     onChange={(e) => setNewWorkspaceName(e.target.value)}
                                     placeholder="e.g., My Team"
                                     className={`w-full px-4 py-3 rounded-lg border ${theme === 'dark'
-                                            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                                            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
                                         } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
                                 />
                             </div>
@@ -416,8 +439,8 @@ const Workspaces = () => {
                                     placeholder="What is this workspace for?"
                                     rows={3}
                                     className={`w-full px-4 py-3 rounded-lg border resize-none ${theme === 'dark'
-                                            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                                            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
                                         } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
                                 />
                             </div>
@@ -463,10 +486,28 @@ const Workspaces = () => {
                                     onChange={(e) => setInviteEmail(e.target.value)}
                                     placeholder="colleague@example.com"
                                     className={`w-full px-4 py-3 rounded-lg border ${theme === 'dark'
-                                            ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
-                                            : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
                                         } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
                                 />
+                            </div>
+                            <div>
+                                <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    Password * <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>(for new users)</span>
+                                </label>
+                                <input
+                                    type="password"
+                                    value={invitePassword}
+                                    onChange={(e) => setInvitePassword(e.target.value)}
+                                    placeholder="Create password for new user"
+                                    className={`w-full px-4 py-3 rounded-lg border ${theme === 'dark'
+                                        ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500'
+                                        : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                                        } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
+                                />
+                                <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    If user doesn't exist, they'll be created with this password
+                                </p>
                             </div>
                             <div>
                                 <label className={`block text-sm font-medium mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -476,10 +517,10 @@ const Workspaces = () => {
                                     <button
                                         onClick={() => setInviteRole('MEMBER')}
                                         className={`flex-1 px-4 py-3 rounded-lg border font-medium transition-colors ${inviteRole === 'MEMBER'
-                                                ? 'border-[#464ace] bg-[#464ace]/10 text-[#464ace]'
-                                                : theme === 'dark'
-                                                    ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                                                    : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                                            ? 'border-[#464ace] bg-[#464ace]/10 text-[#464ace]'
+                                            : theme === 'dark'
+                                                ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                                                : 'border-slate-300 text-slate-600 hover:bg-slate-50'
                                             }`}
                                     >
                                         <User size={16} className="inline mr-2" />
@@ -488,10 +529,10 @@ const Workspaces = () => {
                                     <button
                                         onClick={() => setInviteRole('ADMIN')}
                                         className={`flex-1 px-4 py-3 rounded-lg border font-medium transition-colors ${inviteRole === 'ADMIN'
-                                                ? 'border-[#464ace] bg-[#464ace]/10 text-[#464ace]'
-                                                : theme === 'dark'
-                                                    ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
-                                                    : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                                            ? 'border-[#464ace] bg-[#464ace]/10 text-[#464ace]'
+                                            : theme === 'dark'
+                                                ? 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                                                : 'border-slate-300 text-slate-600 hover:bg-slate-50'
                                             }`}
                                     >
                                         <Shield size={16} className="inline mr-2" />
@@ -540,8 +581,8 @@ const Workspaces = () => {
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
                                     className={`w-full px-4 py-3 rounded-lg border ${theme === 'dark'
-                                            ? 'bg-slate-800 border-slate-700 text-white'
-                                            : 'bg-white border-slate-300 text-slate-900'
+                                        ? 'bg-slate-800 border-slate-700 text-white'
+                                        : 'bg-white border-slate-300 text-slate-900'
                                         } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
                                 />
                             </div>
@@ -554,8 +595,8 @@ const Workspaces = () => {
                                     onChange={(e) => setEditDescription(e.target.value)}
                                     rows={3}
                                     className={`w-full px-4 py-3 rounded-lg border resize-none ${theme === 'dark'
-                                            ? 'bg-slate-800 border-slate-700 text-white'
-                                            : 'bg-white border-slate-300 text-slate-900'
+                                        ? 'bg-slate-800 border-slate-700 text-white'
+                                        : 'bg-white border-slate-300 text-slate-900'
                                         } focus:outline-none focus:ring-2 focus:ring-[#464ace]`}
                                 />
                             </div>

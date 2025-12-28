@@ -32,6 +32,12 @@ enum WorkspaceRole {
   MEMBER   // Can view and work on assigned tasks
 }
 
+enum InviteStatus {
+  PENDING   // Invitation sent, waiting for response
+  ACCEPTED  // User accepted the invitation
+  REJECTED  // User rejected the invitation
+}
+
 // ==================== MODELS ====================
 
 model User {
@@ -101,9 +107,12 @@ model WorkspaceMember {
   // Role in this workspace
   role        WorkspaceRole @default(MEMBER)
   
-  // Invitation status
-  invitedAt   DateTime      @default(now())
-  joinedAt    DateTime?
+  // Invitation tracking
+  inviteStatus InviteStatus @default(PENDING)
+  invitedById  String?      // Who sent the invitation
+  invitedAt    DateTime     @default(now())
+  joinedAt     DateTime?    // When they accepted
+  respondedAt  DateTime?    // When they responded (accept/reject)
   
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -111,6 +120,7 @@ model WorkspaceMember {
   @@unique([userId, workspaceId])
   @@index([userId])
   @@index([workspaceId])
+  @@index([inviteStatus])
 }
 
 model Task {

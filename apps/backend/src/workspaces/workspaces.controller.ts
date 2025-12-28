@@ -27,6 +27,30 @@ export class WorkspacesController {
         return this.workspacesService.getUserWorkspaces(req.user.userId);
     }
 
+    // Get pending invitations for current user
+    @Get('invitations/pending')
+    async getPendingInvitations(@Request() req: any) {
+        return this.workspacesService.getPendingInvitations(req.user.userId);
+    }
+
+    // Accept an invitation
+    @Post('invitations/:workspaceId/accept')
+    async acceptInvitation(
+        @Request() req: any,
+        @Param('workspaceId') workspaceId: string,
+    ) {
+        return this.workspacesService.acceptInvitation(req.user.userId, workspaceId);
+    }
+
+    // Reject an invitation
+    @Post('invitations/:workspaceId/reject')
+    async rejectInvitation(
+        @Request() req: any,
+        @Param('workspaceId') workspaceId: string,
+    ) {
+        return this.workspacesService.rejectInvitation(req.user.userId, workspaceId);
+    }
+
     // Get active workspace
     @Get('active')
     async getActiveWorkspace(@Request() req: any) {
@@ -64,17 +88,18 @@ export class WorkspacesController {
         return this.workspacesService.deleteWorkspace(id, req.user.userId);
     }
 
-    // Invite a member
+    // Invite a member (creates user if not exists)
     @Post(':id/members')
     async inviteMember(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { email: string; role?: WorkspaceRole },
+        @Body() body: { email: string; password: string; role?: WorkspaceRole },
     ) {
         return this.workspacesService.inviteMember(
             id,
             req.user.userId,
             body.email,
+            body.password,
             body.role,
         );
     }
@@ -105,3 +130,4 @@ export class WorkspacesController {
         );
     }
 }
+

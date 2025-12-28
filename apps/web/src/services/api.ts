@@ -120,12 +120,25 @@ export interface WorkspaceMember {
     userId: string;
     workspaceId: string;
     role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    inviteStatus: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+    invitedById?: string;
     invitedAt: string;
     joinedAt?: string;
+    respondedAt?: string;
     user: {
         id: string;
         name: string;
         email: string;
+    };
+}
+
+export interface PendingInvitation extends WorkspaceMember {
+    workspace: Workspace & {
+        owner: {
+            id: string;
+            name: string;
+            email: string;
+        };
     };
 }
 
@@ -174,9 +187,9 @@ export const workspacesAPI = {
     // Delete workspace
     deleteWorkspace: (id: string) => api.delete(`/v0/workspaces/${id}`),
 
-    // Invite member
-    inviteMember: (workspaceId: string, email: string, role?: 'ADMIN' | 'MEMBER') =>
-        api.post<WorkspaceMember>(`/v0/workspaces/${workspaceId}/members`, { email, role }),
+    // Invite member (creates user if not exists)
+    inviteMember: (workspaceId: string, email: string, password: string, role?: 'ADMIN' | 'MEMBER') =>
+        api.post<WorkspaceMember>(`/v0/workspaces/${workspaceId}/members`, { email, password, role }),
 
     // Remove member
     removeMember: (workspaceId: string, userId: string) =>
@@ -185,7 +198,19 @@ export const workspacesAPI = {
     // Update member role
     updateMemberRole: (workspaceId: string, userId: string, role: 'ADMIN' | 'MEMBER') =>
         api.put(`/v0/workspaces/${workspaceId}/members/${userId}`, { role }),
+
+    // Get pending invitations for current user
+    getPendingInvitations: () => api.get<PendingInvitation[]>('/v0/workspaces/invitations/pending'),
+
+    // Accept invitation
+    acceptInvitation: (workspaceId: string) =>
+        api.post(`/v0/workspaces/invitations/${workspaceId}/accept`),
+
+    // Reject invitation
+    rejectInvitation: (workspaceId: string) =>
+        api.post(`/v0/workspaces/invitations/${workspaceId}/reject`),
 };
 
 export default api;
+
 

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { workspacesAPI, type Workspace } from '../services/api';
+import { PendingInvitationsModal } from './modals/PendingInvitationsModal';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -37,6 +38,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const { theme, toggleTheme } = useTheme();
     const profileRef = useRef<HTMLDivElement>(null);
     const workspaceRef = useRef<HTMLDivElement>(null);
+    const [showInvitationsModal, setShowInvitationsModal] = useState(false);
+    const [hasCheckedInvitations, setHasCheckedInvitations] = useState(false);
 
     // Get user initials from name/email
     const getUserInitials = (name: string) => {
@@ -68,6 +71,24 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         };
         if (token) fetchWorkspaces();
     }, [token]);
+
+    // Check for pending invitations on mount (once per session)
+    useEffect(() => {
+        const checkInvitations = async () => {
+            if (hasCheckedInvitations) return;
+            try {
+                const response = await workspacesAPI.getPendingInvitations();
+                if (response.data.length > 0) {
+                    setShowInvitationsModal(true);
+                }
+            } catch (error) {
+                console.error('Failed to check invitations:', error);
+            } finally {
+                setHasCheckedInvitations(true);
+            }
+        };
+        if (token) checkInvitations();
+    }, [token, hasCheckedInvitations]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -323,6 +344,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     {children}
                 </main>
             </div>
+
+            {/* Pending Invitations Modal */}
+            {showInvitationsModal && (
+                <PendingInvitationsModal onClose={() => setShowInvitationsModal(false)} />
+            )}
         </div >
     );
 };
