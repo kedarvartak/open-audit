@@ -114,4 +114,78 @@ export const tasksAPI = {
         api.post('/v0/tasks/enhance-description', { description }),
 };
 
+// Workspace types
+export interface WorkspaceMember {
+    id: string;
+    userId: string;
+    workspaceId: string;
+    role: 'OWNER' | 'ADMIN' | 'MEMBER';
+    invitedAt: string;
+    joinedAt?: string;
+    user: {
+        id: string;
+        name: string;
+        email: string;
+    };
+}
+
+export interface Workspace {
+    id: string;
+    name: string;
+    description?: string;
+    logo?: string;
+    ownerId: string;
+    owner: {
+        id: string;
+        name: string;
+        email: string;
+    };
+    members: WorkspaceMember[];
+    _count?: {
+        tasks: number;
+        members: number;
+    };
+    createdAt: string;
+    updatedAt: string;
+}
+
+export const workspacesAPI = {
+    // Get all workspaces for current user
+    getMyWorkspaces: () => api.get<Workspace[]>('/v0/workspaces'),
+
+    // Get active workspace
+    getActiveWorkspace: () => api.get<Workspace | null>('/v0/workspaces/active'),
+
+    // Set active workspace
+    setActiveWorkspace: (workspaceId: string) =>
+        api.post(`/v0/workspaces/active/${workspaceId}`),
+
+    // Get single workspace
+    getWorkspace: (id: string) => api.get<Workspace>(`/v0/workspaces/${id}`),
+
+    // Create workspace
+    createWorkspace: (data: { name: string; description?: string }) =>
+        api.post<Workspace>('/v0/workspaces', data),
+
+    // Update workspace
+    updateWorkspace: (id: string, data: { name?: string; description?: string }) =>
+        api.put<Workspace>(`/v0/workspaces/${id}`, data),
+
+    // Delete workspace
+    deleteWorkspace: (id: string) => api.delete(`/v0/workspaces/${id}`),
+
+    // Invite member
+    inviteMember: (workspaceId: string, email: string, role?: 'ADMIN' | 'MEMBER') =>
+        api.post<WorkspaceMember>(`/v0/workspaces/${workspaceId}/members`, { email, role }),
+
+    // Remove member
+    removeMember: (workspaceId: string, userId: string) =>
+        api.delete(`/v0/workspaces/${workspaceId}/members/${userId}`),
+
+    // Update member role
+    updateMemberRole: (workspaceId: string, userId: string, role: 'ADMIN' | 'MEMBER') =>
+        api.put(`/v0/workspaces/${workspaceId}/members/${userId}`, { role }),
+};
+
 export default api;
+

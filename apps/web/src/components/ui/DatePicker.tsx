@@ -9,7 +9,7 @@ interface DatePickerProps {
     required?: boolean;
 }
 
-export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeholder = 'dd/mm/yyyy', required }) => {
+export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeholder = 'dd/mm/yyyy' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const { theme } = useTheme();

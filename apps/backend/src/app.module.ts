@@ -8,6 +8,7 @@ import { BlockchainModule } from './blockchain/blockchain.module';
 import { StorageModule } from './storage/storage.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FirebaseModule } from './firebase/firebase.module';
+import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { FirebaseModule } from './firebase/firebase.module';
     StorageModule,
     TasksModule,
     FirebaseModule,
+    WorkspacesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

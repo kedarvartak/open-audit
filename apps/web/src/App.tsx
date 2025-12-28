@@ -8,6 +8,7 @@ import MyTasks from './pages/MyTasks';
 import TaskWorkspace from './pages/TaskWorkspace';
 import TaskReview from './pages/TaskReview';
 import Calendar from './pages/Calendar';
+import Workspaces from './pages/Workspaces';
 import { requestForToken, onMessageListener } from './lib/firebase';
 import { authAPI } from './services/api';
 import toast from 'react-hot-toast';
@@ -64,6 +65,11 @@ function App() {
         <Route
           path="/calendar"
           element={isAuthenticated ? <Calendar /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/workspaces"
+          element={isAuthenticated ? <Workspaces /> : <Navigate to="/login" />}
         />
 
         <Route

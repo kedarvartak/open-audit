@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Upload, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Button, buttonVariants } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
 
 interface Milestone {
     id: string;

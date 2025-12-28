@@ -183,9 +183,9 @@ export default function TaskWorkspace() {
                                     id="file-upload"
                                 />
                                 <label htmlFor="file-upload">
-                                    <Button className="mt-4 cursor-pointer" as="span">
+                                    <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-[#464ace] text-white shadow hover:bg-[#3a3eb8] h-9 px-4 py-2 mt-4 cursor-pointer">
                                         Browse Files
-                                    </Button>
+                                    </span>
                                 </label>
                             </div>
 

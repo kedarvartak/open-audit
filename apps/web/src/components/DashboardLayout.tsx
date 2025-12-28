@@ -13,9 +13,12 @@ import {
     LogOut,
     Sun,
     Moon,
-    ChevronDown
+    ChevronDown,
+    Building2,
+    Check
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { workspacesAPI, type Workspace } from '../services/api';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -28,8 +31,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const userName = localStorage.getItem('userName') || 'User';
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
+    const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+    const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
     const { theme, toggleTheme } = useTheme();
     const profileRef = useRef<HTMLDivElement>(null);
+    const workspaceRef = useRef<HTMLDivElement>(null);
 
     // Get user initials from name/email
     const getUserInitials = (name: string) => {
@@ -40,11 +47,36 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         return name.slice(0, 2).toUpperCase();
     };
 
-    // Close dropdown when clicking outside
+    // Fetch workspaces on mount
+    useEffect(() => {
+        const fetchWorkspaces = async () => {
+            try {
+                const response = await workspacesAPI.getMyWorkspaces();
+                setWorkspaces(response.data);
+                // Set active workspace
+                const activeId = localStorage.getItem('activeWorkspaceId');
+                if (activeId) {
+                    const active = response.data.find((w: Workspace) => w.id === activeId);
+                    if (active) setActiveWorkspace(active);
+                } else if (response.data.length > 0) {
+                    setActiveWorkspace(response.data[0]);
+                    localStorage.setItem('activeWorkspaceId', response.data[0].id);
+                }
+            } catch (error) {
+                console.error('Failed to fetch workspaces:', error);
+            }
+        };
+        if (token) fetchWorkspaces();
+    }, [token]);
+
+    // Close dropdowns when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
+            }
+            if (workspaceRef.current && !workspaceRef.current.contains(event.target as Node)) {
+                setIsWorkspaceOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -53,7 +85,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('activeWorkspaceId');
         navigate('/login');
+    };
+
+    const handleSwitchWorkspace = async (workspace: Workspace) => {
+        try {
+            await workspacesAPI.setActiveWorkspace(workspace.id);
+            setActiveWorkspace(workspace);
+            localStorage.setItem('activeWorkspaceId', workspace.id);
+            setIsWorkspaceOpen(false);
+        } catch (error) {
+            console.error('Failed to switch workspace:', error);
+        }
     };
 
     const menuItems = [
@@ -62,7 +106,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         { icon: CalendarDays, path: '/calendar', label: 'Calendar' },
         { icon: FileText, path: '/documents', label: 'Documents' },
         { icon: Trophy, path: '/achievements', label: 'Achievements' },
-        { icon: Users, path: '/team', label: 'Team' },
+        { icon: Users, path: '/workspaces', label: 'Workspaces' },
         { icon: Printer, path: '/reports', label: 'Reports' },
         { icon: Share2, path: '/share', label: 'Share' },
     ];
@@ -146,60 +190,131 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         Welcome <span className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}>{userName.split('@')[0]}</span>
                     </h1>
 
-                    {/* Profile Dropdown */}
-                    <div ref={profileRef} className="relative">
-                        <button
-                            onClick={() => setIsProfileOpen(!isProfileOpen)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors ${theme === 'dark'
-                                ? 'hover:bg-slate-800'
-                                : 'hover:bg-slate-100'
-                                }`}
-                        >
-                            <div className="w-9 h-9 rounded-full bg-[#464ace] flex items-center justify-center text-white font-semibold text-sm">
-                                {getUserInitials(userName)}
-                            </div>
-                            <ChevronDown size={16} className={`transition-transform ${isProfileOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
-                        </button>
+                    <div className="flex items-center gap-3">
+                        {/* Workspace Dropdown */}
+                        <div ref={workspaceRef} className="relative">
+                            <button
+                                onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${theme === 'dark'
+                                    ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                                    }`}
+                            >
+                                <Building2 size={18} className="text-[#464ace]" />
+                                <span className="text-sm font-medium max-w-[150px] truncate">
+                                    {activeWorkspace?.name || 'Select Workspace'}
+                                </span>
+                                <ChevronDown size={14} className={`transition-transform ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                            </button>
 
-                        {/* Dropdown Menu */}
-                        {isProfileOpen && (
-                            <div className={`absolute right-0 top-full mt-2 w-64 rounded-xl shadow-lg border py-2 z-50 ${theme === 'dark'
-                                ? 'bg-slate-800 border-slate-700'
-                                : 'bg-white border-slate-200'
-                                }`}>
-                                {/* User Info */}
-                                <div className="px-4 py-3 flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-[#464ace] flex items-center justify-center text-white font-semibold">
-                                        {getUserInitials(userName)}
+                            {/* Workspace Dropdown Menu */}
+                            {isWorkspaceOpen && (
+                                <div className={`absolute right-0 top-full mt-2 w-72 rounded-xl shadow-lg border py-2 z-50 ${theme === 'dark'
+                                    ? 'bg-slate-800 border-slate-700'
+                                    : 'bg-white border-slate-200'
+                                    }`}>
+                                    <div className={`px-3 py-2 text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        Switch Workspace
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`font-semibold truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                            {userName.includes('@') ? userName.split('@')[0] : userName}
-                                        </p>
-                                        <p className={`text-sm truncate ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            {userName.includes('@') ? userName : ''}
-                                        </p>
+                                    <div className="max-h-64 overflow-auto">
+                                        {workspaces.map(workspace => (
+                                            <button
+                                                key={workspace.id}
+                                                onClick={() => handleSwitchWorkspace(workspace)}
+                                                className={`w-full px-3 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
+                                                    ? 'hover:bg-slate-700'
+                                                    : 'hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                <div className="w-8 h-8 rounded-lg bg-[#464ace] flex items-center justify-center text-white font-bold text-sm">
+                                                    {workspace.name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <p className={`font-medium truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                                        {workspace.name}
+                                                    </p>
+                                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                        {workspace._count?.members || workspace.members?.length || 1} members
+                                                    </p>
+                                                </div>
+                                                {activeWorkspace?.id === workspace.id && (
+                                                    <Check size={16} className="text-[#464ace]" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className={`border-t mt-2 pt-2 ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                                        <Link
+                                            to="/workspaces"
+                                            onClick={() => setIsWorkspaceOpen(false)}
+                                            className={`w-full px-3 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
+                                                ? 'text-[#464ace] hover:bg-slate-700'
+                                                : 'text-[#464ace] hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <Users size={16} />
+                                            <span className="font-medium text-sm">Manage Workspaces</span>
+                                        </Link>
                                     </div>
                                 </div>
+                            )}
+                        </div>
 
-                                {/* Divider */}
-                                <div className={`my-2 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
+                        {/* Profile Dropdown */}
+                        <div ref={profileRef} className="relative">
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors ${theme === 'dark'
+                                    ? 'hover:bg-slate-800'
+                                    : 'hover:bg-slate-100'
+                                    }`}
+                            >
+                                <div className="w-9 h-9 rounded-full bg-[#464ace] flex items-center justify-center text-white font-semibold text-sm">
+                                    {getUserInitials(userName)}
+                                </div>
+                                <ChevronDown size={16} className={`transition-transform ${isProfileOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                            </button>
 
-                                {/* Logout */}
-                                {token && (
-                                    <button
-                                        onClick={handleLogout}
-                                        className={`w-full px-4 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
-                                            ? 'text-red-400 hover:bg-slate-700'
-                                            : 'text-red-600 hover:bg-red-50'
-                                            }`}
-                                    >
-                                        <LogOut size={18} />
-                                        <span className="font-medium">Log Out</span>
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                            {/* Dropdown Menu */}
+                            {isProfileOpen && (
+                                <div className={`absolute right-0 top-full mt-2 w-64 rounded-xl shadow-lg border py-2 z-50 ${theme === 'dark'
+                                    ? 'bg-slate-800 border-slate-700'
+                                    : 'bg-white border-slate-200'
+                                    }`}>
+                                    {/* User Info */}
+                                    <div className="px-4 py-3 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#464ace] flex items-center justify-center text-white font-semibold">
+                                            {getUserInitials(userName)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`font-semibold truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                                {userName.includes('@') ? userName.split('@')[0] : userName}
+                                            </p>
+                                            <p className={`text-sm truncate ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                {userName.includes('@') ? userName : ''}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Divider */}
+                                    <div className={`my-2 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
+
+                                    {/* Logout */}
+                                    {token && (
+                                        <button
+                                            onClick={handleLogout}
+                                            className={`w-full px-4 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
+                                                ? 'text-red-400 hover:bg-slate-700'
+                                                : 'text-red-600 hover:bg-red-50'
+                                                }`}
+                                        >
+                                            <LogOut size={18} />
+                                            <span className="font-medium">Log Out</span>
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 
