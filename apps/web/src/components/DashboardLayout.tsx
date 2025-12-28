@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     Home,
@@ -11,9 +11,9 @@ import {
     Share2,
     Settings,
     LogOut,
-    User,
     Sun,
-    Moon
+    Moon,
+    ChevronDown
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -25,8 +25,31 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
+    const userName = localStorage.getItem('userName') || 'User';
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const { theme, toggleTheme } = useTheme();
+    const profileRef = useRef<HTMLDivElement>(null);
+
+    // Get user initials from name/email
+    const getUserInitials = (name: string) => {
+        const parts = name.split(/[@\s]/);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return name.slice(0, 2).toUpperCase();
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -120,22 +143,62 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 {/* Top Bar */}
                 <header className={`h-16 ${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'} border-b px-8 flex items-center justify-between`}>
                     <h1 className={`text-xl font-medium ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                        Welcome <span className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}>Super_admin</span>
+                        Welcome <span className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}>{userName.split('@')[0]}</span>
                     </h1>
 
-                    <div className="flex items-center gap-4">
-                        <button className={`w-10 h-10 rounded-full ${theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-200 hover:bg-slate-300'} flex items-center justify-center transition-colors`}>
-                            <User size={18} className={theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} />
+                    {/* Profile Dropdown */}
+                    <div ref={profileRef} className="relative">
+                        <button
+                            onClick={() => setIsProfileOpen(!isProfileOpen)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-colors ${theme === 'dark'
+                                ? 'hover:bg-slate-800'
+                                : 'hover:bg-slate-100'
+                                }`}
+                        >
+                            <div className="w-9 h-9 rounded-full bg-[#464ace] flex items-center justify-center text-white font-semibold text-sm">
+                                {getUserInitials(userName)}
+                            </div>
+                            <ChevronDown size={16} className={`transition-transform ${isProfileOpen ? 'rotate-180' : ''} ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                         </button>
 
-                        {token && (
-                            <button
-                                onClick={handleLogout}
-                                className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors"
-                                title="Logout"
-                            >
-                                <LogOut size={18} className="text-white" />
-                            </button>
+                        {/* Dropdown Menu */}
+                        {isProfileOpen && (
+                            <div className={`absolute right-0 top-full mt-2 w-64 rounded-xl shadow-lg border py-2 z-50 ${theme === 'dark'
+                                ? 'bg-slate-800 border-slate-700'
+                                : 'bg-white border-slate-200'
+                                }`}>
+                                {/* User Info */}
+                                <div className="px-4 py-3 flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#464ace] flex items-center justify-center text-white font-semibold">
+                                        {getUserInitials(userName)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`font-semibold truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                            {userName.includes('@') ? userName.split('@')[0] : userName}
+                                        </p>
+                                        <p className={`text-sm truncate ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {userName.includes('@') ? userName : ''}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className={`my-2 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
+
+                                {/* Logout */}
+                                {token && (
+                                    <button
+                                        onClick={handleLogout}
+                                        className={`w-full px-4 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
+                                            ? 'text-red-400 hover:bg-slate-700'
+                                            : 'text-red-600 hover:bg-red-50'
+                                            }`}
+                                    >
+                                        <LogOut size={18} />
+                                        <span className="font-medium">Log Out</span>
+                                    </button>
+                                )}
+                            </div>
                         )}
                     </div>
                 </header>

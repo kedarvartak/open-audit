@@ -139,7 +139,7 @@ export const Dashboard = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${theme === 'dark'
                                     ? 'bg-slate-700 border border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500'
-                                    : 'bg-white border border-slate-200 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
+                                    : 'bg-slate-200 border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-blue-500'
                                     }`}
                             />
                         </div>
@@ -159,7 +159,7 @@ export const Dashboard = () => {
                 {filteredTasks.length === 0 ? (
                     <div className={`flex-1 flex items-center justify-center rounded-md border ${theme === 'dark'
                         ? 'bg-slate-700/50 border-slate-600'
-                        : 'bg-white border-slate-200'
+                        : 'bg-slate-200 border-slate-300'
                         }`}>
                         <div className="text-center">
                             <p className={`text-2xl font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -177,7 +177,7 @@ export const Dashboard = () => {
                             >
                                 <div className={`rounded-lg overflow-hidden ${theme === 'dark'
                                     ? 'bg-slate-900'
-                                    : 'bg-white'
+                                    : 'bg-slate-200'
                                     }`}>
 
                                     {/* Image Banner - With Gap */}
