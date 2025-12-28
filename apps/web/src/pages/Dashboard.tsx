@@ -204,7 +204,7 @@ export const Dashboard = () => {
                                 onClick={() => setSelectedTaskId(task.id)}
                                 className="block text-left w-full"
                             >
-                                <div className={`rounded-lg overflow-hidden ${theme === 'dark'
+                                <div className={`rounded-sm overflow-hidden ${theme === 'dark'
                                     ? 'bg-slate-900'
                                     : 'bg-slate-200'
                                     }`}>
@@ -291,8 +291,8 @@ export const Dashboard = () => {
                                                     }`}>
                                                     {task.title}
                                                 </h3>
-                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white">
-                                                    ₹{task.budget.toLocaleString()}
+                                                <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-emerald-500 text-white">
+                                                    {task.budget.toLocaleString()}
                                                 </span>
                                             </div>
                                         </div>
@@ -308,35 +308,59 @@ export const Dashboard = () => {
 
                                         {/* Status, Category & Time Badges */}
                                         <div className="flex items-center gap-2 mb-4 flex-wrap">
-                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${task.status === 'OPEN'
+                                            <span className={`px-2 py-0.5 rounded-sm text-xs font-semibold ${task.status === 'OPEN'
                                                 ? 'bg-amber-400 text-slate-900'
                                                 : 'bg-amber-500 text-white'
                                                 }`}>
                                                 {task.status}
                                             </span>
-                                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
+                                            <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-red-500 text-white">
                                                 {task.category.toUpperCase()}
                                             </span>
                                             {task.deadline && (
-                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
+                                                <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-[#464ace] text-white">
                                                     {formatTime(task.deadline)}
                                                 </span>
                                             )}
                                         </div>
 
-                                        {/* Footer with Avatar */}
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white">
-                                                {task.client?.name?.charAt(0).toUpperCase() || '?'}
+                                        {/* Footer with Client and Worker Assignment */}
+                                        <div className="flex items-center justify-between gap-2">
+                                            {/* Client Info */}
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white flex-shrink-0">
+                                                    {task.client?.name?.charAt(0).toUpperCase() || '?'}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                        {task.client?.name || 'Unknown Client'}
+                                                    </p>
+                                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                        {getTimeSince(task.createdAt)}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                    {task.client?.name || 'Unknown Client'}
-                                                </p>
-                                                <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
-                                                    {getTimeSince(task.createdAt)}
-                                                </p>
-                                            </div>
+
+                                            {/* Worker Assignment */}
+                                            {task.worker ? (
+                                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
+                                                        {task.worker.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                        {task.worker.name.split(' ')[0]}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 border-dashed ${theme === 'dark' ? 'border-slate-600' : 'border-slate-400'}`}>
+                                                        <span className={`text-xs ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`}>?</span>
+                                                    </div>
+                                                    <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                        Unassigned
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

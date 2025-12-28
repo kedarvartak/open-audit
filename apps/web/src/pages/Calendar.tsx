@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI, type Task } from '../services/api';
-import { ChevronLeft, ChevronRight, Clock, MapPin, DollarSign, User, AlertCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, AlertCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 type ViewMode = 'month' | 'week';
@@ -343,13 +343,13 @@ const Calendar = () => {
                                     {selectedDateTasks.map(task => (
                                         <div
                                             key={task.id}
-                                            className={`p-4 rounded-xl border transition-all hover:shadow-md cursor-pointer ${theme === 'dark'
+                                            className={`p-4 rounded-sm border transition-all hover:shadow-md cursor-pointer ${theme === 'dark'
                                                 ? 'bg-slate-800 border-slate-700 hover:border-slate-600'
                                                 : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                                                 }`}
                                         >
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className={`${getStatusColor(task.status)} text-white text-xs px-2 py-0.5 rounded-full font-medium`}>
+                                                <span className={`text-xs px-2 py-0.5 rounded-sm font-semibold ${task.status === 'OPEN' ? 'bg-amber-400 text-slate-900' : 'bg-amber-500 text-white'}`}>
                                                     {task.status.replace('_', ' ')}
                                                 </span>
                                                 {task.deadline && (
@@ -365,15 +365,43 @@ const Calendar = () => {
                                             <p className={`text-sm line-clamp-2 mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
                                                 {task.description}
                                             </p>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-1 text-sm font-bold text-green-500">
-                                                    <DollarSign size={14} />
-                                                    ₹{task.budget}
-                                                </div>
-                                                <span className={`flex items-center gap-1 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                    <User size={12} />
-                                                    {userRole === 'CLIENT' ? task.worker?.name || 'Unassigned' : task.client.name}
+                                            <div className="flex items-center justify-between gap-2">
+                                                {/* Budget */}
+                                                <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-emerald-500 text-white">
+                                                    {task.budget.toLocaleString()}
                                                 </span>
+
+                                                {/* Worker Assignment */}
+                                                {userRole === 'CLIENT' ? (
+                                                    task.worker ? (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">
+                                                                {task.worker.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                                {task.worker.name.split(' ')[0]}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 border-dashed ${theme === 'dark' ? 'border-slate-600' : 'border-slate-400'}`}>
+                                                                <span className={`text-xs ${theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`}>?</span>
+                                                            </div>
+                                                            <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                Unassigned
+                                                            </span>
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white">
+                                                            {task.client.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                            {task.client.name.split(' ')[0]}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                             {task.locationName && (
                                                 <div className={`mt-2 pt-2 border-t flex items-center gap-1 text-xs ${theme === 'dark' ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-500'
