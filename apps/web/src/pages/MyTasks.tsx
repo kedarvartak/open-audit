@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, Clock, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { TaskDetailsModal } from '../components/modals/TaskDetailsModal';
 import { TaskWorkspaceModal } from '../components/modals/TaskWorkspaceModal';
@@ -36,39 +35,41 @@ export default function MyTasks() {
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'OPEN':
-                return 'bg-blue-600';
+                return 'bg-amber-400 text-slate-900';
             case 'ACCEPTED':
             case 'IN_PROGRESS':
-                return 'bg-yellow-600';
+                return 'bg-[#464ace] text-white';
             case 'SUBMITTED':
-                return 'bg-purple-600';
+                return 'bg-purple-500 text-white';
             case 'COMPLETED':
             case 'PAID':
-                return 'bg-green-600';
+                return 'bg-emerald-500 text-white';
             case 'DISPUTED':
-                return 'bg-red-600';
+                return 'bg-red-500 text-white';
             default:
-                return 'bg-gray-600';
+                return 'bg-slate-500 text-white';
         }
     };
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'OPEN':
-                return <FileText size={16} />;
-            case 'ACCEPTED':
-            case 'IN_PROGRESS':
-                return <Clock size={16} />;
-            case 'SUBMITTED':
-                return <Briefcase size={16} />;
-            case 'COMPLETED':
-            case 'PAID':
-                return <CheckCircle2 size={16} />;
-            case 'DISPUTED':
-                return <AlertCircle size={16} />;
-            default:
-                return <FileText size={16} />;
-        }
+    const getTimeSince = (date: string) => {
+        const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years ago";
+
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+
+        return "Just now";
     };
 
     const filteredTasks = tasks.filter(task => {
@@ -93,7 +94,7 @@ export default function MyTasks() {
 
     return (
         <DashboardLayout>
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 min-h-full">
                 <div>
                     <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                         My Tasks
@@ -103,7 +104,7 @@ export default function MyTasks() {
                     </p>
                 </div>
 
-                {/* Filter Tabs */}
+                {/* Filter Tabs - Brand Blue */}
                 <div className="flex gap-2">
                     {[
                         { value: 'all', label: 'All Tasks' },
@@ -114,12 +115,10 @@ export default function MyTasks() {
                             key={tab.value}
                             onClick={() => setFilter(tab.value as any)}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${filter === tab.value
-                                ? theme === 'dark'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-blue-600 text-white'
+                                ? 'bg-[#464ace] text-white'
                                 : theme === 'dark'
                                     ? 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                                 }`}
                         >
                             {tab.label}
@@ -127,13 +126,20 @@ export default function MyTasks() {
                     ))}
                 </div>
 
-                {/* Tasks Grid */}
+                {/* Tasks Grid - Same as Dashboard */}
                 {filteredTasks.length === 0 ? (
-                    <div className={`text-center py-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                        <p>No tasks found</p>
+                    <div className={`flex-1 flex items-center justify-center rounded-md border ${theme === 'dark'
+                        ? 'bg-slate-700/50 border-slate-600'
+                        : 'bg-slate-200 border-slate-300'
+                        }`}>
+                        <div className="text-center py-12">
+                            <p className={`text-lg font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                No tasks found
+                            </p>
+                        </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                         {filteredTasks.map((task) => {
                             const shouldOpenWorkspace = userRole === 'WORKER' && ['ACCEPTED', 'IN_PROGRESS'].includes(task.status);
 
@@ -147,39 +153,101 @@ export default function MyTasks() {
                                             setSelectedTaskId(task.id);
                                         }
                                     }}
-                                    className={`block rounded-md border p-6 hover:shadow-lg transition-all duration-200 text-left w-full ${theme === 'dark'
-                                        ? 'bg-slate-700 border-slate-600 hover:border-blue-500'
-                                        : 'bg-white border-slate-200 hover:border-blue-400'
-                                        }`}
+                                    className="block text-left w-full"
                                 >
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className={`flex items-center gap-2 px-3 py-1 rounded-md text-xs font-semibold text-white ${getStatusColor(task.status)}`}>
-                                            {getStatusIcon(task.status)}
-                                            {task.status}
+                                    <div className={`rounded-lg overflow-hidden ${theme === 'dark'
+                                        ? 'bg-slate-900'
+                                        : 'bg-slate-200'
+                                        }`}>
+
+                                        {/* Image Banner */}
+                                        <div className="p-3">
+                                            <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                                {task.beforeImage ? (
+                                                    <img
+                                                        src={task.beforeImage}
+                                                        alt={task.title}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <svg width="48" height="36" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.2">
+                                                            <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
+                                                            <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <span className={`text-lg font-bold ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
-                                            Rs.{task.budget}
-                                        </span>
-                                    </div>
 
-                                    <h3 className={`text-lg font-bold mb-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                        {task.title}
-                                    </h3>
+                                        {/* Card Content */}
+                                        <div className="p-4">
+                                            {/* Title with Budget */}
+                                            <div className="mb-3">
+                                                <div className="flex items-baseline gap-2 flex-wrap">
+                                                    <h3 className={`text-base font-bold leading-snug line-clamp-1 ${theme === 'dark'
+                                                        ? 'text-slate-100'
+                                                        : 'text-slate-900'
+                                                        }`}>
+                                                        {task.title}
+                                                    </h3>
+                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white">
+                                                        ₹{task.budget.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
 
-                                    <p className={`text-sm mb-4 line-clamp-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                        {task.description}
-                                    </p>
+                                            {/* Description */}
+                                            <div className="mb-4">
+                                                <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                    {task.description && task.description.length > 100
+                                                        ? `${task.description.slice(0, 100)}...`
+                                                        : task.description}
+                                                </p>
+                                            </div>
 
-                                    <div className={`pt-4 border-t ${theme === 'dark' ? 'border-slate-600' : 'border-slate-200'}`}>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>
-                                                {userRole === 'CLIENT' ? 'Worker:' : 'Client:'}
-                                            </span>
-                                            <span className={`font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                {userRole === 'CLIENT'
-                                                    ? task.worker?.name || 'Not assigned'
-                                                    : task.client.name}
-                                            </span>
+                                            {/* Status, Category & Role Chips */}
+                                            <div className="flex items-center gap-2 mb-4 flex-wrap">
+                                                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusColor(task.status)}`}>
+                                                    {task.status}
+                                                </span>
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
+                                                    {task.category.toUpperCase()}
+                                                </span>
+                                                {/* Role-specific chip */}
+                                                {userRole === 'WORKER' && task.status === 'ACCEPTED' && (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
+                                                        Start Work
+                                                    </span>
+                                                )}
+                                                {userRole === 'WORKER' && task.status === 'IN_PROGRESS' && (
+                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500 text-white">
+                                                        In Progress
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Footer with Avatar */}
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark'
+                                                    ? 'bg-slate-800 text-slate-400'
+                                                    : 'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                    {userRole === 'CLIENT'
+                                                        ? (task.worker?.name?.charAt(0).toUpperCase() || '?')
+                                                        : (task.client?.name?.charAt(0).toUpperCase() || '?')}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                        {userRole === 'CLIENT'
+                                                            ? (task.worker?.name || 'Not assigned')
+                                                            : (task.client?.name || 'Unknown Client')}
+                                                    </p>
+                                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                        {getTimeSince(task.createdAt)}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </button>

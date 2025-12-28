@@ -3,7 +3,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { DatePicker } from '../ui/DatePicker';
 import { useTheme } from '../../contexts/ThemeContext';
-import { MapPin, Trash2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { MapPin, Trash2, Check } from 'lucide-react';
 import axios from 'axios';
 
 interface CreateProjectModalProps {
@@ -27,6 +27,13 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
     const [imagePreview, setImagePreview] = useState<string>('');
     const [gettingLocation, setGettingLocation] = useState(false);
 
+    const steps = [
+        { number: 1, title: 'Basic Info', description: 'Title and description' },
+        { number: 2, title: 'Media', description: 'Upload task image' },
+        { number: 3, title: 'Location', description: 'Set task location' },
+        { number: 4, title: 'Budget', description: 'Set budget & deadline' },
+    ];
+
     const handleNext = () => {
         if (currentStep === 1) {
             if (!formData.title.trim()) {
@@ -43,13 +50,14 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                 alert('Please upload an image');
                 return;
             }
+        } else if (currentStep === 3) {
             if (!formData.locationName.trim()) {
                 alert('Please provide a location');
                 return;
             }
         }
 
-        if (currentStep < 3) {
+        if (currentStep < 4) {
             setCurrentStep(currentStep + 1);
         }
     };
@@ -178,161 +186,237 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
     };
 
     return (
-        <div className="space-y-6">
-            {/* Progress Steps - Just 3 Dashes */}
-            <div className="flex items-center gap-3">
-                {[1, 2, 3].map((num) => (
-                    <div
-                        key={num}
-                        className={`flex-1 h-1 rounded-full transition-colors ${currentStep >= num
-                            ? 'bg-blue-500'
-                            : theme === 'dark'
-                                ? 'bg-slate-700'
-                                : 'bg-slate-300'
-                            }`}
-                    />
-                ))}
+        <div className="flex min-h-[500px]">
+            {/* Left Sidebar - Steps */}
+            <div className={`w-56 pr-6 border-r ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                <div className="relative">
+                    {steps.map((step, index) => (
+                        <div key={step.number} className="relative flex gap-4 pb-8 last:pb-0">
+                            {/* Vertical line */}
+                            {index < steps.length - 1 && (
+                                <div
+                                    className={`absolute left-3 top-7 w-0.5 h-full ${currentStep > step.number
+                                        ? 'bg-[#464ace]'
+                                        : theme === 'dark'
+                                            ? 'bg-slate-600'
+                                            : 'bg-slate-300'
+                                        }`}
+                                    style={{ borderStyle: currentStep > step.number ? 'solid' : 'dashed' }}
+                                />
+                            )}
+
+                            {/* Step indicator */}
+                            <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${currentStep > step.number
+                                ? 'bg-[#464ace] text-white'
+                                : currentStep === step.number
+                                    ? 'bg-[#464ace] text-white'
+                                    : theme === 'dark'
+                                        ? 'bg-slate-700 border-2 border-slate-600'
+                                        : 'bg-white border-2 border-slate-300'
+                                }`}>
+                                {currentStep > step.number ? (
+                                    <Check size={14} />
+                                ) : (
+                                    <span className={`text-xs font-medium ${currentStep === step.number
+                                        ? 'text-white'
+                                        : theme === 'dark'
+                                            ? 'text-slate-400'
+                                            : 'text-slate-500'
+                                        }`}>
+                                        {step.number}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Step text */}
+                            <div className="pt-0.5">
+                                <p className={`text-sm font-semibold ${currentStep >= step.number
+                                    ? theme === 'dark' ? 'text-slate-100' : 'text-slate-900'
+                                    : theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
+                                    }`}>
+                                    {step.title}
+                                </p>
+                                <p className={`text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    {step.description}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Basic Info */}
-                {currentStep === 1 && (
-                    <>
-                        <div className="space-y-2">
-                            <label htmlFor="title" className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                Task Title
-                            </label>
-                            <Input
-                                id="title"
-                                name="title"
-                                type="text"
-                                placeholder="Enter task title"
-                                value={formData.title}
-                                onChange={handleChange}
-                            />
-                        </div>
+            {/* Right Content Area */}
+            <div className="flex-1 pl-8 flex flex-col">
+                {/* Step Title */}
+                <h3 className={`text-lg font-semibold mb-6 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                    {steps[currentStep - 1].title}
+                </h3>
 
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label htmlFor="description" className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                    Description
+                <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+                    {/* Step 1: Basic Info */}
+                    {currentStep === 1 && (
+                        <div className="space-y-5">
+                            <div className="space-y-2">
+                                <label htmlFor="title" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    Task Title <span className="text-red-500">*</span>
                                 </label>
-                                <span className={`text-xs ${formData.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 10
-                                    ? theme === 'dark' ? 'text-green-400' : 'text-green-600'
-                                    : theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                    {formData.description.trim().split(/\s+/).filter(word => word.length > 0).length} / 10 words
-                                </span>
+                                <Input
+                                    id="title"
+                                    name="title"
+                                    type="text"
+                                    placeholder="Enter task title"
+                                    value={formData.title}
+                                    onChange={handleChange}
+                                />
                             </div>
-                            <textarea
-                                id="description"
-                                name="description"
-                                rows={4}
-                                placeholder="Describe your task in detail (minimum 10 words)"
-                                value={formData.description}
-                                onChange={handleChange}
-                                className={`flex w-full rounded-md border px-4 py-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 resize-none ${theme === 'dark'
-                                    ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500 focus-visible:border-blue-500'
-                                    : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:border-blue-500'
-                                    } ${descriptionError ? 'border-red-500' : ''}`}
-                            />
-                            {descriptionError && (
-                                <p className="text-xs text-red-500">{descriptionError}</p>
-                            )}
-                        </div>
-                    </>
-                )}
 
-                {/* Step 2: Image & Location */}
-                {currentStep === 2 && (
-                    <>
-                        <div className="space-y-2">
-                            <label className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                Task Image <span className="text-red-500">*</span>
-                            </label>
-                            {imagePreview ? (
-                                <div className="relative">
-                                    <img
-                                        src={imagePreview}
-                                        alt="Preview"
-                                        className={`w-full h-48 object-contain rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="absolute top-2 right-2 p-1.5 rounded-full bg-red-500 hover:bg-red-600 shadow-lg transition-colors"
-                                    >
-                                        <Trash2 size={16} className="text-white" />
-                                    </button>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label htmlFor="description" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                        Description <span className="text-red-500">*</span>
+                                    </label>
+                                    <span className={`text-xs ${formData.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 10
+                                        ? 'text-green-500'
+                                        : theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        {formData.description.trim().split(/\s+/).filter(word => word.length > 0).length}/10 words
+                                    </span>
                                 </div>
-                            ) : (
-                                <label
-                                    className={`flex flex-col items-center justify-center w-full h-56 rounded-xl cursor-pointer ${theme === 'dark'
-                                        ? 'bg-gradient-to-b from-slate-800 to-slate-800/60 ring-1 ring-slate-700'
-                                        : 'bg-gradient-to-b from-slate-100 to-slate-50 ring-1 ring-slate-200'
-                                        }`}
-                                >
-                                    <div className="flex flex-col items-center justify-center py-8 px-4">
-                                        {/* Folder Icon */}
-                                        <div className={`mb-4 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`}>
-                                            <svg width="56" height="56" viewBox="0 0 24 24" fill="currentColor" opacity="0.8">
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    rows={4}
+                                    placeholder="Describe your task in detail (minimum 10 words)"
+                                    value={formData.description}
+                                    onChange={handleChange}
+                                    className={`flex w-full rounded-md border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 resize-none ${theme === 'dark'
+                                        ? 'border-slate-600 bg-slate-700 text-slate-100 placeholder:text-slate-500'
+                                        : 'border-slate-300 bg-slate-100 text-slate-900 placeholder:text-slate-400'
+                                        } ${descriptionError ? 'border-red-500' : ''}`}
+                                />
+                                {descriptionError && (
+                                    <p className="text-xs text-red-500">{descriptionError}</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 2: Media */}
+                    {currentStep === 2 && (
+                        <div className="space-y-4">
+                            {/* Upload Area */}
+                            <div className={`border-2 border-dashed rounded-xl p-6 ${theme === 'dark'
+                                ? 'border-slate-600 bg-slate-800/30'
+                                : 'border-slate-300 bg-slate-50'
+                                }`}>
+                                <div className="flex flex-col items-center justify-center">
+                                    {/* Folder Icon */}
+                                    <div className="mb-4 text-[#464ace]">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.9">
+                                            <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
+                                        </svg>
+                                    </div>
+
+                                    <p className={`text-sm mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                        Drag your file(s) to start uploading
+                                    </p>
+
+                                    <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                        OR
+                                    </p>
+
+                                    <label className="cursor-pointer">
+                                        <span className="px-4 py-2 text-sm font-medium text-[#464ace] border border-[#464ace] rounded-md hover:bg-[#464ace]/10 transition-colors">
+                                            Browse files
+                                        </span>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Format Support Text */}
+                            <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                Only support .jpg, .png and .svg and zip files
+                            </p>
+
+                            {/* Uploaded File Info */}
+                            {imageFile && (
+                                <div className={`flex items-center gap-3 p-3 rounded-lg border ${theme === 'dark'
+                                    ? 'bg-slate-800 border-slate-700'
+                                    : 'bg-white border-slate-200'
+                                    }`}>
+                                    {imagePreview ? (
+                                        <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded" />
+                                    ) : (
+                                        <div className={`w-10 h-10 rounded flex items-center justify-center ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-[#464ace]">
                                                 <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
                                             </svg>
                                         </div>
-
-                                        <p className={`mb-1 text-sm text-center ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                            Drag and drop or <span className="font-semibold text-blue-500">browse</span>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                                            {imageFile.name}
                                         </p>
-                                        <p className={`text-xs text-center ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                            JPG, PNG & WEBP up to 5MB
+                                        <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            {(imageFile.size / (1024 * 1024)).toFixed(2)} MB
                                         </p>
                                     </div>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                    />
-                                </label>
+                                    <button
+                                        type="button"
+                                        onClick={removeImage}
+                                        className="p-1.5 rounded-full hover:bg-red-500/10 transition-colors"
+                                    >
+                                        <Trash2 size={18} className="text-red-500" />
+                                    </button>
+                                </div>
                             )}
                         </div>
+                    )}
 
-                        <div className="space-y-2">
-                            <label htmlFor="locationName" className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                Location <span className="text-red-500">*</span>
-                            </label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="locationName"
-                                    name="locationName"
-                                    type="text"
-                                    placeholder="Enter address or use GPS"
-                                    value={formData.locationName}
-                                    onChange={handleChange}
-                                    className="flex-1"
-                                />
-                                <Button
-                                    type="button"
-                                    onClick={getGPSLocation}
-                                    disabled={gettingLocation}
-                                    className="px-3"
-                                >
-                                    <MapPin size={18} className={gettingLocation ? 'animate-pulse' : ''} />
-                                </Button>
-                            </div>
-                            <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                Click GPS to auto-detect your location, or type manually
-                            </p>
-                        </div>
-                    </>
-                )}
-
-                {/* Step 3: Budget & Deadline */}
-                {currentStep === 3 && (
-                    <>
-                        <div className="grid grid-cols-2 gap-4">
+                    {/* Step 3: Location */}
+                    {currentStep === 3 && (
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <label htmlFor="fundingGoal" className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                    Budget (₹)
+                                <label htmlFor="locationName" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    Location <span className="text-red-500">*</span>
+                                </label>
+                                <div className="flex gap-3">
+                                    <Input
+                                        id="locationName"
+                                        name="locationName"
+                                        type="text"
+                                        placeholder="Enter address"
+                                        value={formData.locationName}
+                                        onChange={handleChange}
+                                        className="flex-1"
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={getGPSLocation}
+                                        disabled={gettingLocation}
+                                        className="px-4"
+                                    >
+                                        <MapPin size={18} className={gettingLocation ? 'animate-pulse' : ''} />
+                                    </Button>
+                                </div>
+                                <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    Click the pin icon to auto-detect location
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 4: Budget & Deadline */}
+                    {currentStep === 4 && (
+                        <div className="space-y-5">
+                            <div className="space-y-2">
+                                <label htmlFor="fundingGoal" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    Budget (₹) <span className="text-red-500">*</span>
                                 </label>
                                 <Input
                                     id="fundingGoal"
@@ -340,70 +424,50 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                     type="text"
                                     inputMode="numeric"
                                     pattern="[0-9]*"
-                                    placeholder="₹ 0"
+                                    placeholder="Enter amount"
                                     value={formData.fundingGoal}
                                     onChange={(e) => {
                                         const value = e.target.value.replace(/\D/g, '');
                                         setFormData({ ...formData, fundingGoal: value });
                                     }}
-                                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <label htmlFor="deadline" className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                <label htmlFor="deadline" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                                     Deadline
                                 </label>
                                 <DatePicker
                                     value={formData.deadline}
                                     onChange={handleDateChange}
-                                    placeholder="dd/mm/yyyy"
+                                    placeholder="Select date"
                                 />
                             </div>
                         </div>
-
-                        <div className={`p-4 rounded-md border ${theme === 'dark'
-                            ? 'bg-blue-900/20 border-blue-800/30 text-blue-300'
-                            : 'bg-blue-50 border-blue-200 text-blue-700'
-                            }`}>
-                            <p className="text-sm">
-                                <span className="font-semibold">Note:</span> All transactions are processed in INR through secure payment gateways.
-                            </p>
-                        </div>
-                    </>
-                )}
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between gap-3 pt-4">
-                    {currentStep > 1 && (
-                        <Button
-                            type="button"
-                            onClick={handleBack}
-                            className="flex items-center gap-2"
-                        >
-                            <ChevronLeft size={16} />
-                            Back
-                        </Button>
                     )}
 
-                    <div className="flex-1" />
-
-                    {currentStep < 3 ? (
+                    {/* Navigation Buttons */}
+                    <div className="flex justify-end gap-3 mt-auto pt-8">
                         <Button
                             type="button"
-                            onClick={handleNext}
-                            className="flex items-center gap-2"
+                            variant="outline"
+                            onClick={currentStep === 1 ? onClose : handleBack}
                         >
-                            Next
-                            <ChevronRight size={16} />
+                            {currentStep === 1 ? 'Cancel' : 'Back'}
                         </Button>
-                    ) : (
-                        <Button type="submit" disabled={loading}>
-                            {loading ? 'Creating...' : 'Create Task'}
-                        </Button>
-                    )}
-                </div>
-            </form>
+
+                        {currentStep < 4 ? (
+                            <Button type="button" onClick={handleNext}>
+                                Next
+                            </Button>
+                        ) : (
+                            <Button type="submit" disabled={loading}>
+                                {loading ? 'Creating...' : 'Create Task'}
+                            </Button>
+                        )}
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

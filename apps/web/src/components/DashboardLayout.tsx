@@ -204,7 +204,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 overflow-auto">
+                <main className={`flex-1 overflow-auto ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
                     {children}
                 </main>
             </div>

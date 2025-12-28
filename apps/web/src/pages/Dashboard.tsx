@@ -112,7 +112,7 @@ export const Dashboard = () => {
 
     return (
         <DashboardLayout>
-            <div className={`p-8 space-y-6 h-full flex flex-col ${theme === 'dark' ? '' : 'bg-slate-50'}`}>
+            <div className="p-8 space-y-6 min-h-full flex flex-col">
                 {/* Filter Bar */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
