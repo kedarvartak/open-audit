@@ -188,10 +188,21 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                 </span>
                             </div>
 
-                            {/* Title */}
-                            <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {task.title}
-                            </h1>
+                            {/* Title with Accept Task Button */}
+                            <div className="flex items-center justify-between gap-4">
+                                <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                    {task.title}
+                                </h1>
+                                {canAccept && (
+                                    <Button
+                                        onClick={handleAccept}
+                                        disabled={accepting}
+                                        className="bg-amber-500 hover:bg-amber-600 text-white flex-shrink-0"
+                                    >
+                                        {accepting ? 'Accepting...' : 'Accept Task'}
+                                    </Button>
+                                )}
+                            </div>
 
                             {/* Description */}
                             <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -257,17 +268,6 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                 </div>
                             </div>
 
-
-                            {/* Accept Button */}
-                            {canAccept && (
-                                <Button
-                                    onClick={handleAccept}
-                                    disabled={accepting}
-                                    className="w-full"
-                                >
-                                    {accepting ? 'Accepting...' : 'Accept Task'}
-                                </Button>
-                            )}
                         </div>
                     )}
                 </div>

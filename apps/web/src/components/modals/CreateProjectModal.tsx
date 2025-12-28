@@ -8,6 +8,7 @@ import type { Task } from '../../services/api';
 import { tasksAPI } from '../../services/api';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 interface CreateProjectModalProps {
     onClose: () => void;
@@ -25,6 +26,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         deadline: editTask?.deadline?.split('T')[0] || '',
         scheduledTime: editTask?.deadline ? new Date(editTask.deadline).toTimeString().slice(0, 5) : '',
         locationName: editTask?.locationName || '',
+        locationLat: 0,
+        locationLng: 0,
     });
     const [loading, setLoading] = useState(false);
     const [enhancing, setEnhancing] = useState(false);
@@ -33,7 +36,6 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
     const [existingImages, setExistingImages] = useState<string[]>(editTask?.beforeImages || []);
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
-    const [gettingLocation, setGettingLocation] = useState(false);
 
     const steps = [
         { number: 1, title: 'Basic Info', description: 'Title and description' },
@@ -108,6 +110,8 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             submitData.append('category', 'general');
             submitData.append('budget', formData.fundingGoal);
             submitData.append('locationName', formData.locationName);
+            if (formData.locationLat) submitData.append('locationLat', formData.locationLat.toString());
+            if (formData.locationLng) submitData.append('locationLng', formData.locationLng.toString());
             if (formData.deadline && formData.scheduledTime) {
                 // Combine date and time into ISO datetime string
                 const deadlineDateTime = `${formData.deadline}T${formData.scheduledTime}:00.000Z`;
@@ -210,36 +214,44 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
         }
     };
 
-    const getGPSLocation = () => {
-        setGettingLocation(true);
-        if ('geolocation' in navigator) {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    try {
-                        const response = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`
-                        );
-                        const data = await response.json();
-                        setFormData({
-                            ...formData,
-                            locationName: data.display_name || `${position.coords.latitude}, ${position.coords.longitude}`,
-                        });
-                    } catch {
-                        setFormData({
-                            ...formData,
-                            locationName: `${position.coords.latitude}, ${position.coords.longitude}`,
-                        });
-                    }
-                    setGettingLocation(false);
-                },
-                () => {
-                    alert('Unable to get your location. Please enter manually.');
-                    setGettingLocation(false);
+    const { isLoaded } = useJsApiLoader({
+        id: 'google-map-script',
+        googleMapsApiKey: 'AIzaSyAVv-fXnoWeN6LG3c7RqAXykXtIUq4scnE'
+    });
+
+    const [mapCenter] = useState({ lat: 18.5204, lng: 73.8567 }); // Default to Pune
+    const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
+
+    const onMapClick = async (e: google.maps.MapMouseEvent) => {
+        if (e.latLng) {
+            const lat = e.latLng.lat();
+            const lng = e.latLng.lng();
+            setMarkerPosition({ lat, lng });
+
+            // Reverse geocode
+            try {
+                const response = await fetch(
+                    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyAVv-fXnoWeN6LG3c7RqAXykXtIUq4scnE`
+                );
+                const data = await response.json();
+                if (data.status === 'OK' && data.results[0]) {
+                    setFormData({
+                        ...formData,
+                        locationName: data.results[0].formatted_address,
+                        locationLat: lat,
+                        locationLng: lng
+                    });
                 }
-            );
-        } else {
-            alert('Geolocation is not supported by your browser');
-            setGettingLocation(false);
+            } catch (error) {
+                console.error('Reverse geocoding failed', error);
+                toast.error('Failed to get address from pin');
+                // Still save coordinates even if geocoding fails
+                setFormData(prev => ({
+                    ...prev,
+                    locationLat: lat,
+                    locationLng: lng
+                }));
+            }
         }
     };
 
@@ -475,28 +487,52 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                 <label htmlFor="locationName" className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                                     Location <span className="text-red-500">*</span>
                                 </label>
-                                <div className="flex gap-3">
-                                    <Input
-                                        id="locationName"
-                                        name="locationName"
-                                        type="text"
-                                        placeholder="Enter address"
-                                        value={formData.locationName}
-                                        onChange={handleChange}
-                                        className="flex-1"
-                                    />
-                                    <Button
-                                        type="button"
-                                        onClick={getGPSLocation}
-                                        disabled={gettingLocation}
-                                        className="px-4"
-                                    >
-                                        <img src="/map.svg" alt="Map" className={`w-5 h-5 ${gettingLocation ? 'animate-pulse' : ''}`} />
-                                    </Button>
+                                <Input
+                                    id="locationName"
+                                    name="locationName"
+                                    type="text"
+                                    placeholder="Enter address"
+                                    value={formData.locationName}
+                                    onChange={handleChange}
+                                    className="flex-1"
+                                />
+                                <div className="space-y-2">
+                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        Click on the map to drop a pin at the task location.
+                                    </p>
+                                    {isLoaded ? (
+                                        <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                                            <GoogleMap
+                                                mapContainerStyle={{ width: '100%', height: '300px' }}
+                                                center={mapCenter}
+                                                zoom={13}
+                                                onClick={onMapClick}
+                                                options={{
+                                                    styles: theme === 'dark' ? [
+                                                        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                                                        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                                                        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                                                        {
+                                                            featureType: "administrative.locality",
+                                                            elementType: "labels.text.fill",
+                                                            stylers: [{ color: "#d59563" }],
+                                                        },
+                                                    ] : [],
+                                                    streetViewControl: false,
+                                                    mapTypeControl: false,
+                                                }}
+                                            >
+                                                {markerPosition && (
+                                                    <Marker position={markerPosition} />
+                                                )}
+                                            </GoogleMap>
+                                        </div>
+                                    ) : (
+                                        <div className="w-full h-[300px] bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse flex items-center justify-center">
+                                            <span className="text-slate-400">Loading Map...</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                    Click the map icon to auto-detect location
-                                </p>
                             </div>
                         </div>
                     )}
