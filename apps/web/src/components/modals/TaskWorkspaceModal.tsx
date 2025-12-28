@@ -20,13 +20,26 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
     const [files, setFiles] = useState<File[]>([]);
     const [notes, setNotes] = useState('');
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [serverTime, setServerTime] = useState<Date | null>(null);
     const { theme } = useTheme();
 
     useEffect(() => {
         if (isOpen && taskId) {
             fetchTask();
+            fetchServerTime();
         }
     }, [isOpen, taskId]);
+
+    // Update server time every minute to keep it in sync
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const interval = setInterval(() => {
+            fetchServerTime();
+        }, 60000); // Update every minute
+
+        return () => clearInterval(interval);
+    }, [isOpen]);
 
     const fetchTask = async () => {
         try {
@@ -39,6 +52,40 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchServerTime = async () => {
+        try {
+            const response = await fetch('http://localhost:3001/v0/server-time');
+            const data = await response.json();
+            setServerTime(new Date(data.serverTime));
+        } catch (error) {
+            console.error('Failed to fetch server time:', error);
+            // Fallback to current time if server time fetch fails
+            setServerTime(new Date());
+        }
+    };
+
+    const canStartTask = () => {
+        if (!task?.deadline || !serverTime) return false;
+        const deadlineTime = new Date(task.deadline);
+        return serverTime >= deadlineTime;
+    };
+
+    const getTimeUntilStart = () => {
+        if (!task?.deadline || !serverTime) return '';
+        const deadlineTime = new Date(task.deadline);
+        const diff = deadlineTime.getTime() - serverTime.getTime();
+
+        if (diff <= 0) return '';
+
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (hours > 0) {
+            return `Available in ${hours}h ${minutes}m`;
+        }
+        return `Available in ${minutes}m`;
     };
 
     const formatDate = (date: string) => {
@@ -220,10 +267,31 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                 </span>
                             </div>
 
-                            {/* Title */}
-                            <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                {task.title}
-                            </h1>
+                            {/* Title with Start Work Button */}
+                            <div className="flex items-center justify-between gap-4">
+                                <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                    {task.title}
+                                </h1>
+                                {task.status === 'ACCEPTED' && (
+                                    <div className="flex items-center gap-2">
+                                        {!canStartTask() && getTimeUntilStart() && (
+                                            <span className={`text-xs font-medium px-2 py-1 rounded ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                {getTimeUntilStart()}
+                                            </span>
+                                        )}
+                                        <Button
+                                            onClick={handleStartWork}
+                                            disabled={!canStartTask()}
+                                            className={`flex-shrink-0 ${!canStartTask()
+                                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                                : 'bg-amber-500 hover:bg-amber-600'
+                                                } text-white`}
+                                        >
+                                            Start Work
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
 
                             {/* Description */}
                             <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -292,23 +360,7 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                 </div>
                             </div>
 
-                            {/* Action Sections based on Status */}
-                            {task.status === 'ACCEPTED' && (
-                                <>
-                                    <div className={`border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`} />
-                                    <div className={`p-5 rounded-lg ${theme === 'dark' ? 'bg-[#464ace]/10 border border-[#464ace]/30' : 'bg-[#464ace]/5 border border-[#464ace]/20'}`}>
-                                        <h2 className={`text-lg font-bold mb-2 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                            Ready to Start?
-                                        </h2>
-                                        <p className={`text-sm mb-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                            Click the button below to mark this task as in progress. You can then upload proof of your work.
-                                        </p>
-                                        <Button onClick={handleStartWork}>
-                                            Start Work
-                                        </Button>
-                                    </div>
-                                </>
-                            )}
+
 
                             {task.status === 'IN_PROGRESS' && (
                                 <>
