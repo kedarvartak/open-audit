@@ -67,11 +67,11 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div
-                className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-md shadow-2xl ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+                className={`w-full max-w-4xl rounded-lg shadow-2xl ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
                     }`}
             >
                 {/* Header */}
-                <div className={`sticky top-0 flex items-center justify-between p-6 border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                <div className={`flex items-center justify-between p-6 border-b ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                     }`}>
                     <h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                         Task Details
@@ -103,7 +103,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                     <img
                                         src={task.beforeImageUrl}
                                         alt={task.title}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-contain"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">

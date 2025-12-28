@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }
             {/* Modal */}
             <div
                 ref={modalRef}
-                className={`relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-md shadow-2xl overflow-visible ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+                className={`relative w-full max-w-5xl flex flex-col rounded-lg shadow-2xl ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
                     }`}
             >
                 {/* Header */}

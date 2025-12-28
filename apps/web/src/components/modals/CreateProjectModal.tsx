@@ -367,7 +367,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                     : 'bg-white border-slate-200'
                                     }`}>
                                     {imagePreview ? (
-                                        <img src={imagePreview} alt="Preview" className="w-10 h-10 object-cover rounded" />
+                                        <img src={imagePreview} alt="Preview" className="w-10 h-10 object-contain rounded" />
                                     ) : (
                                         <div className={`w-10 h-10 rounded flex items-center justify-center ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-[#464ace]">
