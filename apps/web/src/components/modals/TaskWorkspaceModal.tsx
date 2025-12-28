@@ -146,13 +146,19 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                             <>
                                                 <button
                                                     onClick={() => setCurrentImageIndex(prev => prev === 0 ? task.beforeImages.length - 1 : prev - 1)}
-                                                    className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all bg-[#464ace] hover:bg-[#3d42b8] text-white"
+                                                    className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${theme === 'dark'
+                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-white'
+                                                        : 'bg-white/80 hover:bg-white text-slate-700'
+                                                        }`}
                                                 >
                                                     <ChevronLeft size={20} />
                                                 </button>
                                                 <button
                                                     onClick={() => setCurrentImageIndex(prev => prev === task.beforeImages.length - 1 ? 0 : prev + 1)}
-                                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all bg-[#464ace] hover:bg-[#3d42b8] text-white"
+                                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${theme === 'dark'
+                                                        ? 'bg-slate-800/80 hover:bg-slate-700 text-white'
+                                                        : 'bg-white/80 hover:bg-white text-slate-700'
+                                                        }`}
                                                 >
                                                     <ChevronRight size={20} />
                                                 </button>

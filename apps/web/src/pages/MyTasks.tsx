@@ -229,10 +229,7 @@ export default function MyTasks() {
 
                                             {/* Footer with Avatar */}
                                             <div className="flex items-center gap-2">
-                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${theme === 'dark'
-                                                    ? 'bg-slate-800 text-slate-400'
-                                                    : 'bg-slate-100 text-slate-600'
-                                                    }`}>
+                                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white">
                                                     {userRole === 'CLIENT'
                                                         ? (task.worker?.name?.charAt(0).toUpperCase() || '?')
                                                         : (task.client?.name?.charAt(0).toUpperCase() || '?')}
