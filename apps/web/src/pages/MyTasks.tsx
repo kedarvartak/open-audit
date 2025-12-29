@@ -115,9 +115,9 @@ export default function MyTasks() {
                 {/* Filter Tabs - Brand Blue */}
                 <div className="flex gap-2">
                     {[
-                        { value: 'all', label: 'All Tasks' },
-                        { value: 'active', label: 'Active' },
-                        { value: 'completed', label: 'Completed' }
+                        { value: 'all', label: 'ALL TASKS' },
+                        { value: 'active', label: 'ACTIVE' },
+                        { value: 'completed', label: 'COMPLETED' }
                     ].map((tab) => (
                         <button
                             key={tab.value}

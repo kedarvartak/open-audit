@@ -174,8 +174,8 @@ export default function MyTaskDetails() {
                     {/* Panel Content - Scrollable Sections */}
                     <div className="flex-1 overflow-y-auto">
                         {/* Description Section */}
-                        <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                            <span className="inline-block px-2 py-0.5 rounded-sm text-xs font-semibold bg-amber-400 text-slate-900 mb-3">
+                        <div className="p-4">
+                            <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-slate-900 mb-2">
                                 DESCRIPTION
                             </span>
                             <p className={`text-sm leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -185,8 +185,8 @@ export default function MyTaskDetails() {
 
                         {/* Schedule Section */}
                         {task.deadline && (
-                            <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                <span className="inline-block px-2 py-0.5 rounded-sm text-xs font-semibold bg-red-500 text-white mb-3">
+                            <div className="p-4 pt-0">
+                                <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-red-500 text-white mb-2">
                                     SCHEDULE
                                 </span>
                                 <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
@@ -197,8 +197,8 @@ export default function MyTaskDetails() {
 
                         {/* Location Section */}
                         {task.locationName && (
-                            <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                <span className="inline-block px-2 py-0.5 rounded-sm text-xs font-semibold bg-[#464ace] text-white mb-3">
+                            <div className="p-4 pt-0">
+                                <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-[#464ace] text-white mb-2">
                                     LOCATION
                                 </span>
                                 <a
@@ -215,8 +215,8 @@ export default function MyTaskDetails() {
                         )}
 
                         {/* Client Section */}
-                        <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                            <span className="inline-block px-2 py-0.5 rounded-sm text-xs font-semibold bg-emerald-500 text-white mb-3">
+                        <div className="p-4 pt-0">
+                            <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500 text-white mb-2">
                                 CLIENT
                             </span>
                             <div className="flex items-center gap-3">
@@ -233,8 +233,8 @@ export default function MyTaskDetails() {
                         </div>
 
                         {/* Worker Section */}
-                        <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                            <span className="inline-block px-2 py-0.5 rounded-sm text-xs font-semibold bg-amber-400 text-slate-900 mb-3">
+                        <div className="p-4 pt-0">
+                            <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-slate-900 mb-2">
                                 WORKER
                             </span>
                             {task.worker ? (
@@ -258,7 +258,7 @@ export default function MyTaskDetails() {
 
                         {/* Images Section */}
                         {task.beforeImages && task.beforeImages.length > 0 && (
-                            <div className={`p-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                            <div className="p-4 pt-0">
                                 <button
                                     onClick={() => {
                                         setCurrentImageIndex(0);
@@ -267,7 +267,7 @@ export default function MyTaskDetails() {
                                     className={`flex items-center gap-2 transition-colors ${theme === 'dark' ? 'hover:opacity-80' : 'hover:opacity-80'
                                         }`}
                                 >
-                                    <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-purple-500 text-white">
+                                    <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-purple-500 text-white">
                                         IMAGES ({task.beforeImages.length})
                                     </span>
                                     <span className={`text-sm font-medium underline ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>

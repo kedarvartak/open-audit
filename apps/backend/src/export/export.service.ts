@@ -55,7 +55,16 @@ export class ExportService {
 
         // 3. Authenticate Google Sheets
         try {
+            // Check for credentials in environment variables first
+            const credentials = process.env.GOOGLE_CLIENT_EMAIL && process.env.GOOGLE_PRIVATE_KEY
+                ? {
+                    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+                }
+                : undefined;
+
             const auth = new google.auth.GoogleAuth({
+                credentials,
                 scopes: ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'],
             });
 

@@ -457,26 +457,26 @@ const Workspaces = () => {
                                                             {member.role === 'MEMBER' ? (
                                                                 <button
                                                                     onClick={() => handleUpdateMemberRole(member.userId, 'ADMIN')}
-                                                                    className={`p-1.5 rounded hover:bg-blue-500/10 text-slate-400 hover:text-blue-500 transition-colors`}
+                                                                    className="p-2 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors shadow-sm"
                                                                     title="Promote to Admin"
                                                                 >
-                                                                    <Shield size={14} />
+                                                                    <Shield size={16} />
                                                                 </button>
                                                             ) : (
                                                                 <button
                                                                     onClick={() => handleUpdateMemberRole(member.userId, 'MEMBER')}
-                                                                    className={`p-1.5 rounded hover:bg-slate-500/10 text-slate-400 hover:text-slate-500 transition-colors`}
+                                                                    className="p-2 rounded bg-slate-500 text-white hover:bg-slate-600 transition-colors shadow-sm"
                                                                     title="Demote to Member"
                                                                 >
-                                                                    <User size={14} />
+                                                                    <User size={16} />
                                                                 </button>
                                                             )}
                                                             <button
                                                                 onClick={() => handleRemoveMember(member.userId)}
-                                                                className={`p-1.5 rounded hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors`}
+                                                                className="p-2 rounded bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm"
                                                                 title="Remove Member"
                                                             >
-                                                                <Trash2 size={14} />
+                                                                <Trash2 size={16} />
                                                             </button>
                                                         </div>
                                                     )}
