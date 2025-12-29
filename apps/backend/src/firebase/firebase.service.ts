@@ -126,6 +126,24 @@ export class FirebaseService implements OnModuleInit {
         );
     }
 
+    async notifyWorkerEnRoute(clientToken: string, workerName: string, taskTitle: string) {
+        return this.sendNotification(
+            clientToken,
+            '🚗 Worker On The Way!',
+            `${workerName} is traveling to your location for: ${taskTitle}`,
+            { type: 'worker_en_route' },
+        );
+    }
+
+    async notifyWorkerArrived(clientToken: string, workerName: string, taskTitle: string) {
+        return this.sendNotification(
+            clientToken,
+            '📍 Worker Has Arrived!',
+            `${workerName} has arrived at your location for: ${taskTitle}`,
+            { type: 'worker_arrived' },
+        );
+    }
+
     async notifyWorkStarted(clientToken: string, taskTitle: string) {
         return this.sendNotification(
             clientToken,

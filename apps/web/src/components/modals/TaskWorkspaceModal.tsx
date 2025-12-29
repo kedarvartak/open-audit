@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -112,6 +112,49 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
 
     const removeFile = (index: number) => {
         setFiles(files.filter((_, i) => i !== index));
+    };
+
+    const handleStartJourney = async () => {
+        try {
+            // Get current location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        try {
+                            await tasksAPI.startJourney(
+                                taskId,
+                                position.coords.latitude,
+                                position.coords.longitude
+                            );
+                            toast.success('Journey started! The client has been notified.');
+                            fetchTask();
+                            onTaskUpdated?.();
+                        } catch (error: any) {
+                            toast.error(error.response?.data?.message || 'Failed to start journey');
+                        }
+                    },
+                    async () => {
+                        // Location denied, still allow starting journey without coords
+                        try {
+                            await tasksAPI.startJourney(taskId);
+                            toast.success('Journey started! The client has been notified.');
+                            fetchTask();
+                            onTaskUpdated?.();
+                        } catch (error: any) {
+                            toast.error(error.response?.data?.message || 'Failed to start journey');
+                        }
+                    }
+                );
+            } else {
+                // No geolocation, start without coords
+                await tasksAPI.startJourney(taskId);
+                toast.success('Journey started! The client has been notified.');
+                fetchTask();
+                onTaskUpdated?.();
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Failed to start journey');
+        }
     };
 
     const handleStartWork = async () => {
@@ -252,11 +295,15 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${task.status === 'ACCEPTED' ? 'bg-[#464ace] text-white' :
-                                        task.status === 'IN_PROGRESS' ? 'bg-purple-500 text-white' :
-                                            task.status === 'SUBMITTED' ? 'bg-amber-400 text-slate-900' :
-                                                'bg-slate-500 text-white'
+                                        task.status === 'EN_ROUTE' ? 'bg-orange-500 text-white' :
+                                            task.status === 'ARRIVED' ? 'bg-teal-500 text-white' :
+                                                task.status === 'IN_PROGRESS' ? 'bg-purple-500 text-white' :
+                                                    task.status === 'SUBMITTED' ? 'bg-amber-400 text-slate-900' :
+                                                        'bg-slate-500 text-white'
                                         }`}>
-                                        {task.status}
+                                        {task.status === 'EN_ROUTE' ? '🚗 EN ROUTE' :
+                                            task.status === 'ARRIVED' ? '📍 ARRIVED' :
+                                                task.status}
                                     </span>
                                     <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
                                         {task.category.toUpperCase()}
@@ -272,6 +319,7 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                 <h1 className={`text-xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
                                     {task.title}
                                 </h1>
+                                {/* ACCEPTED: Show 'I'm On My Way' button */}
                                 {task.status === 'ACCEPTED' && (
                                     <div className="flex items-center gap-2">
                                         {!canStartTask() && getTimeUntilStart() && (
@@ -280,13 +328,34 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                             </span>
                                         )}
                                         <Button
-                                            onClick={handleStartWork}
+                                            onClick={handleStartJourney}
                                             disabled={!canStartTask()}
-                                            className={`flex-shrink-0 ${!canStartTask()
+                                            className={`flex-shrink-0 flex items-center gap-2 ${!canStartTask()
                                                 ? 'bg-gray-400 cursor-not-allowed opacity-60'
-                                                : 'bg-amber-500 hover:bg-amber-600'
+                                                : 'bg-orange-500 hover:bg-orange-600'
                                                 } text-white`}
                                         >
+                                            <Navigation size={16} />
+                                            I'm On My Way
+                                        </Button>
+                                    </div>
+                                )}
+                                {/* EN_ROUTE: Show status indicator */}
+                                {task.status === 'EN_ROUTE' && (
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-700'}`}>
+                                            🚗 Traveling to location...
+                                        </span>
+                                    </div>
+                                )}
+                                {/* ARRIVED: Show 'Start Work' button */}
+                                {task.status === 'ARRIVED' && (
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            onClick={handleStartWork}
+                                            className="flex-shrink-0 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white"
+                                        >
+                                            <MapPin size={16} />
                                             Start Work
                                         </Button>
                                     </div>

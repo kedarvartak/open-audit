@@ -85,6 +85,14 @@ export const tasksAPI = {
 
     acceptTask: (id: string) => api.post(`/v0/tasks/${id}/accept`),
 
+    // Worker starts journey to task location
+    startJourney: (id: string, lat?: number, lng?: number) =>
+        api.post(`/v0/tasks/${id}/en-route`, { lat, lng }),
+
+    // Worker marks as arrived at location
+    markArrived: (id: string, lat: number, lng: number) =>
+        api.post(`/v0/tasks/${id}/arrived`, { lat, lng }),
+
     getMyTasks: (role: 'client' | 'worker') =>
         api.get('/v0/tasks/my-tasks', { params: { role } }),
 

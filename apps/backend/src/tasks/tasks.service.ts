@@ -253,6 +253,105 @@ export class TasksService {
         return updatedTask;
     }
 
+    // WORKER: Start journey to task location (En Route)
+    async startJourney(
+        taskId: string,
+        workerId: string,
+        workerLat?: number,
+        workerLng?: number,
+    ) {
+        const task = await this.getTaskById(taskId);
+
+        if (task.workerId !== workerId) {
+            throw new BadRequestException('Not your task');
+        }
+
+        if (task.status !== TaskStatus.ACCEPTED) {
+            throw new BadRequestException('Task must be in ACCEPTED state to start journey');
+        }
+
+        const updatedTask = await this.prisma.task.update({
+            where: { id: taskId },
+            data: {
+                status: TaskStatus.EN_ROUTE,
+                workerStartLat: workerLat,
+                workerStartLng: workerLng,
+            },
+            include: {
+                client: true,
+                worker: true,
+            },
+        });
+
+        // Send Firebase Notification to Client - "Worker is on the way"
+        if (updatedTask.client.fcmToken && updatedTask.worker) {
+            this.firebase.notifyWorkerEnRoute(
+                updatedTask.client.fcmToken,
+                updatedTask.worker.name,
+                updatedTask.title
+            ).catch(err => console.error('Failed to send Firebase notification:', err));
+        }
+
+        return updatedTask;
+    }
+
+    // WORKER: Mark as arrived at location
+    async markArrived(
+        taskId: string,
+        workerId: string,
+        workerLat: number,
+        workerLng: number,
+    ) {
+        const task = await this.getTaskById(taskId);
+
+        if (task.workerId !== workerId) {
+            throw new BadRequestException('Not your task');
+        }
+
+        if (task.status !== TaskStatus.EN_ROUTE) {
+            throw new BadRequestException('Must be EN_ROUTE to mark as arrived');
+        }
+
+        // Location verification - worker must be within radius of task location
+        if (task.requiresLocation && task.locationLat !== null && task.locationLng !== null) {
+            const distance = this.calculateDistance(
+                workerLat,
+                workerLng,
+                task.locationLat,
+                task.locationLng,
+            );
+
+            const radius = task.locationRadius || 100; // Default 100m radius
+            if (distance > radius) {
+                throw new BadRequestException(
+                    `You are ${Math.round(distance)}m away. Must be within ${radius}m to mark as arrived.`,
+                );
+            }
+        }
+
+        const updatedTask = await this.prisma.task.update({
+            where: { id: taskId },
+            data: {
+                status: TaskStatus.ARRIVED,
+            },
+            include: {
+                client: true,
+                worker: true,
+            },
+        });
+
+        // Send Firebase Notification to Client - "Worker has arrived"
+        if (updatedTask.client.fcmToken && updatedTask.worker) {
+            this.firebase.notifyWorkerArrived(
+                updatedTask.client.fcmToken,
+                updatedTask.worker.name,
+                updatedTask.title
+            ).catch(err => console.error('Failed to send Firebase notification:', err));
+        }
+
+        return updatedTask;
+    }
+
     // WORKER: Start work on the task
     async startWork(
         taskId: string,
@@ -266,8 +365,10 @@ export class TasksService {
             throw new BadRequestException('Not your task');
         }
 
-        if (task.status !== TaskStatus.ACCEPTED) {
-            throw new BadRequestException('Task not in accepted state');
+        // Allow starting work from ACCEPTED (backwards compatible), EN_ROUTE, or ARRIVED
+        const validStatuses: TaskStatus[] = [TaskStatus.ACCEPTED, TaskStatus.EN_ROUTE, TaskStatus.ARRIVED];
+        if (!validStatuses.includes(task.status)) {
+            throw new BadRequestException('Task not in valid state to start work');
         }
 
         // Location verification if required

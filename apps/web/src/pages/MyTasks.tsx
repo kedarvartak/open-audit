@@ -37,8 +37,13 @@ export default function MyTasks() {
             case 'OPEN':
                 return 'bg-amber-400 text-slate-900';
             case 'ACCEPTED':
-            case 'IN_PROGRESS':
                 return 'bg-[#464ace] text-white';
+            case 'EN_ROUTE':
+                return 'bg-orange-500 text-white';
+            case 'ARRIVED':
+                return 'bg-teal-500 text-white';
+            case 'IN_PROGRESS':
+                return 'bg-purple-500 text-white';
             case 'SUBMITTED':
                 return 'bg-purple-500 text-white';
             case 'COMPLETED':
@@ -79,7 +84,7 @@ export default function MyTasks() {
 
     const filteredTasks = tasks.filter(task => {
         if (filter === 'active') {
-            return ['OPEN', 'ACCEPTED', 'IN_PROGRESS', 'SUBMITTED'].includes(task.status);
+            return ['OPEN', 'ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS', 'SUBMITTED'].includes(task.status);
         }
         if (filter === 'completed') {
             return ['COMPLETED', 'PAID'].includes(task.status);
@@ -146,7 +151,7 @@ export default function MyTasks() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                         {filteredTasks.map((task) => {
-                            const shouldOpenWorkspace = userRole === 'WORKER' && ['ACCEPTED', 'IN_PROGRESS'].includes(task.status);
+                            const shouldOpenWorkspace = userRole === 'WORKER' && ['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].includes(task.status);
 
                             return (
                                 <button

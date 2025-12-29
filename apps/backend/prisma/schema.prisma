@@ -18,6 +18,8 @@ enum Role {
 enum TaskStatus {
   OPEN           // Posted, awaiting worker
   ACCEPTED       // Worker claimed it
+  EN_ROUTE       // Worker is traveling to the location
+  ARRIVED        // Worker has arrived at location, can start work
   IN_PROGRESS    // Before image uploaded, work started
   SUBMITTED      // After image uploaded, AI verifying
   VERIFIED       // AI approved

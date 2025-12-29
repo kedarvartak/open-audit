@@ -87,6 +87,43 @@ export class TasksController {
         return this.tasksService.acceptTask(id, req.user.userId);
     }
 
+    @Post(':id/en-route')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WORKER, Role.ADMIN)
+    async startJourney(
+        @Param('id') id: string,
+        @Body() body: any,
+        @Request() req: any,
+    ) {
+        return this.tasksService.startJourney(
+            id,
+            req.user.userId,
+            body.lat ? parseFloat(body.lat) : undefined,
+            body.lng ? parseFloat(body.lng) : undefined,
+        );
+    }
+
+    @Post(':id/arrived')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WORKER, Role.ADMIN)
+    async markArrived(
+        @Param('id') id: string,
+        @Body() body: any,
+        @Request() req: any,
+    ) {
+        if (!body.lat || !body.lng) {
+            throw new BadRequestException('Location (lat, lng) is required to mark as arrived');
+        }
+        return this.tasksService.markArrived(
+            id,
+            req.user.userId,
+            parseFloat(body.lat),
+            parseFloat(body.lng),
+        );
+    }
+
     @Post(':id/start')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard, RolesGuard)
