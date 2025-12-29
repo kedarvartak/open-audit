@@ -72,7 +72,7 @@ export const PendingInvitationsModal = ({ onClose }: PendingInvitationsModalProp
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className={`w-full max-w-lg rounded-2xl shadow-2xl ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
+            <div className={`w-full max-w-lg rounded-sm shadow-2xl ${theme === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
                 {/* Header */}
                 <div className={`flex items-center justify-between p-6 border-b ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
                     <div className="flex items-center gap-3">

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Polyline, Circle } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Circle, DirectionsRenderer } from '@react-google-maps/api';
 import { subscribeToWorkerLocation, type WorkerLocation } from '../../lib/firebase';
 import { useTheme } from '../../contexts/ThemeContext';
-import { MapPin, Navigation, Clock, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface LiveLocationMapProps {
     taskId: string;
@@ -11,6 +11,7 @@ interface LiveLocationMapProps {
     destinationName?: string;
     geofenceRadius?: number; // Arrival zone radius in meters
     onArrival?: () => void;
+    fullHeight?: boolean; // If true, map fills container height
 }
 
 export const LiveLocationMap = ({
@@ -20,11 +21,13 @@ export const LiveLocationMap = ({
     destinationName,
     geofenceRadius = 100,
     onArrival,
+    fullHeight = false,
 }: LiveLocationMapProps) => {
     const { theme } = useTheme();
     const [workerLocation, setWorkerLocation] = useState<WorkerLocation | null>(null);
     const [lastUpdate, setLastUpdate] = useState<string>('');
     const [hasArrived, setHasArrived] = useState(false);
+    const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
     const mapRef = useRef<google.maps.Map | null>(null);
 
     // Load Google Maps
@@ -110,6 +113,25 @@ export const LiveLocationMap = ({
         mapRef.current = map;
     }, []);
 
+    // Calculate route when worker location updates
+    useEffect(() => {
+        if (workerLocation && window.google) {
+            const directionsService = new google.maps.DirectionsService();
+            directionsService.route(
+                {
+                    origin: { lat: workerLocation.lat, lng: workerLocation.lng },
+                    destination: { lat: destinationLat, lng: destinationLng },
+                    travelMode: google.maps.TravelMode.DRIVING,
+                },
+                (result, status) => {
+                    if (status === google.maps.DirectionsStatus.OK && result) {
+                        setDirections(result);
+                    }
+                }
+            );
+        }
+    }, [workerLocation, destinationLat, destinationLng]);
+
     useEffect(() => {
         if (mapRef.current && workerLocation) {
             const bounds = new google.maps.LatLngBounds();
@@ -122,7 +144,7 @@ export const LiveLocationMap = ({
     // Map container style
     const mapContainerStyle = {
         width: '100%',
-        height: '256px',
+        height: fullHeight ? '100%' : '256px',
     };
 
     // Dark mode map style
@@ -159,185 +181,141 @@ export const LiveLocationMap = ({
     }
 
     return (
-        <div className={`rounded-lg overflow-hidden border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+        <div className={`${fullHeight ? 'h-full flex flex-col' : ''} rounded-lg overflow-hidden border ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
             {/* Map Container */}
-            <GoogleMap
-                mapContainerStyle={mapContainerStyle}
-                center={{ lat: destinationLat, lng: destinationLng }}
-                zoom={14}
-                options={{
-                    styles: theme === 'dark' ? darkMapStyle : [],
-                    disableDefaultUI: true,
-                    zoomControl: true,
-                    mapTypeControl: false,
-                    streetViewControl: false,
-                    fullscreenControl: false,
-                }}
-                onLoad={onMapLoad}
-            >
-                {/* Destination/Client marker (emerald pin with pulsing ring) */}
-                <Marker
-                    position={{ lat: destinationLat, lng: destinationLng }}
-                    title={destinationName || 'Task Location'}
-                    label={{
-                        text: '📍',
-                        fontSize: '24px',
-                    }}
-                />
-
-                {/* Geofence/Arrival zone circle */}
-                <Circle
+            <div className={fullHeight ? 'flex-1' : ''}>
+                <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
                     center={{ lat: destinationLat, lng: destinationLng }}
-                    radius={geofenceRadius}
+                    zoom={14}
                     options={{
-                        fillColor: '#10B981',
-                        fillOpacity: 0.08,
-                        strokeColor: '#10B981',
-                        strokeWeight: 2,
-                        strokeOpacity: 0.4,
+                        styles: theme === 'dark' ? darkMapStyle : [],
+                        disableDefaultUI: true,
+                        zoomControl: true,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false,
                     }}
-                />
+                    onLoad={onMapLoad}
+                >
+                    {/* Destination/Client marker (blue circle) */}
+                    <Marker
+                        position={{ lat: destinationLat, lng: destinationLng }}
+                        title={destinationName || 'Task Location'}
+                        icon={{
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 10,
+                            fillColor: '#464ace',
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 3,
+                        }}
+                    />
 
-                {/* Inner destination ring */}
-                <Circle
-                    center={{ lat: destinationLat, lng: destinationLng }}
-                    radius={20}
-                    options={{
-                        fillColor: '#10B981',
-                        fillOpacity: 0.3,
-                        strokeColor: '#10B981',
-                        strokeWeight: 3,
-                        strokeOpacity: 0.8,
-                    }}
-                />
+                    {/* Geofence/Arrival zone circle */}
+                    <Circle
+                        center={{ lat: destinationLat, lng: destinationLng }}
+                        radius={geofenceRadius}
+                        options={{
+                            fillColor: '#10B981',
+                            fillOpacity: 0.08,
+                            strokeColor: '#10B981',
+                            strokeWeight: 2,
+                            strokeOpacity: 0.4,
+                        }}
+                    />
 
-                {/* Worker marker (car/worker icon) */}
-                {workerLocation && (
-                    <>
-                        <Marker
-                            position={{ lat: workerLocation.lat, lng: workerLocation.lng }}
-                            title={workerLocation.workerName}
-                            label={{
-                                text: '🚗',
-                                fontSize: '24px',
-                            }}
-                        />
+                    {/* Inner destination ring */}
+                    <Circle
+                        center={{ lat: destinationLat, lng: destinationLng }}
+                        radius={20}
+                        options={{
+                            fillColor: '#10B981',
+                            fillOpacity: 0.3,
+                            strokeColor: '#10B981',
+                            strokeWeight: 3,
+                            strokeOpacity: 0.8,
+                        }}
+                    />
 
-                        {/* Worker position ring */}
-                        <Circle
-                            center={{ lat: workerLocation.lat, lng: workerLocation.lng }}
-                            radius={30}
+                    {/* Worker marker (car/worker icon) */}
+                    {workerLocation && (
+                        <>
+                            <Marker
+                                position={{ lat: workerLocation.lat, lng: workerLocation.lng }}
+                                title={workerLocation.workerName}
+                                icon={{
+                                    path: google.maps.SymbolPath.CIRCLE,
+                                    scale: 10,
+                                    fillColor: '#F59E0B',
+                                    fillOpacity: 1,
+                                    strokeColor: '#ffffff',
+                                    strokeWeight: 3,
+                                }}
+                            />
+
+                            {/* Worker position ring */}
+                            <Circle
+                                center={{ lat: workerLocation.lat, lng: workerLocation.lng }}
+                                radius={30}
+                                options={{
+                                    fillColor: '#F59E0B',
+                                    fillOpacity: 0.2,
+                                    strokeColor: '#F59E0B',
+                                    strokeWeight: 2,
+                                    strokeOpacity: 0.6,
+                                }}
+                            />
+
+                        </>
+                    )}
+
+                    {/* Directions Route */}
+                    {directions && (
+                        <DirectionsRenderer
+                            directions={directions}
                             options={{
-                                fillColor: '#F97316',
-                                fillOpacity: 0.2,
-                                strokeColor: '#F97316',
-                                strokeWeight: 2,
-                                strokeOpacity: 0.6,
+                                suppressMarkers: true,
+                                polylineOptions: {
+                                    strokeColor: '#F59E0B',
+                                    strokeWeight: 5,
+                                    strokeOpacity: 0.8,
+                                },
                             }}
                         />
-
-                        {/* Dashed path connecting worker to destination */}
-                        <Polyline
-                            path={[
-                                { lat: workerLocation.lat, lng: workerLocation.lng },
-                                { lat: destinationLat, lng: destinationLng },
-                            ]}
-                            options={{
-                                strokeColor: '#F97316',
-                                strokeOpacity: 0,
-                                strokeWeight: 4,
-                                geodesic: true,
-                                icons: [
-                                    {
-                                        icon: {
-                                            path: 'M 0,-1 0,1',
-                                            strokeOpacity: 0.8,
-                                            strokeColor: '#F97316',
-                                            scale: 4,
-                                        },
-                                        offset: '0',
-                                        repeat: '20px',
-                                    },
-                                ],
-                            }}
-                        />
-
-                        {/* Direction arrow on the path */}
-                        <Polyline
-                            path={[
-                                { lat: workerLocation.lat, lng: workerLocation.lng },
-                                { lat: destinationLat, lng: destinationLng },
-                            ]}
-                            options={{
-                                strokeColor: 'transparent',
-                                strokeOpacity: 0,
-                                strokeWeight: 0,
-                                geodesic: true,
-                                icons: [
-                                    {
-                                        icon: {
-                                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                                            scale: 3,
-                                            fillColor: '#F97316',
-                                            fillOpacity: 1,
-                                            strokeColor: '#ffffff',
-                                            strokeWeight: 1,
-                                        },
-                                        offset: '50%',
-                                    },
-                                ],
-                            }}
-                        />
-                    </>
-                )}
-            </GoogleMap>
+                    )}
+                </GoogleMap>
+            </div>
 
             {/* Info Bar */}
             <div className={`p-3 ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-50'}`}>
                 {workerLocation ? (
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-3">
-                            {/* Worker indicator */}
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-orange-500 animate-pulse" />
-                                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                    {workerLocation.workerName}
-                                </span>
-                            </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Worker Name Chip */}
+                        <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-orange-500 text-white">
+                            {workerLocation.workerName}
+                        </span>
 
-                            {/* Last update */}
-                            <div className={`flex items-center gap-1 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                <Clock size={12} />
-                                <span>{lastUpdate}</span>
-                            </div>
-                        </div>
+                        {/* Last Update Chip */}
+                        <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-amber-400 text-slate-900">
+                            {lastUpdate}
+                        </span>
 
-                        <div className="flex items-center gap-4">
-                            {/* Distance */}
-                            <div className="flex items-center gap-1">
-                                <MapPin size={14} className="text-emerald-500" />
-                                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                    {getDistanceDisplay()}
-                                </span>
-                            </div>
+                        {/* Distance Chip */}
+                        <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-emerald-500 text-white">
+                            {getDistanceDisplay()}
+                        </span>
 
-                            {/* ETA */}
-                            <div className="flex items-center gap-1">
-                                <Navigation size={14} className="text-orange-500" />
-                                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                    ETA: {getETA()}
-                                </span>
-                            </div>
-                        </div>
+                        {/* ETA Chip */}
+                        <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-[#464ace] text-white">
+                            ETA: {getETA()}
+                        </span>
                     </div>
                 ) : (
                     <div className="flex items-center justify-center py-2">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-                            <span className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                Waiting for worker location...
-                            </span>
-                        </div>
+                        <span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                            Waiting for worker location...
+                        </span>
                     </div>
                 )}
             </div>

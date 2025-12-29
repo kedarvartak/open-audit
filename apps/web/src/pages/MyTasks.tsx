@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
-import { TaskDetailsModal } from '../components/modals/TaskDetailsModal';
-import { TaskWorkspaceModal } from '../components/modals/TaskWorkspaceModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI } from '../services/api';
 import type { Task } from '../services/api';
@@ -10,9 +9,8 @@ export default function MyTasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
-    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-    const [workspaceTaskId, setWorkspaceTaskId] = useState<string | null>(null);
     const { theme } = useTheme();
+    const navigate = useNavigate();
 
     const userRole = localStorage.getItem('userRole');
 
@@ -150,142 +148,114 @@ export default function MyTasks() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                        {filteredTasks.map((task) => {
-                            const shouldOpenWorkspace = userRole === 'WORKER' && ['ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'IN_PROGRESS'].includes(task.status);
+                        {filteredTasks.map((task) => (
+                            <button
+                                key={task.id}
+                                onClick={() => navigate(`/my-tasks/${task.id}`)}
+                                className="block text-left w-full"
+                            >
+                                <div className={`rounded-lg overflow-hidden ${theme === 'dark'
+                                    ? 'bg-slate-900'
+                                    : 'bg-slate-200'
+                                    }`}>
 
-                            return (
-                                <button
-                                    key={task.id}
-                                    onClick={() => {
-                                        if (shouldOpenWorkspace) {
-                                            setWorkspaceTaskId(task.id);
-                                        } else {
-                                            setSelectedTaskId(task.id);
-                                        }
-                                    }}
-                                    className="block text-left w-full"
-                                >
-                                    <div className={`rounded-lg overflow-hidden ${theme === 'dark'
-                                        ? 'bg-slate-900'
-                                        : 'bg-slate-200'
-                                        }`}>
+                                    {/* Image Banner */}
+                                    <div className="p-3">
+                                        <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                            {task.beforeImages?.length > 0 ? (
+                                                <img
+                                                    src={task.beforeImages[0]}
+                                                    alt={task.title}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <svg width="48" height="36" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.2">
+                                                        <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
+                                                        <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
 
-                                        {/* Image Banner */}
-                                        <div className="p-3">
-                                            <div className={`w-full aspect-video overflow-hidden rounded-lg ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                                                {task.beforeImages?.length > 0 ? (
-                                                    <img
-                                                        src={task.beforeImages[0]}
-                                                        alt={task.title}
-                                                        className="w-full h-full object-contain"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <svg width="48" height="36" viewBox="0 0 50 39" fill="none" xmlns="http://www.w3.org/2000/svg" opacity="0.2">
-                                                            <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" fill="#007AFF" />
-                                                            <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" fill="#312ECB" />
-                                                        </svg>
-                                                    </div>
-                                                )}
+                                    {/* Card Content */}
+                                    <div className="p-4">
+                                        {/* Title with Budget */}
+                                        <div className="mb-3">
+                                            <div className="flex items-baseline gap-2 flex-wrap">
+                                                <h3 className={`text-base font-bold leading-snug line-clamp-1 ${theme === 'dark'
+                                                    ? 'text-slate-100'
+                                                    : 'text-slate-900'
+                                                    }`}>
+                                                    {task.title}
+                                                </h3>
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white">
+                                                    ₹{task.budget.toLocaleString()}
+                                                </span>
                                             </div>
                                         </div>
 
-                                        {/* Card Content */}
-                                        <div className="p-4">
-                                            {/* Title with Budget */}
-                                            <div className="mb-3">
-                                                <div className="flex items-baseline gap-2 flex-wrap">
-                                                    <h3 className={`text-base font-bold leading-snug line-clamp-1 ${theme === 'dark'
-                                                        ? 'text-slate-100'
-                                                        : 'text-slate-900'
-                                                        }`}>
-                                                        {task.title}
-                                                    </h3>
-                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500 text-white">
-                                                        ₹{task.budget.toLocaleString()}
-                                                    </span>
-                                                </div>
-                                            </div>
+                                        {/* Description */}
+                                        <div className="mb-4">
+                                            <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                {task.description && task.description.length > 100
+                                                    ? `${task.description.slice(0, 100)}...`
+                                                    : task.description}
+                                            </p>
+                                        </div>
 
-                                            {/* Description */}
-                                            <div className="mb-4">
-                                                <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                    {task.description && task.description.length > 100
-                                                        ? `${task.description.slice(0, 100)}...`
-                                                        : task.description}
-                                                </p>
-                                            </div>
-
-                                            {/* Status, Category & Role Chips */}
-                                            <div className="flex items-center gap-2 mb-4 flex-wrap">
-                                                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusColor(task.status)}`}>
-                                                    {task.status}
+                                        {/* Status, Category & Role Chips */}
+                                        <div className="flex items-center gap-2 mb-4 flex-wrap">
+                                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusColor(task.status)}`}>
+                                                {task.status}
+                                            </span>
+                                            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
+                                                {task.category.toUpperCase()}
+                                            </span>
+                                            {/* Role-specific chip */}
+                                            {userRole === 'WORKER' && task.status === 'ACCEPTED' && (
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
+                                                    Start Work
                                                 </span>
-                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
-                                                    {task.category.toUpperCase()}
+                                            )}
+                                            {userRole === 'WORKER' && task.status === 'IN_PROGRESS' && (
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500 text-white">
+                                                    In Progress
                                                 </span>
-                                                {/* Role-specific chip */}
-                                                {userRole === 'WORKER' && task.status === 'ACCEPTED' && (
-                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
-                                                        Start Work
-                                                    </span>
-                                                )}
-                                                {userRole === 'WORKER' && task.status === 'IN_PROGRESS' && (
-                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500 text-white">
-                                                        In Progress
-                                                    </span>
-                                                )}
-                                                {task.deadline && (
-                                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
-                                                        {formatTime(task.deadline)}
-                                                    </span>
-                                                )}
-                                            </div>
+                                            )}
+                                            {task.deadline && (
+                                                <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[#464ace] text-white">
+                                                    {formatTime(task.deadline)}
+                                                </span>
+                                            )}
+                                        </div>
 
-                                            {/* Footer with Avatar */}
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white">
+                                        {/* Footer with Avatar */}
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#464ace] text-white">
+                                                {userRole === 'CLIENT'
+                                                    ? (task.worker?.name?.charAt(0).toUpperCase() || '?')
+                                                    : (task.client?.name?.charAt(0).toUpperCase() || '?')}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                                                     {userRole === 'CLIENT'
-                                                        ? (task.worker?.name?.charAt(0).toUpperCase() || '?')
-                                                        : (task.client?.name?.charAt(0).toUpperCase() || '?')}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`text-xs font-medium truncate ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                        {userRole === 'CLIENT'
-                                                            ? (task.worker?.name || 'Not assigned')
-                                                            : (task.client?.name || 'Unknown Client')}
-                                                    </p>
-                                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
-                                                        {getTimeSince(task.createdAt)}
-                                                    </p>
-                                                </div>
+                                                        ? (task.worker?.name || 'Not assigned')
+                                                        : (task.client?.name || 'Unknown Client')}
+                                                </p>
+                                                <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                                                    {getTimeSince(task.createdAt)}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
-                                </button>
-                            );
-                        })}
+                                </div>
+                            </button>
+                        ))}
                     </div>
                 )}
             </div>
-
-            {selectedTaskId && (
-                <TaskDetailsModal
-                    taskId={selectedTaskId}
-                    isOpen={!!selectedTaskId}
-                    onClose={() => setSelectedTaskId(null)}
-                    onTaskUpdated={fetchMyTasks}
-                />
-            )}
-
-            {workspaceTaskId && (
-                <TaskWorkspaceModal
-                    taskId={workspaceTaskId}
-                    isOpen={!!workspaceTaskId}
-                    onClose={() => setWorkspaceTaskId(null)}
-                    onTaskUpdated={fetchMyTasks}
-                />
-            )}
         </DashboardLayout>
     );
 }

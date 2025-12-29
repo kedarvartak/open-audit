@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation, MapPin, Radio, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -279,7 +279,7 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div
-                className={`w-full max-w-4xl rounded-lg shadow-2xl my-4 max-h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+                className={`w-full max-w-4xl rounded-sm shadow-2xl my-4 max-h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
                     }`}
             >
                 {/* Header */}
@@ -374,24 +374,42 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
 
                             {/* Tags & Budget Row */}
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${task.status === 'ACCEPTED' ? 'bg-[#464ace] text-white' :
-                                        task.status === 'EN_ROUTE' ? 'bg-orange-500 text-white' :
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={`px-2 py-0.5 rounded-sm text-xs font-semibold ${task.status === 'ACCEPTED' ? 'bg-[#464ace] text-white' :
+                                        task.status === 'EN_ROUTE' ? 'bg-amber-400 text-slate-900' :
                                             task.status === 'ARRIVED' ? 'bg-teal-500 text-white' :
                                                 task.status === 'IN_PROGRESS' ? 'bg-purple-500 text-white' :
                                                     task.status === 'SUBMITTED' ? 'bg-amber-400 text-slate-900' :
                                                         'bg-slate-500 text-white'
                                         }`}>
-                                        {task.status === 'EN_ROUTE' ? '🚗 EN ROUTE' :
-                                            task.status === 'ARRIVED' ? '📍 ARRIVED' :
-                                                task.status}
+                                        {task.status.replace('_', ' ').toUpperCase()}
                                     </span>
-                                    <span className="px-2 py-0.5 rounded text-xs font-semibold bg-red-500 text-white">
+                                    <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-slate-500 text-white">
                                         {task.category.toUpperCase()}
                                     </span>
+
+                                    {/* Show tracking chips when EN_ROUTE */}
+                                    {task.status === 'EN_ROUTE' && (
+                                        <>
+                                            <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-amber-400 text-slate-900">
+                                                {locationTracking.isTracking ? 'SHARING LOCATION' : 'TRAVELING...'}
+                                            </span>
+                                            {geofenceInfo.distance !== null && (
+                                                <span className={`px-2 py-0.5 rounded-sm text-xs font-semibold ${geofenceInfo.isWithinGeofence
+                                                    ? 'bg-emerald-500 text-white'
+                                                    : 'bg-slate-500 text-white'
+                                                    }`}>
+                                                    {geofenceInfo.distance < 1000
+                                                        ? `${geofenceInfo.distance}M AWAY`
+                                                        : `${(geofenceInfo.distance / 1000).toFixed(1)}KM AWAY`
+                                                    }
+                                                </span>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
-                                <span className="px-2.5 py-1 rounded text-sm font-semibold bg-emerald-500 text-white">
-                                    ₹{task.budget.toLocaleString()}
+                                <span className="px-2 py-0.5 rounded-sm text-xs font-semibold bg-emerald-500 text-white">
+                                    Rs.{task.budget.toLocaleString()}
                                 </span>
                             </div>
 
@@ -421,59 +439,19 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                         </Button>
                                     </div>
                                 )}
-                                {/* EN_ROUTE: Show tracking status and arrival button */}
+                                {/* EN_ROUTE: Show arrival button */}
                                 {task.status === 'EN_ROUTE' && (
                                     <div className="flex items-center gap-3 flex-wrap">
-                                        {/* Live tracking indicator */}
-                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${theme === 'dark' ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
-                                            <div className="relative">
-                                                <Radio size={14} className="text-orange-500" />
-                                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full animate-ping" />
-                                            </div>
-                                            <span className={`text-xs font-medium ${theme === 'dark' ? 'text-orange-400' : 'text-orange-700'}`}>
-                                                {locationTracking.isTracking ? 'Sharing location' : 'Traveling...'}
-                                            </span>
-                                        </div>
-
-                                        {/* Distance to destination */}
-                                        {geofenceInfo.distance !== null && (
-                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${geofenceInfo.isWithinGeofence
-                                                ? (theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-100')
-                                                : (theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100')
-                                                }`}>
-                                                <MapPin size={14} className={geofenceInfo.isWithinGeofence ? 'text-emerald-500' : 'text-slate-500'} />
-                                                <span className={`text-xs font-medium ${geofenceInfo.isWithinGeofence
-                                                    ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700')
-                                                    : (theme === 'dark' ? 'text-slate-400' : 'text-slate-600')
-                                                    }`}>
-                                                    {geofenceInfo.distance < 1000
-                                                        ? `${geofenceInfo.distance}m away`
-                                                        : `${(geofenceInfo.distance / 1000).toFixed(1)}km away`
-                                                    }
-                                                </span>
-                                            </div>
-                                        )}
-
                                         {/* I've Arrived button - enabled when within geofence OR testing mode is on */}
                                         <Button
                                             onClick={handleMarkArrived}
                                             disabled={markingArrived || (!testingMode && !geofenceInfo.isWithinGeofence && locationTracking.currentLocation !== null)}
-                                            className={`flex-shrink-0 flex items-center gap-2 ${testingMode
-                                                    ? 'bg-amber-500 hover:bg-amber-600' // Testing mode - amber color
-                                                    : geofenceInfo.isWithinGeofence
-                                                        ? 'bg-emerald-500 hover:bg-emerald-600'
-                                                        : 'bg-slate-400 cursor-not-allowed opacity-70'
-                                                } text-white`}
+                                            className={`flex-shrink-0 ${markingArrived || (!testingMode && !geofenceInfo.isWithinGeofence && locationTracking.currentLocation !== null)
+                                                ? 'bg-slate-400 cursor-not-allowed opacity-70 text-white'
+                                                : 'bg-amber-400 hover:bg-amber-500 text-slate-900'
+                                                }`}
                                         >
-                                            <CheckCircle2 size={16} />
-                                            {markingArrived
-                                                ? 'Marking...'
-                                                : testingMode
-                                                    ? "I've Arrived (Test Mode)"
-                                                    : geofenceInfo.isWithinGeofence
-                                                        ? "I've Arrived"
-                                                        : `Arrive within ${geofenceInfo.radius || 100}m`
-                                            }
+                                            {markingArrived ? 'MARKING...' : 'ARRIVED'}
                                         </Button>
 
                                         {/* Error indicator if location fails */}
@@ -489,9 +467,8 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                     <div className="flex items-center gap-2">
                                         <Button
                                             onClick={handleStartWork}
-                                            className="flex-shrink-0 flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white"
+                                            className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white"
                                         >
-                                            <MapPin size={16} />
                                             Start Work
                                         </Button>
                                     </div>

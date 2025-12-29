@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import TaskDetails from './pages/TaskDetails';
 import MyTasks from './pages/MyTasks';
+import MyTaskDetails from './pages/MyTaskDetails';
 import TaskWorkspace from './pages/TaskWorkspace';
 import TaskReview from './pages/TaskReview';
 import Calendar from './pages/Calendar';
@@ -60,6 +61,11 @@ function App() {
         <Route
           path="/my-tasks"
           element={isAuthenticated ? <MyTasks /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/my-tasks/:id"
+          element={isAuthenticated ? <MyTaskDetails /> : <Navigate to="/login" />}
         />
 
         <Route

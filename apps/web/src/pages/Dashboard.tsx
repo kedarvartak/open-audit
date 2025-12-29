@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, MoreVertical, FlaskConical } from 'lucide-react';
+import { Search, Plus, MoreVertical } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
@@ -108,19 +108,19 @@ export const Dashboard = () => {
     };
 
     const filterOptions = [
-        { value: 'all', label: 'Show All' },
-        { value: 'active', label: 'Active Tasks' },
-        { value: 'completed', label: 'Completed Tasks' },
-        { value: 'general', label: 'General' },
-        { value: 'design', label: 'Design' },
-        { value: 'development', label: 'Development' },
+        { value: 'all', label: 'SHOW ALL' },
+        { value: 'active', label: 'ACTIVE TASKS' },
+        { value: 'completed', label: 'COMPLETED TASKS' },
+        { value: 'general', label: 'GENERAL' },
+        { value: 'design', label: 'DESIGN' },
+        { value: 'development', label: 'DEVELOPMENT' },
     ];
 
     const sortOptions = [
-        { value: 'newest', label: 'Sort By: Newest' },
-        { value: 'oldest', label: 'Sort By: Oldest' },
-        { value: 'budget-high', label: 'Sort By: Highest Budget' },
-        { value: 'budget-low', label: 'Sort By: Lowest Budget' },
+        { value: 'newest', label: 'SORT BY: NEWEST' },
+        { value: 'oldest', label: 'SORT BY: OLDEST' },
+        { value: 'budget-high', label: 'SORT BY: HIGHEST BUDGET' },
+        { value: 'budget-low', label: 'SORT BY: LOWEST BUDGET' },
     ];
 
     const handleToggleTestingMode = () => {
@@ -128,8 +128,8 @@ export const Dashboard = () => {
         setTestingMode(newValue);
         localStorage.setItem('testingMode', String(newValue));
         toast.success(newValue
-            ? '🧪 Testing Mode Enabled - Location checks will be bypassed'
-            : '✅ Testing Mode Disabled - Normal location verification active'
+            ? 'Testing Mode Enabled - Location checks will be bypassed'
+            : 'Testing Mode Disabled - Normal location verification active'
         );
     };
 
@@ -171,7 +171,7 @@ export const Dashboard = () => {
                             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} size={18} />
                             <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder="SEARCH..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${theme === 'dark'
@@ -184,38 +184,34 @@ export const Dashboard = () => {
 
 
                     {userRole === 'CLIENT' && (
-                        <Button className="gap-2 shadow-md" onClick={() => setIsCreateModalOpen(true)}>
-                            <Plus size={18} />
-                            <span className="font-semibold">Create Task</span>
-                        </Button>
+                        <div className="flex items-center gap-3">
+                            <Button className="gap-2 shadow-md" onClick={() => setIsCreateModalOpen(true)}>
+                                <Plus size={18} />
+                                <span className="font-semibold">CREATE TASK</span>
+                            </Button>
+
+                            {/* Testing Mode Toggle Button */}
+                            <button
+                                onClick={handleToggleTestingMode}
+                                className={`h-12 px-6 py-3 rounded-md text-sm font-semibold transition-all ${testingMode
+                                    ? 'bg-amber-500 text-white hover:bg-amber-600'
+                                    : theme === 'dark'
+                                        ? 'bg-slate-700 text-slate-400 border border-slate-600 hover:bg-slate-600'
+                                        : 'bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200'
+                                    }`}
+                                title={testingMode ? 'Disable Testing Mode' : 'Enable Testing Mode - Bypasses location verification'}
+                            >
+                                TESTING MODE
+                            </button>
+                        </div>
                     )}
                 </div>
 
-                {/* Testing Mode Toggle & Results Count */}
+                {/* Results Count */}
                 <div className="flex items-center justify-between gap-4">
                     <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
                         Showing {filteredTasks.length} of {tasks.length} Tasks
-                        {testingMode && (
-                            <span className="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-600">
-                                🧪 Testing Mode
-                            </span>
-                        )}
                     </p>
-
-                    {/* Testing Mode Toggle Button */}
-                    <button
-                        onClick={handleToggleTestingMode}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${testingMode
-                                ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-md'
-                                : theme === 'dark'
-                                    ? 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-300 border border-slate-600'
-                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border border-slate-300'
-                            }`}
-                        title={testingMode ? 'Disable Testing Mode' : 'Enable Testing Mode - Bypasses location verification'}
-                    >
-                        <FlaskConical size={14} />
-                        {testingMode ? 'Testing Mode ON' : 'Testing Mode'}
-                    </button>
                 </div>
 
                 {filteredTasks.length === 0 ? (
@@ -414,18 +410,6 @@ export const Dashboard = () => {
                 />
             </Modal>
 
-
-            {
-                selectedTaskId && (
-                    <TaskDetailsModal
-                        taskId={selectedTaskId}
-                        isOpen={!!selectedTaskId}
-                        onClose={() => setSelectedTaskId(null)}
-                        onTaskUpdated={fetchTasks}
-                    />
-                )
-            }
-
             {editingTask && (
                 <Modal
                     isOpen={!!editingTask}
@@ -441,6 +425,15 @@ export const Dashboard = () => {
                         editTask={editingTask}
                     />
                 </Modal>
+            )}
+
+            {selectedTaskId && (
+                <TaskDetailsModal
+                    taskId={selectedTaskId}
+                    isOpen={!!selectedTaskId}
+                    onClose={() => setSelectedTaskId(null)}
+                    onTaskUpdated={fetchTasks}
+                />
             )}
         </DashboardLayout >
     );

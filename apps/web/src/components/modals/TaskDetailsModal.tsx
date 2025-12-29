@@ -76,7 +76,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
             <div
-                className={`w-full max-w-4xl rounded-lg shadow-2xl my-4 max-h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+                className={`w-full max-w-4xl rounded-sm shadow-2xl my-4 max-h-[90vh] flex flex-col ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'
                     }`}
             >
                 {/* Header */}

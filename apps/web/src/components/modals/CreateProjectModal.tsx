@@ -509,17 +509,19 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                                                 onClick={onMapClick}
                                                 options={{
                                                     styles: theme === 'dark' ? [
-                                                        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                                                        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                                                        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                                                        {
-                                                            featureType: "administrative.locality",
-                                                            elementType: "labels.text.fill",
-                                                            stylers: [{ color: "#d59563" }],
-                                                        },
+                                                        { elementType: 'geometry', stylers: [{ color: '#1e293b' }] },
+                                                        { elementType: 'labels.text.stroke', stylers: [{ color: '#1e293b' }] },
+                                                        { elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
+                                                        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#334155' }] },
+                                                        { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#475569' }] },
+                                                        { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f172a' }] },
+                                                        { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#334155' }] },
+                                                        { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#334155' }] },
                                                     ] : [],
                                                     streetViewControl: false,
                                                     mapTypeControl: false,
+                                                    disableDefaultUI: true,
+                                                    zoomControl: true,
                                                 }}
                                             >
                                                 {markerPosition && (
