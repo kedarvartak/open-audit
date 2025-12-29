@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Polyline, Circle } from '@react-google-maps/api';
 import { subscribeToWorkerLocation, type WorkerLocation } from '../../lib/firebase';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MapPin, Navigation, Clock, AlertCircle } from 'lucide-react';
@@ -173,38 +173,55 @@ export const LiveLocationMap = ({
                 }}
                 onLoad={onMapLoad}
             >
-                {/* Destination marker (green circle) */}
+                {/* Destination/Client marker (emerald pin with pulsing ring) */}
                 <Marker
                     position={{ lat: destinationLat, lng: destinationLng }}
-                    title={destinationName || 'Destination'}
-                    icon={{
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 10,
-                        fillColor: '#10B981',
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 3,
+                    title={destinationName || 'Task Location'}
+                    label={{
+                        text: '📍',
+                        fontSize: '24px',
                     }}
                 />
 
-                {/* Worker marker (orange arrow) */}
+                {/* Destination ring effect */}
+                <Circle
+                    center={{ lat: destinationLat, lng: destinationLng }}
+                    radius={50}
+                    options={{
+                        fillColor: '#10B981',
+                        fillOpacity: 0.15,
+                        strokeColor: '#10B981',
+                        strokeWeight: 2,
+                        strokeOpacity: 0.5,
+                    }}
+                />
+
+                {/* Worker marker (car/worker icon) */}
                 {workerLocation && (
                     <>
                         <Marker
                             position={{ lat: workerLocation.lat, lng: workerLocation.lng }}
                             title={workerLocation.workerName}
-                            icon={{
-                                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                                scale: 6,
-                                fillColor: '#F97316',
-                                fillOpacity: 1,
-                                strokeColor: '#ffffff',
-                                strokeWeight: 2,
-                                rotation: workerLocation.heading || 0,
+                            label={{
+                                text: '🚗',
+                                fontSize: '24px',
                             }}
                         />
 
-                        {/* Polyline connecting worker to destination */}
+                        {/* Worker position ring */}
+                        <Circle
+                            center={{ lat: workerLocation.lat, lng: workerLocation.lng }}
+                            radius={30}
+                            options={{
+                                fillColor: '#F97316',
+                                fillOpacity: 0.2,
+                                strokeColor: '#F97316',
+                                strokeWeight: 2,
+                                strokeOpacity: 0.6,
+                            }}
+                        />
+
+                        {/* Dashed path connecting worker to destination */}
                         <Polyline
                             path={[
                                 { lat: workerLocation.lat, lng: workerLocation.lng },
@@ -212,9 +229,48 @@ export const LiveLocationMap = ({
                             ]}
                             options={{
                                 strokeColor: '#F97316',
-                                strokeOpacity: 0.6,
-                                strokeWeight: 3,
+                                strokeOpacity: 0,
+                                strokeWeight: 4,
                                 geodesic: true,
+                                icons: [
+                                    {
+                                        icon: {
+                                            path: 'M 0,-1 0,1',
+                                            strokeOpacity: 0.8,
+                                            strokeColor: '#F97316',
+                                            scale: 4,
+                                        },
+                                        offset: '0',
+                                        repeat: '20px',
+                                    },
+                                ],
+                            }}
+                        />
+
+                        {/* Direction arrow on the path */}
+                        <Polyline
+                            path={[
+                                { lat: workerLocation.lat, lng: workerLocation.lng },
+                                { lat: destinationLat, lng: destinationLng },
+                            ]}
+                            options={{
+                                strokeColor: 'transparent',
+                                strokeOpacity: 0,
+                                strokeWeight: 0,
+                                geodesic: true,
+                                icons: [
+                                    {
+                                        icon: {
+                                            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                                            scale: 3,
+                                            fillColor: '#F97316',
+                                            fillOpacity: 1,
+                                            strokeColor: '#ffffff',
+                                            strokeWeight: 1,
+                                        },
+                                        offset: '50%',
+                                    },
+                                ],
                             }}
                         />
                     </>
