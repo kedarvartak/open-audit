@@ -30,6 +30,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
     const userName = localStorage.getItem('userName') || 'User';
+    const userRole = localStorage.getItem('userRole') as 'CLIENT' | 'WORKER';
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
@@ -50,7 +51,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         return name.slice(0, 2).toUpperCase();
     };
 
-    // Fetch workspaces on mount
+    // Fetch workspaces on mount (only for WORKER users)
     useEffect(() => {
         const fetchWorkspaces = async () => {
             try {
@@ -69,10 +70,10 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 console.error('Failed to fetch workspaces:', error);
             }
         };
-        if (token) fetchWorkspaces();
-    }, [token]);
+        if (token && userRole === 'WORKER') fetchWorkspaces();
+    }, [token, userRole]);
 
-    // Check for pending invitations on mount (once per session)
+    // Check for pending invitations on mount (once per session) - only for WORKER users
     useEffect(() => {
         const checkInvitations = async () => {
             if (hasCheckedInvitations) return;
@@ -87,8 +88,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 setHasCheckedInvitations(true);
             }
         };
-        if (token) checkInvitations();
-    }, [token, hasCheckedInvitations]);
+        if (token && userRole === 'WORKER') checkInvitations();
+    }, [token, userRole, hasCheckedInvitations]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -121,16 +122,19 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         }
     };
 
-    const menuItems = [
+    // Filter menu items based on user role - Workspaces only for WORKER users
+    const allMenuItems = [
         { icon: Home, path: '/dashboard', label: 'Dashboard' },
         { icon: LayoutDashboard, path: '/my-tasks', label: 'My Tasks' },
         { icon: CalendarDays, path: '/calendar', label: 'Calendar' },
         { icon: FileText, path: '/documents', label: 'Documents' },
         { icon: Trophy, path: '/achievements', label: 'Achievements' },
-        { icon: Users, path: '/workspaces', label: 'Workspaces' },
+        { icon: Users, path: '/workspaces', label: 'Workspaces', workerOnly: true },
         { icon: Printer, path: '/reports', label: 'Reports' },
         { icon: Share2, path: '/share', label: 'Share' },
     ];
+
+    const menuItems = allMenuItems.filter(item => !item.workerOnly || userRole === 'WORKER');
 
     return (
         <div className={`flex h-screen ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
@@ -212,74 +216,76 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     </h1>
 
                     <div className="flex items-center gap-3">
-                        {/* Workspace Dropdown */}
-                        <div ref={workspaceRef} className="relative">
-                            <button
-                                onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${theme === 'dark'
-                                    ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
-                                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                    }`}
-                            >
-                                <Building2 size={18} className="text-[#464ace]" />
-                                <span className="text-sm font-medium max-w-[150px] truncate">
-                                    {activeWorkspace?.name || 'Select Workspace'}
-                                </span>
-                                <ChevronDown size={14} className={`transition-transform ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
-                            </button>
+                        {/* Workspace Dropdown - Only for WORKER users */}
+                        {userRole === 'WORKER' && (
+                            <div ref={workspaceRef} className="relative">
+                                <button
+                                    onClick={() => setIsWorkspaceOpen(!isWorkspaceOpen)}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${theme === 'dark'
+                                        ? 'border-slate-700 hover:bg-slate-800 text-slate-300'
+                                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                                        }`}
+                                >
+                                    <Building2 size={18} className="text-[#464ace]" />
+                                    <span className="text-sm font-medium max-w-[150px] truncate">
+                                        {activeWorkspace?.name || 'Select Workspace'}
+                                    </span>
+                                    <ChevronDown size={14} className={`transition-transform ${isWorkspaceOpen ? 'rotate-180' : ''}`} />
+                                </button>
 
-                            {/* Workspace Dropdown Menu */}
-                            {isWorkspaceOpen && (
-                                <div className={`absolute right-0 top-full mt-2 w-72 rounded-xl shadow-lg border py-2 z-50 ${theme === 'dark'
-                                    ? 'bg-slate-800 border-slate-700'
-                                    : 'bg-white border-slate-200'
-                                    }`}>
-                                    <div className={`px-3 py-2 text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                        Switch Workspace
-                                    </div>
-                                    <div className="max-h-64 overflow-auto">
-                                        {workspaces.map(workspace => (
-                                            <button
-                                                key={workspace.id}
-                                                onClick={() => handleSwitchWorkspace(workspace)}
+                                {/* Workspace Dropdown Menu */}
+                                {isWorkspaceOpen && (
+                                    <div className={`absolute right-0 top-full mt-2 w-72 rounded-xl shadow-lg border py-2 z-50 ${theme === 'dark'
+                                        ? 'bg-slate-800 border-slate-700'
+                                        : 'bg-white border-slate-200'
+                                        }`}>
+                                        <div className={`px-3 py-2 text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                            Switch Workspace
+                                        </div>
+                                        <div className="max-h-64 overflow-auto">
+                                            {workspaces.map(workspace => (
+                                                <button
+                                                    key={workspace.id}
+                                                    onClick={() => handleSwitchWorkspace(workspace)}
+                                                    className={`w-full px-3 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
+                                                        ? 'hover:bg-slate-700'
+                                                        : 'hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-[#464ace] flex items-center justify-center text-white font-bold text-sm">
+                                                        {workspace.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div className="flex-1 text-left min-w-0">
+                                                        <p className={`font-medium truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                                            {workspace.name}
+                                                        </p>
+                                                        <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                            {workspace._count?.members || workspace.members?.length || 1} members
+                                                        </p>
+                                                    </div>
+                                                    {activeWorkspace?.id === workspace.id && (
+                                                        <Check size={16} className="text-[#464ace]" />
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className={`border-t mt-2 pt-2 ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                                            <Link
+                                                to="/workspaces"
+                                                onClick={() => setIsWorkspaceOpen(false)}
                                                 className={`w-full px-3 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
-                                                    ? 'hover:bg-slate-700'
-                                                    : 'hover:bg-slate-50'
+                                                    ? 'text-[#464ace] hover:bg-slate-700'
+                                                    : 'text-[#464ace] hover:bg-slate-50'
                                                     }`}
                                             >
-                                                <div className="w-8 h-8 rounded-lg bg-[#464ace] flex items-center justify-center text-white font-bold text-sm">
-                                                    {workspace.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex-1 text-left min-w-0">
-                                                    <p className={`font-medium truncate ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                                                        {workspace.name}
-                                                    </p>
-                                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                        {workspace._count?.members || workspace.members?.length || 1} members
-                                                    </p>
-                                                </div>
-                                                {activeWorkspace?.id === workspace.id && (
-                                                    <Check size={16} className="text-[#464ace]" />
-                                                )}
-                                            </button>
-                                        ))}
+                                                <Users size={16} />
+                                                <span className="font-medium text-sm">Manage Workspaces</span>
+                                            </Link>
+                                        </div>
                                     </div>
-                                    <div className={`border-t mt-2 pt-2 ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                                        <Link
-                                            to="/workspaces"
-                                            onClick={() => setIsWorkspaceOpen(false)}
-                                            className={`w-full px-3 py-2.5 flex items-center gap-3 transition-colors ${theme === 'dark'
-                                                ? 'text-[#464ace] hover:bg-slate-700'
-                                                : 'text-[#464ace] hover:bg-slate-50'
-                                                }`}
-                                        >
-                                            <Users size={16} />
-                                            <span className="font-medium text-sm">Manage Workspaces</span>
-                                        </Link>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Profile Dropdown */}
                         <div ref={profileRef} className="relative">
