@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
@@ -238,15 +239,12 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
         }
     };
 
-    const handleStartWork = async () => {
-        try {
-            await tasksAPI.startWork(taskId, new FormData());
-            toast.success('Work started! You can now upload your proof.');
-            fetchTask();
-            onTaskUpdated?.();
-        } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Failed to start work');
-        }
+    const navigate = useNavigate();
+
+    const handleStartWork = () => {
+        // Navigate to the WorkVerification page
+        onClose();
+        navigate(`/tasks/${taskId}/verify`);
     };
 
     const handleSubmit = async () => {
@@ -469,7 +467,7 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                             onClick={handleStartWork}
                                             className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white"
                                         >
-                                            Start Work
+                                            START WORK
                                         </Button>
                                     </div>
                                 )}

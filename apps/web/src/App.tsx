@@ -8,6 +8,7 @@ import MyTasks from './pages/MyTasks';
 import MyTaskDetails from './pages/MyTaskDetails';
 import TaskWorkspace from './pages/TaskWorkspace';
 import TaskReview from './pages/TaskReview';
+import { WorkVerification } from './pages/WorkVerification';
 import Calendar from './pages/Calendar';
 import Workspaces from './pages/Workspaces';
 import { requestForToken, onMessageListener } from './lib/firebase';
@@ -91,6 +92,11 @@ function App() {
         <Route
           path="/tasks/:id/review"
           element={isAuthenticated ? <TaskReview /> : <Navigate to="/login" />}
+        />
+
+        <Route
+          path="/tasks/:id/verify"
+          element={isAuthenticated ? <WorkVerification /> : <Navigate to="/login" />}
         />
 
         <Route path="/" element={<Navigate to="/dashboard" />} />
