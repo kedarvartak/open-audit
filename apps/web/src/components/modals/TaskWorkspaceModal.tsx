@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation, MapPin, Radio } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation, MapPin, Radio, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -14,6 +14,19 @@ interface TaskWorkspaceModalProps {
     onTaskUpdated?: () => void;
 }
 
+// Haversine formula to calculate distance in meters
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
 export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: TaskWorkspaceModalProps) => {
     const [task, setTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
@@ -22,6 +35,8 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
     const [notes, setNotes] = useState('');
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [serverTime, setServerTime] = useState<Date | null>(null);
+    const [markingArrived, setMarkingArrived] = useState(false);
+    const [testingMode, setTestingMode] = useState(false);
     const { theme } = useTheme();
 
     // Get worker info from localStorage
@@ -37,10 +52,33 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
         updateIntervalMs: 5000, // Update every 5 seconds
     });
 
+    // Calculate distance to task location (geofence check)
+    const geofenceInfo = useMemo(() => {
+        if (!task?.locationLat || !task?.locationLng || !locationTracking.currentLocation) {
+            return { distance: null, isWithinGeofence: false };
+        }
+
+        const distance = calculateDistance(
+            locationTracking.currentLocation.coords.latitude,
+            locationTracking.currentLocation.coords.longitude,
+            task.locationLat,
+            task.locationLng
+        );
+
+        const geofenceRadius = task.locationRadius || 100; // Default 100m
+        return {
+            distance: Math.round(distance),
+            isWithinGeofence: distance <= geofenceRadius,
+            radius: geofenceRadius,
+        };
+    }, [task?.locationLat, task?.locationLng, task?.locationRadius, locationTracking.currentLocation]);
+
     useEffect(() => {
         if (isOpen && taskId) {
             fetchTask();
             fetchServerTime();
+            // Read testing mode from localStorage
+            setTestingMode(localStorage.getItem('testingMode') === 'true');
         }
     }, [isOpen, taskId]);
 
@@ -168,6 +206,35 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
             }
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to start journey');
+        }
+    };
+
+    const handleMarkArrived = async () => {
+        if (!locationTracking.currentLocation) {
+            toast.error('Unable to get your location. Please enable GPS.');
+            return;
+        }
+
+        const lat = locationTracking.currentLocation.coords.latitude;
+        const lng = locationTracking.currentLocation.coords.longitude;
+
+        // Check if testing mode is enabled (bypasses geofence check)
+        const isTestingMode = localStorage.getItem('testingMode') === 'true';
+
+        try {
+            setMarkingArrived(true);
+            await tasksAPI.markArrived(taskId, lat, lng, isTestingMode);
+            toast.success(isTestingMode
+                ? 'You have arrived! (Testing mode - location check bypassed)'
+                : 'You have arrived! The client has been notified.'
+            );
+            fetchTask();
+            onTaskUpdated?.();
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || 'Failed to mark arrival';
+            toast.error(errorMsg);
+        } finally {
+            setMarkingArrived(false);
         }
     };
 
@@ -354,9 +421,9 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                         </Button>
                                     </div>
                                 )}
-                                {/* EN_ROUTE: Show tracking status indicator */}
+                                {/* EN_ROUTE: Show tracking status and arrival button */}
                                 {task.status === 'EN_ROUTE' && (
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 flex-wrap">
                                         {/* Live tracking indicator */}
                                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${theme === 'dark' ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
                                             <div className="relative">
@@ -367,6 +434,47 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                                 {locationTracking.isTracking ? 'Sharing location' : 'Traveling...'}
                                             </span>
                                         </div>
+
+                                        {/* Distance to destination */}
+                                        {geofenceInfo.distance !== null && (
+                                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${geofenceInfo.isWithinGeofence
+                                                ? (theme === 'dark' ? 'bg-emerald-500/20' : 'bg-emerald-100')
+                                                : (theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100')
+                                                }`}>
+                                                <MapPin size={14} className={geofenceInfo.isWithinGeofence ? 'text-emerald-500' : 'text-slate-500'} />
+                                                <span className={`text-xs font-medium ${geofenceInfo.isWithinGeofence
+                                                    ? (theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700')
+                                                    : (theme === 'dark' ? 'text-slate-400' : 'text-slate-600')
+                                                    }`}>
+                                                    {geofenceInfo.distance < 1000
+                                                        ? `${geofenceInfo.distance}m away`
+                                                        : `${(geofenceInfo.distance / 1000).toFixed(1)}km away`
+                                                    }
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* I've Arrived button - enabled when within geofence OR testing mode is on */}
+                                        <Button
+                                            onClick={handleMarkArrived}
+                                            disabled={markingArrived || (!testingMode && !geofenceInfo.isWithinGeofence && locationTracking.currentLocation !== null)}
+                                            className={`flex-shrink-0 flex items-center gap-2 ${testingMode
+                                                    ? 'bg-amber-500 hover:bg-amber-600' // Testing mode - amber color
+                                                    : geofenceInfo.isWithinGeofence
+                                                        ? 'bg-emerald-500 hover:bg-emerald-600'
+                                                        : 'bg-slate-400 cursor-not-allowed opacity-70'
+                                                } text-white`}
+                                        >
+                                            <CheckCircle2 size={16} />
+                                            {markingArrived
+                                                ? 'Marking...'
+                                                : testingMode
+                                                    ? "I've Arrived (Test Mode)"
+                                                    : geofenceInfo.isWithinGeofence
+                                                        ? "I've Arrived"
+                                                        : `Arrive within ${geofenceInfo.radius || 100}m`
+                                            }
+                                        </Button>
 
                                         {/* Error indicator if location fails */}
                                         {locationTracking.error && (

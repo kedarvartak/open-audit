@@ -121,6 +121,7 @@ export class TasksController {
             req.user.userId,
             parseFloat(body.lat),
             parseFloat(body.lng),
+            body.skipLocationCheck === true, // Testing mode: skip geofence check
         );
     }
 

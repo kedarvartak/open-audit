@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, MoreVertical } from 'lucide-react';
+import { Search, Plus, MoreVertical, FlaskConical } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { Dropdown } from '../components/ui/Dropdown';
@@ -21,6 +21,7 @@ export const Dashboard = () => {
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [testingMode, setTestingMode] = useState(() => localStorage.getItem('testingMode') === 'true');
     const { theme } = useTheme();
 
     const fetchTasks = async () => {
@@ -122,6 +123,16 @@ export const Dashboard = () => {
         { value: 'budget-low', label: 'Sort By: Lowest Budget' },
     ];
 
+    const handleToggleTestingMode = () => {
+        const newValue = !testingMode;
+        setTestingMode(newValue);
+        localStorage.setItem('testingMode', String(newValue));
+        toast.success(newValue
+            ? '🧪 Testing Mode Enabled - Location checks will be bypassed'
+            : '✅ Testing Mode Disabled - Normal location verification active'
+        );
+    };
+
     const handleCreateSuccess = () => {
         fetchTasks();
     };
@@ -180,10 +191,32 @@ export const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Results Count */}
-                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                    Showing {filteredTasks.length} of {tasks.length} Tasks
-                </p>
+                {/* Testing Mode Toggle & Results Count */}
+                <div className="flex items-center justify-between gap-4">
+                    <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Showing {filteredTasks.length} of {tasks.length} Tasks
+                        {testingMode && (
+                            <span className="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-amber-500/20 text-amber-600">
+                                🧪 Testing Mode
+                            </span>
+                        )}
+                    </p>
+
+                    {/* Testing Mode Toggle Button */}
+                    <button
+                        onClick={handleToggleTestingMode}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${testingMode
+                                ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-md'
+                                : theme === 'dark'
+                                    ? 'bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-slate-300 border border-slate-600'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border border-slate-300'
+                            }`}
+                        title={testingMode ? 'Disable Testing Mode' : 'Enable Testing Mode - Bypasses location verification'}
+                    >
+                        <FlaskConical size={14} />
+                        {testingMode ? 'Testing Mode ON' : 'Testing Mode'}
+                    </button>
+                </div>
 
                 {filteredTasks.length === 0 ? (
                     <div className={`flex-1 flex items-center justify-center rounded-md border ${theme === 'dark'

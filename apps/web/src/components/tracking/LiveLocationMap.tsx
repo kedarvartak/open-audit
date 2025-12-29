@@ -9,6 +9,7 @@ interface LiveLocationMapProps {
     destinationLat: number;
     destinationLng: number;
     destinationName?: string;
+    geofenceRadius?: number; // Arrival zone radius in meters
     onArrival?: () => void;
 }
 
@@ -17,6 +18,7 @@ export const LiveLocationMap = ({
     destinationLat,
     destinationLng,
     destinationName,
+    geofenceRadius = 100,
     onArrival,
 }: LiveLocationMapProps) => {
     const { theme } = useTheme();
@@ -183,16 +185,29 @@ export const LiveLocationMap = ({
                     }}
                 />
 
-                {/* Destination ring effect */}
+                {/* Geofence/Arrival zone circle */}
                 <Circle
                     center={{ lat: destinationLat, lng: destinationLng }}
-                    radius={50}
+                    radius={geofenceRadius}
                     options={{
                         fillColor: '#10B981',
-                        fillOpacity: 0.15,
+                        fillOpacity: 0.08,
                         strokeColor: '#10B981',
                         strokeWeight: 2,
-                        strokeOpacity: 0.5,
+                        strokeOpacity: 0.4,
+                    }}
+                />
+
+                {/* Inner destination ring */}
+                <Circle
+                    center={{ lat: destinationLat, lng: destinationLng }}
+                    radius={20}
+                    options={{
+                        fillColor: '#10B981',
+                        fillOpacity: 0.3,
+                        strokeColor: '#10B981',
+                        strokeWeight: 3,
+                        strokeOpacity: 0.8,
                     }}
                 />
 

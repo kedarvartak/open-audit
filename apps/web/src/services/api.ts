@@ -93,8 +93,8 @@ export const tasksAPI = {
         api.post(`/v0/tasks/${id}/en-route`, { lat, lng }),
 
     // Worker marks as arrived at location
-    markArrived: (id: string, lat: number, lng: number) =>
-        api.post(`/v0/tasks/${id}/arrived`, { lat, lng }),
+    markArrived: (id: string, lat: number, lng: number, skipLocationCheck?: boolean) =>
+        api.post(`/v0/tasks/${id}/arrived`, { lat, lng, skipLocationCheck }),
 
     getMyTasks: (role: 'client' | 'worker') =>
         api.get('/v0/tasks/my-tasks', { params: { role } }),

@@ -206,6 +206,7 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                         destinationLat={task.locationLat}
                                         destinationLng={task.locationLng}
                                         destinationName={task.locationName}
+                                        geofenceRadius={task.locationRadius || 100}
                                         onArrival={() => {
                                             toast.success('Worker has arrived at the location!');
                                             fetchTask();

@@ -301,6 +301,7 @@ export class TasksService {
         workerId: string,
         workerLat: number,
         workerLng: number,
+        skipLocationCheck: boolean = false, // Testing mode: skip geofence verification
     ) {
         const task = await this.getTaskById(taskId);
 
@@ -313,7 +314,8 @@ export class TasksService {
         }
 
         // Location verification - worker must be within radius of task location
-        if (task.requiresLocation && task.locationLat !== null && task.locationLng !== null) {
+        // Skip verification if testing mode is enabled
+        if (!skipLocationCheck && task.requiresLocation && task.locationLat !== null && task.locationLng !== null) {
             const distance = this.calculateDistance(
                 workerLat,
                 workerLng,
