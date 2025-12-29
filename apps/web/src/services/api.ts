@@ -211,6 +211,10 @@ export const workspacesAPI = {
     // Reject invitation
     rejectInvitation: (workspaceId: string) =>
         api.post(`/v0/workspaces/invitations/${workspaceId}/reject`),
+
+    // Export workspace to Google Sheets
+    exportWorkspaceToSheets: (workspaceId: string) =>
+        api.post<{ url: string }>('/v0/export/workspace-to-sheets', { workspaceId }),
 };
 
 export default api;

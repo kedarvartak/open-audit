@@ -9,6 +9,7 @@ import { StorageModule } from './storage/storage.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FirebaseModule } from './firebase/firebase.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
+import { ExportModule } from './export/export.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     TasksModule,
     FirebaseModule,
     WorkspacesModule,
+    ExportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

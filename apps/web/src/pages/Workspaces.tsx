@@ -11,7 +11,8 @@ import {
     Shield,
     User,
     Pencil,
-    Info
+    Info,
+    FileSpreadsheet
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authAPI } from '../services/api';
@@ -210,6 +211,23 @@ const Workspaces = () => {
         }
     };
 
+    const handleExportToSheets = async () => {
+        if (!selectedWorkspace) return;
+
+        try {
+            toast.loading('Exporting workspace to Google Sheets...');
+            const response = await workspacesAPI.exportWorkspaceToSheets(selectedWorkspace.id);
+            toast.dismiss();
+            toast.success('Exported successfully!');
+            // Open the spreadsheet in a new tab
+            window.open(response.data.url, '_blank');
+        } catch (error: any) {
+            toast.dismiss();
+            console.error('Failed to export workspace:', error);
+            toast.error(error.response?.data?.message || 'Failed to export workspace. Make sure Google credentials are configured.');
+        }
+    };
+
     const getRoleBadgeColor = (role: string) => {
         switch (role) {
             case 'OWNER': return 'bg-amber-400 text-slate-900';
@@ -312,22 +330,35 @@ const Workspaces = () => {
                                     </div>
                                 </div>
 
-                                {selectedWorkspace.ownerId === currentUserId && (
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={openEditModal}
-                                            className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white transition-colors"
-                                        >
-                                            <Pencil size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteWorkspace(selectedWorkspace.id)}
-                                            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {/* Export to Sheets - Available to all members */}
+                                    <button
+                                        onClick={handleExportToSheets}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-sm bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-medium transition-colors"
+                                        title="Export workspace to Google Sheets"
+                                    >
+                                        <FileSpreadsheet size={16} />
+                                        Export to Sheets
+                                    </button>
+
+                                    {/* Owner-only actions */}
+                                    {selectedWorkspace.ownerId === currentUserId && (
+                                        <>
+                                            <button
+                                                onClick={openEditModal}
+                                                className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white transition-colors"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteWorkspace(selectedWorkspace.id)}
+                                                className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Members Section */}
@@ -351,8 +382,8 @@ const Workspaces = () => {
                                 <div className={`rounded-lg border overflow-hidden ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
                                     {/* Table Header */}
                                     <div className={`grid grid-cols-12 gap-0 divide-x border-b text-xs font-semibold uppercase tracking-wider ${theme === 'dark'
-                                            ? 'bg-slate-800/50 text-slate-400 divide-slate-700 border-slate-700'
-                                            : 'bg-slate-50 text-slate-500 divide-slate-200 border-slate-200'
+                                        ? 'bg-slate-800/50 text-slate-400 divide-slate-700 border-slate-700'
+                                        : 'bg-slate-50 text-slate-500 divide-slate-200 border-slate-200'
                                         }`}>
                                         <div className="col-span-5 px-4 py-3">Member</div>
                                         <div className="col-span-3 px-4 py-3">Role</div>
@@ -366,8 +397,8 @@ const Workspaces = () => {
                                             <div
                                                 key={member.id}
                                                 className={`grid grid-cols-12 gap-0 divide-x items-center transition-colors ${theme === 'dark'
-                                                        ? 'divide-slate-700 hover:bg-slate-800/30'
-                                                        : 'divide-slate-200 hover:bg-slate-50'
+                                                    ? 'divide-slate-700 hover:bg-slate-800/30'
+                                                    : 'divide-slate-200 hover:bg-slate-50'
                                                     }`}
                                             >
                                                 {/* Member Column */}
