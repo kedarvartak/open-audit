@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation, MapPin } from 'lucide-react';
+import { X, Calendar, File, Trash2, ChevronLeft, ChevronRight, Navigation, MapPin, Radio } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 import { tasksAPI } from '../../services/api';
 import type { Task } from '../../services/api';
+import { useLocationTracking } from '../../hooks/useLocationTracking';
 
 interface TaskWorkspaceModalProps {
     taskId: string;
@@ -22,6 +23,19 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [serverTime, setServerTime] = useState<Date | null>(null);
     const { theme } = useTheme();
+
+    // Get worker info from localStorage
+    const workerId = localStorage.getItem('userId') || '';
+    const workerName = localStorage.getItem('userName') || 'Worker';
+
+    // Location tracking hook - only active when EN_ROUTE
+    const locationTracking = useLocationTracking({
+        taskId,
+        workerId,
+        workerName,
+        isTracking: task?.status === 'EN_ROUTE',
+        updateIntervalMs: 5000, // Update every 5 seconds
+    });
 
     useEffect(() => {
         if (isOpen && taskId) {
@@ -340,12 +354,26 @@ export const TaskWorkspaceModal = ({ taskId, isOpen, onClose, onTaskUpdated }: T
                                         </Button>
                                     </div>
                                 )}
-                                {/* EN_ROUTE: Show status indicator */}
+                                {/* EN_ROUTE: Show tracking status indicator */}
                                 {task.status === 'EN_ROUTE' && (
-                                    <div className="flex items-center gap-2">
-                                        <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${theme === 'dark' ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-700'}`}>
-                                            🚗 Traveling to location...
-                                        </span>
+                                    <div className="flex items-center gap-3">
+                                        {/* Live tracking indicator */}
+                                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${theme === 'dark' ? 'bg-orange-500/20' : 'bg-orange-100'}`}>
+                                            <div className="relative">
+                                                <Radio size={14} className="text-orange-500" />
+                                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full animate-ping" />
+                                            </div>
+                                            <span className={`text-xs font-medium ${theme === 'dark' ? 'text-orange-400' : 'text-orange-700'}`}>
+                                                {locationTracking.isTracking ? 'Sharing location' : 'Traveling...'}
+                                            </span>
+                                        </div>
+
+                                        {/* Error indicator if location fails */}
+                                        {locationTracking.error && (
+                                            <span className="text-xs text-red-500">
+                                                ({locationTracking.error})
+                                            </span>
+                                        )}
                                     </div>
                                 )}
                                 {/* ARRIVED: Show 'Start Work' button */}

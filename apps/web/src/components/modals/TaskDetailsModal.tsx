@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { X, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Calendar, ChevronLeft, ChevronRight, Radio } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '../ui/Button';
 import { useTheme } from '../../contexts/ThemeContext';
 import { tasksAPI } from '../../services/api';
 import type { Task } from '../../services/api';
+import { LiveLocationMap } from '../tracking/LiveLocationMap';
 
 interface TaskDetailsModalProps {
     taskId: string;
@@ -187,6 +188,31 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                     ₹{task.budget.toLocaleString()}
                                 </span>
                             </div>
+
+                            {/* Live Location Map - Show when worker is EN_ROUTE */}
+                            {task.status === 'EN_ROUTE' && task.worker && task.locationLat && task.locationLng && userRole === 'CLIENT' && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <div className="relative">
+                                            <Radio size={16} className="text-orange-500" />
+                                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-orange-500 rounded-full animate-ping" />
+                                        </div>
+                                        <span className={`text-sm font-medium ${theme === 'dark' ? 'text-orange-400' : 'text-orange-600'}`}>
+                                            {task.worker.name} is on the way
+                                        </span>
+                                    </div>
+                                    <LiveLocationMap
+                                        taskId={taskId}
+                                        destinationLat={task.locationLat}
+                                        destinationLng={task.locationLng}
+                                        destinationName={task.locationName}
+                                        onArrival={() => {
+                                            toast.success('Worker has arrived at the location!');
+                                            fetchTask();
+                                        }}
+                                    />
+                                </div>
+                            )}
 
                             {/* Title with Accept Task Button */}
                             <div className="flex items-center justify-between gap-4">
