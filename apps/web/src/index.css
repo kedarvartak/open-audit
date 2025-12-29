@@ -52,3 +52,75 @@
         @apply font-sans;
     }
 }
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar {
+    scrollbar-width: thin;
+}
+
+/* Dark Theme Scrollbar */
+.dark-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
+    /* slate-900 with opacity */
+    border-radius: 4px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.6);
+    /* slate-600 with opacity */
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.8);
+    /* slate-500 with opacity */
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(148, 163, 184, 0.9);
+    /* slate-400 with opacity */
+}
+
+/* Light Theme Scrollbar */
+.light-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.light-scrollbar::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.8);
+    /* slate-100 with opacity */
+    border-radius: 4px;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(203, 213, 225, 0.8);
+    /* slate-300 with opacity */
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.9);
+    /* slate-400 with opacity */
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(100, 116, 139, 1);
+    /* slate-500 */
+}
+
+/* Firefox Scrollbar */
+.dark-scrollbar {
+    scrollbar-color: rgba(71, 85, 105, 0.6) rgba(15, 23, 42, 0.3);
+}
+
+.light-scrollbar {
+    scrollbar-color: rgba(203, 213, 225, 0.8) rgba(241, 245, 249, 0.8);
+}

@@ -37,8 +37,8 @@ async function seedUsers() {
 
         console.log('\n✅ Seeding complete!');
         console.log('\nTest accounts:');
-        console.log('  Client: client@test.com / pass123');
-        console.log('  Worker: worker@test.com / pass123\n');
+        console.log('  Client: client@test.com / password123');
+        console.log('  Worker: worker@test.com / password123\n');
 
     } catch (error) {
         console.error('❌ Error seeding users:', error);

@@ -21,7 +21,6 @@ export const Dashboard = () => {
     const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [editingTask, setEditingTask] = useState<Task | null>(null);
-    const [testingMode, setTestingMode] = useState(() => localStorage.getItem('testingMode') === 'true');
     const { theme } = useTheme();
 
     const fetchTasks = async () => {
@@ -123,15 +122,7 @@ export const Dashboard = () => {
         { value: 'budget-low', label: 'SORT BY: LOWEST BUDGET' },
     ];
 
-    const handleToggleTestingMode = () => {
-        const newValue = !testingMode;
-        setTestingMode(newValue);
-        localStorage.setItem('testingMode', String(newValue));
-        toast.success(newValue
-            ? 'Testing Mode Enabled - Location checks will be bypassed'
-            : 'Testing Mode Disabled - Normal location verification active'
-        );
-    };
+
 
     const handleCreateSuccess = () => {
         fetchTasks();
@@ -190,19 +181,7 @@ export const Dashboard = () => {
                                 <span className="font-semibold">CREATE TASK</span>
                             </Button>
 
-                            {/* Testing Mode Toggle Button */}
-                            <button
-                                onClick={handleToggleTestingMode}
-                                className={`h-12 px-6 py-3 rounded-md text-sm font-semibold transition-all ${testingMode
-                                    ? 'bg-amber-500 text-white hover:bg-amber-600'
-                                    : theme === 'dark'
-                                        ? 'bg-slate-700 text-slate-400 border border-slate-600 hover:bg-slate-600'
-                                        : 'bg-slate-100 text-slate-500 border border-slate-300 hover:bg-slate-200'
-                                    }`}
-                                title={testingMode ? 'Disable Testing Mode' : 'Enable Testing Mode - Bypasses location verification'}
-                            >
-                                TESTING MODE
-                            </button>
+
                         </div>
                     )}
                 </div>
