@@ -5,8 +5,6 @@ import Register from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import TaskDetails from './pages/TaskDetails';
 import MyTasks from './pages/MyTasks';
-import MyTaskDetails from './pages/MyTaskDetails';
-import TaskWorkspace from './pages/TaskWorkspace';
 import TaskReview from './pages/TaskReview';
 import { WorkVerification } from './pages/WorkVerification';
 import Calendar from './pages/Calendar';
@@ -65,11 +63,6 @@ function App() {
         />
 
         <Route
-          path="/my-tasks/:id"
-          element={isAuthenticated ? <MyTaskDetails /> : <Navigate to="/login" />}
-        />
-
-        <Route
           path="/calendar"
           element={isAuthenticated ? <Calendar /> : <Navigate to="/login" />}
         />
@@ -82,11 +75,6 @@ function App() {
         <Route
           path="/tasks/:id"
           element={isAuthenticated ? <TaskDetails /> : <Navigate to="/login" />}
-        />
-
-        <Route
-          path="/tasks/:id/work"
-          element={isAuthenticated ? <TaskWorkspace /> : <Navigate to="/login" />}
         />
 
         <Route

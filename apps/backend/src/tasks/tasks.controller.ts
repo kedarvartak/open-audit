@@ -139,6 +139,7 @@ export class TasksController {
             req.user.userId,
             body.lat ? parseFloat(body.lat) : undefined,
             body.lng ? parseFloat(body.lng) : undefined,
+            body.skipLocationCheck === true, // Testing mode: skip geofence check
         );
     }
 
@@ -146,17 +147,29 @@ export class TasksController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.WORKER, Role.ADMIN)
-    @UseInterceptors(FileInterceptor('afterImage'))
+    @UseInterceptors(FilesInterceptor('afterImages', 10))
     async submitWork(
         @Param('id') id: string,
-        @UploadedFile() afterImage: Express.Multer.File,
+        @UploadedFiles() afterImages: Express.Multer.File[],
         @Request() req: any,
     ) {
-        if (!afterImage) {
-            throw new BadRequestException('After image required');
+        console.log(`[TasksController] submitWork called for task ${id} by user ${req.user.userId}`);
+        console.log(`[TasksController] Received ${afterImages?.length || 0} afterImages`);
+
+        if (!afterImages || afterImages.length === 0) {
+            console.error('[TasksController] No afterImages provided');
+            throw new BadRequestException('After images required');
         }
 
-        return this.tasksService.submitWork(id, req.user.userId, afterImage);
+        const result = await this.tasksService.submitWork(id, req.user.userId, afterImages);
+        console.log(`[TasksController] submitWork result: aiResult keys=${result.aiResult ? Object.keys(result.aiResult) : 'null'}`);
+        if (result.aiResult && result.aiResult.details) {
+            console.log(`[TasksController] AI details count: ${result.aiResult.details.length}`);
+            result.aiResult.details.forEach((d, i) => {
+                console.log(`[TasksController] Detail ${i}: before_len=${d.before_image_annotated?.length}, after_len=${d.after_image_annotated?.length}`);
+            });
+        }
+        return result;
     }
 
     @Post(':id/dispute')

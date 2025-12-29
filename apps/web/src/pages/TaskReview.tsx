@@ -104,7 +104,7 @@ export default function TaskReview() {
                     className={`flex items-center gap-2 ${theme === 'dark' ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'} transition-colors`}
                 >
                     <ArrowLeft size={20} />
-                    <span className="font-medium">Back to My Tasks</span>
+                    <span className="font-medium">Back to Team Tasks</span>
                 </button>
 
                 {/* Task Header */}

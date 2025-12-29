@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, X, ChevronRight, ImageIcon, Upload } from 'lucide-react';
+import { ArrowLeft, X, ChevronRight, ImageIcon } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { useTheme } from '../contexts/ThemeContext';
@@ -24,8 +24,9 @@ export const WorkVerification = () => {
     const [loading, setLoading] = useState(true);
     const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
     const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-    const [viewMode, setViewMode] = useState<'before' | 'after'>('after');
+    const [viewMode, setViewMode] = useState<'before' | 'after' | 'ai'>('after');
     const [submitting, setSubmitting] = useState(false);
+    const [aiResults, setAiResults] = useState<any>(null);
 
     // Fetch task details
     useEffect(() => {
@@ -90,24 +91,69 @@ export const WorkVerification = () => {
 
     // Submit work for verification
     const handleSubmitWork = async () => {
+        console.log('[WorkVerification] handleSubmitWork called');
+        console.log('[WorkVerification] capturedImages:', capturedImages.length);
+
         if (capturedImages.length === 0) {
             toast.error('Please upload at least one image');
             return;
         }
 
+        // Note: Backend now handles all status transitions automatically
+
         setSubmitting(true);
         try {
             const formData = new FormData();
+
             for (let i = 0; i < capturedImages.length; i++) {
                 const img = capturedImages[i];
+                console.log(`[WorkVerification] Processing image ${i}: ${img.src.substring(0, 50)}...`);
+
                 const response = await fetch(img.src);
                 const blob = await response.blob();
-                formData.append('afterImages', blob, `after_${i}.jpg`);
+                console.log(`[WorkVerification] Blob created: type=${blob.type}, size=${blob.size}`);
+
+                // Create a File object from the blob
+                const file = new File([blob], `after_${i}.jpg`, { type: blob.type });
+                formData.append('afterImages', file);
             }
 
-            await tasksAPI.submitWork(id!, formData);
-            toast.success('Work submitted for verification');
-            navigate(`/my-tasks/${id}`);
+            // Log FormData contents
+            console.log('[WorkVerification] FormData entries:');
+            for (const pair of formData.entries()) {
+                console.log(`  ${pair[0]}: ${pair[1]}`);
+            }
+
+            // Use native fetch instead of axios
+            const token = localStorage.getItem('token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+            console.log(`[WorkVerification] Sending to: ${apiUrl}/v0/tasks/${id}/submit`);
+
+            const fetchResponse = await fetch(`${apiUrl}/v0/tasks/${id}/submit`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            console.log(`[WorkVerification] Response status: ${fetchResponse.status}`);
+
+            if (!fetchResponse.ok) {
+                const errorText = await fetchResponse.text();
+                console.error('[WorkVerification] Error response:', errorText);
+                throw new Error(`HTTP ${fetchResponse.status}: ${errorText}`);
+            }
+
+            const data = await fetchResponse.json();
+            toast.success('Work submitted and verified!');
+            setAiResults(data.aiResult);
+            // Switch to AI view mode automatically
+            if (data.aiResult?.details?.length > 0) {
+                setViewMode('ai');
+                setSelectedImageIndex(0);
+            }
         } catch (error) {
             console.error('Submit error:', error);
             toast.error('Failed to submit work');
@@ -155,7 +201,7 @@ export const WorkVerification = () => {
                 <div className={`flex items-center justify-between px-6 py-4 border-b ${theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
                     <div className="flex items-center gap-4">
                         <button
-                            onClick={() => navigate(`/my-tasks/${id}`)}
+                            onClick={() => navigate('/my-tasks')}
                             className={`p-2 rounded-full transition-all ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'}`}
                         >
                             <ArrowLeft size={20} />
@@ -200,6 +246,59 @@ export const WorkVerification = () => {
                                     alt="After"
                                     className="w-full h-full object-contain"
                                 />
+                            ) : viewMode === 'ai' && selectedImageIndex !== null && aiResults?.details?.[selectedImageIndex] ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                                    {/* Debug logging */}
+                                    {(() => {
+                                        const detail = aiResults.details[selectedImageIndex];
+                                        console.log(`[WorkVerification] Rendering AI result ${selectedImageIndex}`);
+                                        console.log(`[WorkVerification] Status: ${detail.status}`);
+                                        return null;
+                                    })()}
+
+                                    {aiResults.details[selectedImageIndex].status === 'success' ? (
+                                        <div className="relative w-full h-full flex gap-4">
+                                            <div className="flex-1 flex flex-col">
+                                                <p className={`text-center mb-2 font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>Before (Annotated)</p>
+                                                <div className="flex-1 relative bg-black/5 rounded-lg overflow-hidden">
+                                                    <img
+                                                        src={aiResults.details[selectedImageIndex].before_image_annotated}
+                                                        alt="Annotated Before"
+                                                        className="absolute inset-0 w-full h-full object-contain"
+                                                        onError={(e) => console.error('Error loading before image', e)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 flex flex-col">
+                                                <p className={`text-center mb-2 font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>After (Annotated)</p>
+                                                <div className="flex-1 relative bg-black/5 rounded-lg overflow-hidden">
+                                                    <img
+                                                        src={aiResults.details[selectedImageIndex].after_image_annotated}
+                                                        alt="Annotated After"
+                                                        className="absolute inset-0 w-full h-full object-contain"
+                                                        onError={(e) => console.error('Error loading after image', e)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className={`flex flex-col items-center justify-center p-8 rounded-lg border ${aiResults.details[selectedImageIndex].status === 'no_defect'
+                                            ? theme === 'dark' ? 'border-amber-500/50 bg-amber-500/10' : 'border-amber-200 bg-amber-50'
+                                            : theme === 'dark' ? 'border-red-500/50 bg-red-500/10' : 'border-red-200 bg-red-50'
+                                            }`}>
+                                            <h3 className={`text-lg font-bold mb-2 ${aiResults.details[selectedImageIndex].status === 'no_defect' ? 'text-amber-500' : 'text-red-500'
+                                                }`}>
+                                                {aiResults.details[selectedImageIndex].status === 'no_defect' ? 'No Defect Detected' : 'AI Analysis Failed'}
+                                            </h3>
+                                            <p className={`text-center ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                {aiResults.details[selectedImageIndex].message || 'Unknown error occurred during analysis'}
+                                            </p>
+                                            <p className="text-sm text-slate-500 mt-4">
+                                                Status: {aiResults.details[selectedImageIndex].status}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center max-w-md mx-auto text-center p-8">
                                     <div className="space-y-6">
@@ -351,6 +450,65 @@ export const WorkVerification = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* AI Results List */}
+                        {aiResults && aiResults.details && (
+                            <div className="flex-1 flex flex-col min-h-0 border-t border-slate-200 dark:border-slate-700">
+                                <div className="px-6 pt-6 pb-2">
+                                    <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${aiResults.verdict === 'FIXED' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                                        }`}>
+                                        AI RESULTS: {aiResults.verdict}
+                                    </span>
+                                    <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                        {aiResults.details.length} Analyzed
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto px-6 pb-4 space-y-3">
+                                    {aiResults.details.map((detail: any, index: number) => (
+                                        <div
+                                            key={`ai-${index}`}
+                                            onClick={() => {
+                                                setViewMode('ai');
+                                                setSelectedImageIndex(index);
+                                            }}
+                                            className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'ai' && selectedImageIndex === index
+                                                ? theme === 'dark' ? 'border-purple-500/50 bg-purple-500/10' : 'border-purple-500 bg-purple-50'
+                                                : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 relative">
+                                                {detail.after_image_annotated ? (
+                                                    <img
+                                                        src={detail.after_image_annotated}
+                                                        alt={`AI Result ${index + 1}`}
+                                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700">
+                                                        <span className="text-xs text-slate-500">No Img</span>
+                                                    </div>
+                                                )}
+                                                <div className={`absolute bottom-0 left-0 right-0 h-1 ${detail.phase2_deep_learning?.verdict === 'FIXED' ? 'bg-emerald-500' :
+                                                    detail.status === 'error' ? 'bg-red-500' : 'bg-amber-500'
+                                                    }`} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                    Result {index + 1}
+                                                </p>
+                                                <p className={`text-xs ${detail.phase2_deep_learning?.verdict === 'FIXED'
+                                                    ? 'text-emerald-500'
+                                                    : 'text-red-500'
+                                                    }`}>
+                                                    {detail.phase2_deep_learning?.verdict} ({detail.phase2_deep_learning?.confidence})
+                                                </p>
+                                            </div>
+                                            <ChevronRight size={16} className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

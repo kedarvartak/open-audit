@@ -4,16 +4,21 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
     baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
+// Automatically set Content-Type based on data type
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Only set Content-Type for non-FormData requests
+    if (!(config.data instanceof FormData)) {
+        config.headers['Content-Type'] = 'application/json';
+    }
+    // For FormData, let the browser set the Content-Type with boundary
+
     return config;
 });
 
@@ -99,15 +104,11 @@ export const tasksAPI = {
     getMyTasks: (role: 'client' | 'worker') =>
         api.get('/v0/tasks/my-tasks', { params: { role } }),
 
-    startWork: (id: string, formData: FormData) =>
-        api.post(`/v0/tasks/${id}/start`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        }),
+    startWork: (id: string, lat?: number, lng?: number, skipLocationCheck?: boolean) =>
+        api.post(`/v0/tasks/${id}/start`, { lat, lng, skipLocationCheck }),
 
     submitWork: (id: string, formData: FormData) =>
-        api.post(`/v0/tasks/${id}/submit`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        }),
+        api.post(`/v0/tasks/${id}/submit`, formData),
 
     approveWork: (id: string) => api.post(`/v0/tasks/${id}/approve`),
 
@@ -117,9 +118,7 @@ export const tasksAPI = {
         api.post(`/v0/tasks/${id}/dispute`, { reason }),
 
     updateTask: (id: string, formData: FormData) =>
-        api.put(`/v0/tasks/${id}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        }),
+        api.put(`/v0/tasks/${id}`, formData),
 
     deleteTask: (id: string) => api.delete(`/v0/tasks/${id}`),
 

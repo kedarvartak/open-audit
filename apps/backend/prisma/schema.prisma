@@ -156,7 +156,7 @@ model Task {
   // Work Evidence
   beforeImages    String[]   @default([])  // Array of image URLs
   beforeImageHashes Json?    // Array of SHA-256 hashes for blockchain verification
-  afterImageUrl   String?
+  afterImageUrl   String?    // URL of after image (first one if multiple)
   afterImageHash  String?    // SHA-256 for blockchain verification
   
   // AI Verification

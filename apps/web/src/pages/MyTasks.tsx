@@ -105,10 +105,10 @@ export default function MyTasks() {
             <div className="p-8 space-y-6 min-h-full">
                 <div>
                     <h1 className={`text-3xl font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
-                        My Tasks
+                        Team Tasks
                     </h1>
                     <p className={`text-sm mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                        {userRole === 'CLIENT' ? 'Tasks you have posted' : 'Tasks you are working on'}
+                        {userRole === 'CLIENT' ? 'Tasks you have posted' : 'View and manage your team\'s tasks'}
                     </p>
                 </div>
 
@@ -151,7 +151,7 @@ export default function MyTasks() {
                         {filteredTasks.map((task) => (
                             <button
                                 key={task.id}
-                                onClick={() => navigate(`/my-tasks/${task.id}`)}
+                                onClick={() => navigate(`/tasks/${task.id}/verify`)}
                                 className="block text-left w-full"
                             >
                                 <div className={`rounded-lg overflow-hidden ${theme === 'dark'

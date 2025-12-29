@@ -248,97 +248,118 @@ def root():
 
 @app.post("/analyze")
 async def analyze(
-    before_image: UploadFile = File(...),
-    after_image: UploadFile = File(...)
+    before_images: List[UploadFile] = File(...),
+    after_images: List[UploadFile] = File(...)
 ):
     """
-    Two-phase defect detection:
+    Two-phase defect detection for multiple image pairs:
     1. Groq Vision finds defect location
     2. Deep Learning checks if fixed
     """
-    try:
-        # Load images
-        before_pil = Image.open(io.BytesIO(await before_image.read())).convert("RGB")
-        after_pil = Image.open(io.BytesIO(await after_image.read())).convert("RGB")
-        
-        # Resize if needed for consistency
-        if before_pil.size != after_pil.size:
-            target_size = (min(before_pil.width, after_pil.width), 
-                          min(before_pil.height, after_pil.height))
-            before_pil = before_pil.resize(target_size)
-            after_pil = after_pil.resize(target_size)
-        
-        width, height = before_pil.size
-        
-        # Convert to OpenCV
-        before_cv = cv2.cvtColor(np.array(before_pil), cv2.COLOR_RGB2BGR)
-        after_cv = cv2.cvtColor(np.array(after_pil), cv2.COLOR_RGB2BGR)
-        
-        # PHASE 1: Groq Vision detects defect by comparing before and after
-        print("Phase 1: Groq comparing images to detect defect...")
-        phase1_result = phase1_detect_defect(before_pil, after_pil)
-        
-        if not phase1_result.get("has_defect"):
-            return {
-                "status": "no_defect",
-                "message": "No defect detected in the image",
-                "phase1": phase1_result
-            }
-        
-        # Convert bbox from percent to pixels
-        bbox_pixels = convert_bbox_percent_to_pixels(
-            phase1_result["bbox_percent"], width, height
-        )
-        x1, y1, x2, y2 = bbox_pixels
-        
-        # Extract defect regions
-        before_region = before_cv[y1:y2, x1:x2]
-        after_region = after_cv[y1:y2, x1:x2]
-        
-        if before_region.size == 0 or after_region.size == 0:
-            return {
+    if len(before_images) != len(after_images):
+        raise HTTPException(status_code=400, detail="Number of before and after images must match")
+
+    results = []
+
+    for i, (before_image, after_image) in enumerate(zip(before_images, after_images)):
+        try:
+            # Load images
+            before_content = await before_image.read()
+            after_content = await after_image.read()
+            
+            before_pil = Image.open(io.BytesIO(before_content)).convert("RGB")
+            after_pil = Image.open(io.BytesIO(after_content)).convert("RGB")
+            
+            # Resize if needed for consistency
+            if before_pil.size != after_pil.size:
+                target_size = (min(before_pil.width, after_pil.width), 
+                              min(before_pil.height, after_pil.height))
+                before_pil = before_pil.resize(target_size)
+                after_pil = after_pil.resize(target_size)
+            
+            width, height = before_pil.size
+            
+            # Convert to OpenCV
+            before_cv = cv2.cvtColor(np.array(before_pil), cv2.COLOR_RGB2BGR)
+            after_cv = cv2.cvtColor(np.array(after_pil), cv2.COLOR_RGB2BGR)
+            
+            # PHASE 1: Groq Vision detects defect by comparing before and after
+            print(f"Processing pair {i+1}: Phase 1 Groq comparing images...")
+            phase1_result = phase1_detect_defect(before_pil, after_pil)
+            
+            if not phase1_result.get("has_defect"):
+                results.append({
+                    "pair_index": i,
+                    "status": "no_defect",
+                    "message": "No defect detected in the image",
+                    "phase1": phase1_result
+                })
+                continue
+            
+            # Convert bbox from percent to pixels
+            bbox_pixels = convert_bbox_percent_to_pixels(
+                phase1_result["bbox_percent"], width, height
+            )
+            x1, y1, x2, y2 = bbox_pixels
+            
+            # Extract defect regions
+            before_region = before_cv[y1:y2, x1:x2]
+            after_region = after_cv[y1:y2, x1:x2]
+            
+            if before_region.size == 0 or after_region.size == 0:
+                results.append({
+                    "pair_index": i,
+                    "status": "error",
+                    "message": "Invalid defect region detected"
+                })
+                continue
+            
+            # PHASE 2: Deep Learning verifies if fixed
+            print(f"Processing pair {i+1}: Phase 2 Deep Learning verifying repair...")
+            phase2_result = phase2_verify_repair(before_region, after_region)
+            
+            # Draw annotations
+            annotated_before, annotated_after = draw_annotations(
+                before_cv.copy(), after_cv.copy(),
+                bbox_pixels,
+                phase1_result["description"],
+                phase2_result["verdict"],
+                phase2_result["confidence"]
+            )
+            
+            # Convert to PIL and base64
+            before_final = Image.fromarray(cv2.cvtColor(annotated_before, cv2.COLOR_BGR2RGB))
+            after_final = Image.fromarray(cv2.cvtColor(annotated_after, cv2.COLOR_BGR2RGB))
+            
+            results.append({
+                "pair_index": i,
+                "status": "success",
+                "phase1_groq": {
+                    "defect_found": True,
+                    "description": phase1_result["description"],
+                    "location_percent": phase1_result["bbox_percent"],
+                    "location_pixels": bbox_pixels
+                },
+                "phase2_deep_learning": {
+                    "verdict": phase2_result["verdict"],
+                    "is_fixed": phase2_result["is_fixed"],
+                    "confidence": phase2_result["confidence"],
+                    "feature_distance": phase2_result["feature_distance"]
+                },
+                "before_image_annotated": image_to_base64(before_final),
+                "after_image_annotated": image_to_base64(after_final),
+                "summary": f"Defect: {phase1_result['description']} | Status: {phase2_result['verdict']}"
+            })
+            
+        except Exception as e:
+            print(f"Error processing pair {i+1}: {e}")
+            results.append({
+                "pair_index": i,
                 "status": "error",
-                "message": "Invalid defect region detected"
-            }
-        
-        # PHASE 2: Deep Learning verifies if fixed
-        print("Phase 2: Deep Learning verifying repair...")
-        phase2_result = phase2_verify_repair(before_region, after_region)
-        
-        # Draw annotations
-        annotated_before, annotated_after = draw_annotations(
-            before_cv.copy(), after_cv.copy(),
-            bbox_pixels,
-            phase1_result["description"],
-            phase2_result["verdict"],
-            phase2_result["confidence"]
-        )
-        
-        # Convert to PIL and base64
-        before_final = Image.fromarray(cv2.cvtColor(annotated_before, cv2.COLOR_BGR2RGB))
-        after_final = Image.fromarray(cv2.cvtColor(annotated_after, cv2.COLOR_BGR2RGB))
-        
-        return {
-            "status": "success",
-            "phase1_groq": {
-                "defect_found": True,
-                "description": phase1_result["description"],
-                "location_percent": phase1_result["bbox_percent"],
-                "location_pixels": bbox_pixels
-            },
-            "phase2_deep_learning": {
-                "verdict": phase2_result["verdict"],
-                "is_fixed": phase2_result["is_fixed"],
-                "confidence": phase2_result["confidence"],
-                "feature_distance": phase2_result["feature_distance"]
-            },
-            "before_image_annotated": image_to_base64(before_final),
-            "after_image_annotated": image_to_base64(after_final),
-            "summary": f"Defect: {phase1_result['description']} | Status: {phase2_result['verdict']}"
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+                "message": str(e)
+            })
+
+    return results
 
 
 if __name__ == "__main__":

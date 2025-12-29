@@ -125,7 +125,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     // Filter menu items based on user role - Workspaces only for WORKER users
     const allMenuItems = [
         { icon: Home, path: '/dashboard', label: 'Dashboard' },
-        { icon: LayoutDashboard, path: '/my-tasks', label: 'My Tasks' },
+        { icon: LayoutDashboard, path: '/my-tasks', label: 'Team Tasks' },
         { icon: CalendarDays, path: '/calendar', label: 'Calendar' },
         { icon: FileText, path: '/documents', label: 'Documents' },
         { icon: Trophy, path: '/achievements', label: 'Achievements' },
