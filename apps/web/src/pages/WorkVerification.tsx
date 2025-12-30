@@ -28,6 +28,7 @@ export const WorkVerification = () => {
     const [viewMode, setViewMode] = useState<'before' | 'after' | 'ai'>('after');
     const [submitting, setSubmitting] = useState(false);
     const [aiResults, setAiResults] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState<'reference' | 'verification' | 'ai'>('verification');
 
     // Fetch task details
     useEffect(() => {
@@ -46,6 +47,7 @@ export const WorkVerification = () => {
                     if (taskData.aiVerification.details?.length > 0) {
                         setViewMode('ai');
                         setSelectedImageIndex(0);
+                        setActiveTab('ai');
                     }
                 }
 
@@ -62,6 +64,9 @@ export const WorkVerification = () => {
                         status: 'pass'
                     };
                     setCapturedImages([uploadedImage]);
+                    if (!taskData.aiVerification) {
+                        setActiveTab('verification');
+                    }
                 }
             } catch (error) {
                 console.error('Failed to fetch task:', error);
@@ -181,6 +186,7 @@ export const WorkVerification = () => {
             if (data.aiResult?.details?.length > 0) {
                 setViewMode('ai');
                 setSelectedImageIndex(0);
+                setActiveTab('ai');
             }
         } catch (error) {
             console.error('Submit error:', error);
@@ -364,188 +370,222 @@ export const WorkVerification = () => {
 
                     {/* Right Panel - Sidebar */}
                     <div className={`w-96 flex flex-col border-l ${theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
-                        {/* Before Images */}
-                        <div className="flex-1 flex flex-col min-h-0 border-b border-slate-200 dark:border-slate-700">
-                            <div className="px-6 pt-6 pb-2">
-                                <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-400 text-slate-900 mb-2">
-                                    REFERENCE
-                                </span>
-                                <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    {task.beforeImages?.length || 0} Images
-                                </div>
-                            </div>
-                            <CustomScrollbar className="flex-1">
-                                <div className="px-6 pb-4 space-y-3">
-                                    {task.beforeImages && task.beforeImages.length > 0 ? (
-                                        task.beforeImages.map((img, index) => (
-                                            <div
-                                                key={`before-${index}`}
-                                                onClick={() => {
-                                                    if (viewMode === 'before' && selectedImageIndex === index) {
-                                                        setSelectedImageIndex(null);
-                                                    } else {
-                                                        setViewMode('before');
-                                                        setSelectedImageIndex(index);
-                                                    }
-                                                }}
-                                                className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'before' && selectedImageIndex === index
-                                                    ? theme === 'dark' ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-indigo-500 bg-indigo-50'
-                                                    : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                            >
-                                                <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                                                    <img
-                                                        src={img}
-                                                        alt={`Before ${index + 1}`}
-                                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                        Image {index + 1}
-                                                    </p>
-                                                    <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                                                        Original State
-                                                    </p>
-                                                </div>
-                                                <ChevronRight size={16} className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className={`text-center py-8 border-2 border-dashed rounded-lg ${theme === 'dark' ? 'border-slate-700 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
-                                            <p className="text-sm">No reference images</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </CustomScrollbar>
+                        {/* Tab Navigation */}
+                        <div className={`flex border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                            <button
+                                onClick={() => setActiveTab('reference')}
+                                className={`flex-1 py-3 text-xs font-bold tracking-wider border-b-2 transition-colors ${activeTab === 'reference'
+                                    ? theme === 'dark' ? 'border-indigo-500 text-indigo-400' : 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-slate-500 hover:text-slate-400'
+                                    }`}
+                            >
+                                REFERENCE
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('verification')}
+                                className={`flex-1 py-3 text-xs font-bold tracking-wider border-b-2 transition-colors ${activeTab === 'verification'
+                                    ? theme === 'dark' ? 'border-indigo-500 text-indigo-400' : 'border-indigo-600 text-indigo-600'
+                                    : 'border-transparent text-slate-500 hover:text-slate-400'
+                                    }`}
+                            >
+                                UPLOADED
+                            </button>
+                            {aiResults && (
+                                <button
+                                    onClick={() => setActiveTab('ai')}
+                                    className={`flex-1 py-3 text-xs font-bold tracking-wider border-b-2 transition-colors ${activeTab === 'ai'
+                                        ? theme === 'dark' ? 'border-indigo-500 text-indigo-400' : 'border-indigo-600 text-indigo-600'
+                                        : 'border-transparent text-slate-500 hover:text-slate-400'
+                                        }`}
+                                >
+                                    AI RESULTS
+                                </button>
+                            )}
                         </div>
 
-                        {/* After Images */}
+                        {/* Tab Content */}
                         <div className="flex-1 flex flex-col min-h-0">
-                            <div className="px-6 pt-6 pb-2">
-                                <span className="inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-500 text-white mb-2">
-                                    VERIFICATION
-                                </span>
-                                <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                    {capturedImages.length} Uploaded
-                                </div>
-                            </div>
-                            <CustomScrollbar className="flex-1">
-                                <div className="px-6 pb-4 space-y-3">
-                                    {capturedImages.length > 0 ? (
-                                        capturedImages.map((img, index) => (
-                                            <div
-                                                key={img.id}
-                                                onClick={() => {
-                                                    setViewMode('after');
-                                                    setSelectedImageIndex(index);
-                                                }}
-                                                className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'after' && selectedImageIndex === index
-                                                    ? theme === 'dark' ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-indigo-500 bg-indigo-50'
-                                                    : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                            >
-                                                <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                                                    <img
-                                                        src={img.src}
-                                                        alt={`Uploaded ${index + 1}`}
-                                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                    />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                            Image {index + 1}
-                                                        </p>
-                                                        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusBadge(img.status)}`}>
-                                                            {img.status.toUpperCase()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                {/* Only show delete button if AI results haven't been generated */}
-                                                {!aiResults && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            removeImage(img.id);
-                                                        }}
-                                                        className="p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className={`flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg ${theme === 'dark' ? 'border-slate-700 text-slate-600' : 'border-slate-100 text-slate-400'}`}>
-                                            <ImageIcon size={24} className="mb-2 opacity-50" />
-                                            <p className="text-sm">No images uploaded</p>
+                            {/* Reference Tab */}
+                            {activeTab === 'reference' && (
+                                <div className="flex-1 flex flex-col min-h-0">
+                                    <div className="px-6 pt-4 pb-2">
+                                        <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {task.beforeImages?.length || 0} Reference Images
                                         </div>
-                                    )}
-                                </div>
-                            </CustomScrollbar>
-                        </div>
-
-                        {/* AI Results List */}
-                        {aiResults && aiResults.details && (
-                            <div className="flex-1 flex flex-col min-h-0 border-t border-slate-200 dark:border-slate-700">
-                                <div className="px-6 pt-6 pb-2">
-                                    <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${aiResults.verdict === 'FIXED' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
-                                        }`}>
-                                        AI RESULTS: {aiResults.verdict}
-                                    </span>
-                                    <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                        {aiResults.details.length} Analyzed
                                     </div>
-                                </div>
-                                <CustomScrollbar className="flex-1">
-                                    <div className="px-6 pb-4 space-y-3">
-                                        {aiResults.details.map((detail: any, index: number) => (
-                                            <div
-                                                key={`ai-${index}`}
-                                                onClick={() => {
-                                                    setViewMode('ai');
-                                                    setSelectedImageIndex(index);
-                                                }}
-                                                className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'ai' && selectedImageIndex === index
-                                                    ? theme === 'dark' ? 'border-purple-500/50 bg-purple-500/10' : 'border-purple-500 bg-purple-50'
-                                                    : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                            >
-                                                <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 relative">
-                                                    {detail.after_image_annotated ? (
-                                                        <img
-                                                            src={detail.after_image_annotated}
-                                                            alt={`AI Result ${index + 1}`}
-                                                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700">
-                                                            <span className="text-xs text-slate-500">No Img</span>
+                                    <CustomScrollbar className="flex-1">
+                                        <div className="px-6 pb-4 space-y-3">
+                                            {task.beforeImages && task.beforeImages.length > 0 ? (
+                                                task.beforeImages.map((img, index) => (
+                                                    <div
+                                                        key={`before-${index}`}
+                                                        onClick={() => {
+                                                            if (viewMode === 'before' && selectedImageIndex === index) {
+                                                                setSelectedImageIndex(null);
+                                                            } else {
+                                                                setViewMode('before');
+                                                                setSelectedImageIndex(index);
+                                                            }
+                                                        }}
+                                                        className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'before' && selectedImageIndex === index
+                                                            ? theme === 'dark' ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-indigo-500 bg-indigo-50'
+                                                            : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                                            }`}
+                                                    >
+                                                        <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                                                            <img
+                                                                src={img}
+                                                                alt={`Before ${index + 1}`}
+                                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                            />
                                                         </div>
-                                                    )}
-                                                    <div className={`absolute bottom-0 left-0 right-0 h-1 ${detail.phase2_deep_learning?.verdict === 'FIXED' ? 'bg-emerald-500' :
-                                                        detail.status === 'error' ? 'bg-red-500' : 'bg-amber-500'
-                                                        }`} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                                Image {index + 1}
+                                                            </p>
+                                                            <p className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                                                                Original State
+                                                            </p>
+                                                        </div>
+                                                        <ChevronRight size={16} className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className={`text-center py-8 border-2 border-dashed rounded-lg ${theme === 'dark' ? 'border-slate-700 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
+                                                    <p className="text-sm">No reference images</p>
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                        Result {index + 1}
-                                                    </p>
-                                                    <p className={`text-xs ${detail.phase2_deep_learning?.verdict === 'FIXED'
-                                                        ? 'text-emerald-500'
-                                                        : 'text-red-500'
-                                                        }`}>
-                                                        {detail.phase2_deep_learning?.verdict} ({detail.phase2_deep_learning?.confidence})
-                                                    </p>
-                                                </div>
-                                                <ChevronRight size={16} className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
-                                            </div>
-                                        ))}
+                                            )}
+                                        </div>
+                                    </CustomScrollbar>
+                                </div>
+                            )}
+
+                            {/* Verification Tab */}
+                            {activeTab === 'verification' && (
+                                <div className="flex-1 flex flex-col min-h-0">
+                                    <div className="px-6 pt-4 pb-2">
+                                        <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {capturedImages.length} Uploaded Images
+                                        </div>
                                     </div>
-                                </CustomScrollbar>
-                            </div>
-                        )}
+                                    <CustomScrollbar className="flex-1">
+                                        <div className="px-6 pb-4 space-y-3">
+                                            {capturedImages.length > 0 ? (
+                                                capturedImages.map((img, index) => (
+                                                    <div
+                                                        key={img.id}
+                                                        onClick={() => {
+                                                            setViewMode('after');
+                                                            setSelectedImageIndex(index);
+                                                        }}
+                                                        className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'after' && selectedImageIndex === index
+                                                            ? theme === 'dark' ? 'border-indigo-500/50 bg-indigo-500/10' : 'border-indigo-500 bg-indigo-50'
+                                                            : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                                            }`}
+                                                    >
+                                                        <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+                                                            <img
+                                                                src={img.src}
+                                                                alt={`Uploaded ${index + 1}`}
+                                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                                    Image {index + 1}
+                                                                </p>
+                                                                <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusBadge(img.status)}`}>
+                                                                    {img.status.toUpperCase()}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        {/* Only show delete button if AI results haven't been generated */}
+                                                        {!aiResults && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    removeImage(img.id);
+                                                                }}
+                                                                className="p-1.5 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className={`flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg ${theme === 'dark' ? 'border-slate-700 text-slate-600' : 'border-slate-100 text-slate-400'}`}>
+                                                    <ImageIcon size={24} className="mb-2 opacity-50" />
+                                                    <p className="text-sm">No images uploaded</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CustomScrollbar>
+                                </div>
+                            )}
+
+                            {/* AI Results Tab */}
+                            {activeTab === 'ai' && aiResults && aiResults.details && (
+                                <div className="flex-1 flex flex-col min-h-0">
+                                    <div className="px-6 pt-4 pb-2">
+                                        <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${aiResults.verdict === 'FIXED' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                                            }`}>
+                                            VERDICT: {aiResults.verdict}
+                                        </span>
+                                        <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {aiResults.details.length} Analyzed Images
+                                        </div>
+                                    </div>
+                                    <CustomScrollbar className="flex-1">
+                                        <div className="px-6 pb-4 space-y-3">
+                                            {aiResults.details.map((detail: any, index: number) => (
+                                                <div
+                                                    key={`ai-${index}`}
+                                                    onClick={() => {
+                                                        setViewMode('ai');
+                                                        setSelectedImageIndex(index);
+                                                    }}
+                                                    className={`group flex items-center gap-4 p-2 rounded-lg cursor-pointer transition-all border ${viewMode === 'ai' && selectedImageIndex === index
+                                                        ? theme === 'dark' ? 'border-purple-500/50 bg-purple-500/10' : 'border-purple-500 bg-purple-50'
+                                                        : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 relative">
+                                                        {detail.after_image_annotated ? (
+                                                            <img
+                                                                src={detail.after_image_annotated}
+                                                                alt={`AI Result ${index + 1}`}
+                                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center bg-slate-200 dark:bg-slate-700">
+                                                                <span className="text-xs text-slate-500">No Img</span>
+                                                            </div>
+                                                        )}
+                                                        <div className={`absolute bottom-0 left-0 right-0 h-1 ${detail.phase2_deep_learning?.verdict === 'FIXED' ? 'bg-emerald-500' :
+                                                            detail.status === 'error' ? 'bg-red-500' : 'bg-amber-500'
+                                                            }`} />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                                                            Result {index + 1}
+                                                        </p>
+                                                        <p className={`text-xs ${detail.phase2_deep_learning?.verdict === 'FIXED'
+                                                            ? 'text-emerald-500'
+                                                            : 'text-red-500'
+                                                            }`}>
+                                                            {detail.phase2_deep_learning?.verdict} ({detail.phase2_deep_learning?.confidence})
+                                                        </p>
+                                                    </div>
+                                                    <ChevronRight size={16} className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CustomScrollbar>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
