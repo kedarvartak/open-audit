@@ -14,6 +14,8 @@ interface CapturedImage {
     src: string;
     timestamp: Date;
     status: 'pending' | 'analyzing' | 'pass' | 'fail' | 'na';
+    mediaType: 'image' | 'video';
+    file?: File;  // Keep original file for upload
 }
 
 export const WorkVerification = () => {
@@ -62,7 +64,8 @@ export const WorkVerification = () => {
                         id: 'uploaded_1',
                         src: taskData.afterImageUrl,
                         timestamp: new Date(taskData.completedAt || new Date()),
-                        status: 'pass'
+                        status: 'pass',
+                        mediaType: 'image'
                     };
                     setCapturedImages([uploadedImage]);
                     if (!taskData.aiVerification) {
@@ -88,17 +91,28 @@ export const WorkVerification = () => {
         const filesArray = Array.from(files);
         let processedCount = 0;
 
+        // Video file extensions
+        const videoExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v'];
+        const isVideoFile = (filename: string) => {
+            const ext = filename.toLowerCase().slice(filename.lastIndexOf('.'));
+            return videoExtensions.includes(ext);
+        };
+
         filesArray.forEach((file) => {
+            const mediaType = isVideoFile(file.name) ? 'video' : 'image';
+
             const reader = new FileReader();
             reader.onload = (event) => {
-                const newImage: CapturedImage = {
-                    id: `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                const newMedia: CapturedImage = {
+                    id: `${mediaType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     src: event.target?.result as string,
                     timestamp: new Date(),
-                    status: 'pending'
+                    status: 'pending',
+                    mediaType: mediaType,
+                    file: file  // Keep original file for upload
                 };
                 setCapturedImages(prev => {
-                    const updated = [...prev, newImage];
+                    const updated = [...prev, newMedia];
                     processedCount++;
                     if (processedCount === filesArray.length) {
                         setViewMode('after');
@@ -129,7 +143,7 @@ export const WorkVerification = () => {
         console.log('[WorkVerification] capturedImages:', capturedImages.length);
 
         if (capturedImages.length === 0) {
-            toast.error('Please upload at least one image');
+            toast.error('Please upload at least one image or video');
             return;
         }
 
@@ -140,16 +154,22 @@ export const WorkVerification = () => {
             const formData = new FormData();
 
             for (let i = 0; i < capturedImages.length; i++) {
-                const img = capturedImages[i];
-                console.log(`[WorkVerification] Processing image ${i}: ${img.src.substring(0, 50)}...`);
+                const media = capturedImages[i];
+                console.log(`[WorkVerification] Processing ${media.mediaType} ${i}: ${media.src.substring(0, 50)}...`);
 
-                const response = await fetch(img.src);
-                const blob = await response.blob();
-                console.log(`[WorkVerification] Blob created: type=${blob.type}, size=${blob.size}`);
-
-                // Create a File object from the blob
-                const file = new File([blob], `after_${i}.jpg`, { type: blob.type });
-                formData.append('afterImages', file);
+                // Use original file if available (important for videos), otherwise create from blob
+                if (media.file) {
+                    console.log(`[WorkVerification] Using original file: ${media.file.name}, type=${media.file.type}, size=${media.file.size}`);
+                    formData.append('afterImages', media.file);
+                } else {
+                    // Fallback for images loaded from backend
+                    const response = await fetch(media.src);
+                    const blob = await response.blob();
+                    console.log(`[WorkVerification] Blob created: type=${blob.type}, size=${blob.size}`);
+                    const ext = media.mediaType === 'video' ? 'mp4' : 'jpg';
+                    const file = new File([blob], `after_${i}.${ext}`, { type: blob.type });
+                    formData.append('afterImages', file);
+                }
             }
 
             // Log FormData contents
@@ -276,11 +296,19 @@ export const WorkVerification = () => {
                                     className="w-full h-full object-contain"
                                 />
                             ) : viewMode === 'after' && selectedImageIndex !== null && capturedImages[selectedImageIndex] ? (
-                                <img
-                                    src={capturedImages[selectedImageIndex].src}
-                                    alt="After"
-                                    className="w-full h-full object-contain"
-                                />
+                                capturedImages[selectedImageIndex].mediaType === 'video' ? (
+                                    <video
+                                        src={capturedImages[selectedImageIndex].src}
+                                        controls
+                                        className="w-full h-full object-contain"
+                                    />
+                                ) : (
+                                    <img
+                                        src={capturedImages[selectedImageIndex].src}
+                                        alt="After"
+                                        className="w-full h-full object-contain"
+                                    />
+                                )
                             ) : viewMode === 'ai' && selectedImageIndex !== null && aiResults?.details?.[selectedImageIndex] ? (
                                 <div className="w-full h-full flex flex-col items-center justify-center p-4">
                                     {/* Debug logging */}
@@ -363,7 +391,7 @@ export const WorkVerification = () => {
                                                 Upload Evidence
                                             </h3>
                                             <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                Upload clear photos of the completed work to verify task completion.
+                                                Upload photos or videos of the completed work to verify task completion.
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-4 justify-center">
@@ -382,7 +410,7 @@ export const WorkVerification = () => {
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,video/mp4,video/quicktime,video/webm,video/x-msvideo"
                                 multiple
                                 className="hidden"
                                 onChange={handleFileUpload}
@@ -505,17 +533,32 @@ export const WorkVerification = () => {
                                                             : theme === 'dark' ? 'border-slate-700 hover:border-slate-600 hover:bg-slate-800' : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                                                             }`}
                                                     >
-                                                        <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                                                            <img
-                                                                src={img.src}
-                                                                alt={`Uploaded ${index + 1}`}
-                                                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                                                            />
+                                                        <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 relative">
+                                                            {img.mediaType === 'video' ? (
+                                                                <>
+                                                                    <video
+                                                                        src={img.src}
+                                                                        className="w-full h-full object-cover"
+                                                                        muted
+                                                                    />
+                                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                                                        <div className="w-6 h-6 rounded-full bg-white/80 flex items-center justify-center">
+                                                                            <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-slate-700 border-b-[5px] border-b-transparent ml-0.5" />
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <img
+                                                                    src={img.src}
+                                                                    alt={`Uploaded ${index + 1}`}
+                                                                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                                                />
+                                                            )}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                                    Image {index + 1}
+                                                                    {img.mediaType === 'video' ? 'Video' : 'Image'} {index + 1}
                                                                 </p>
                                                                 <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusBadge(img.status)}`}>
                                                                     {img.status.toUpperCase()}

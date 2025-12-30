@@ -10,10 +10,11 @@ import uvicorn
 import io
 import base64
 import os
+import tempfile
 from PIL import Image
 import cv2
 import numpy as np
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 import torch
 import torchvision.transforms as transforms
 import torchvision.models as models
@@ -33,10 +34,11 @@ app.add_middleware(
 print("Loading models...")
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY", "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"))
 
-# ResNet for deep comparison
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# ResNet for image-to-image comparison (Phase 2 - Image Mode)
 resnet = models.resnet50(pretrained=True)
 resnet.eval()
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 resnet = resnet.to(device)
 
 transform = transforms.Compose([
@@ -45,7 +47,24 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-print(f"✓ Models loaded on {device}")
+print(f"✓ ResNet loaded on {device}")
+
+# CLIP for video-to-image comparison (Phase 2 - Video Mode)
+# CLIP is more robust to compression artifacts and quality differences
+try:
+    import clip
+    clip_model, clip_preprocess = clip.load("ViT-B/32", device=device)
+    clip_model.eval()
+    CLIP_AVAILABLE = True
+    print(f"✓ CLIP loaded on {device}")
+except ImportError:
+    print("⚠ CLIP not installed. Run: pip install git+https://github.com/openai/CLIP.git")
+    CLIP_AVAILABLE = False
+except Exception as e:
+    print(f"⚠ CLIP failed to load: {e}")
+    CLIP_AVAILABLE = False
+
+print(f"✓ All models loaded")
 
 
 def image_to_base64(img: Image.Image) -> str:
@@ -53,6 +72,192 @@ def image_to_base64(img: Image.Image) -> str:
     buffered = io.BytesIO()
     img.save(buffered, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buffered.getvalue()).decode()
+
+
+# Video file extensions
+VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v'}
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
+
+
+def is_video_file(filename: str) -> bool:
+    """Check if file is a video based on extension"""
+    if not filename:
+        return False
+    ext = os.path.splitext(filename.lower())[1]
+    return ext in VIDEO_EXTENSIONS
+
+
+def is_image_file(filename: str) -> bool:
+    """Check if file is an image based on extension"""
+    if not filename:
+        return False
+    ext = os.path.splitext(filename.lower())[1]
+    return ext in IMAGE_EXTENSIONS
+
+
+def extract_frames_from_video(video_content: bytes, fps: float = 1.0, max_frames: int = 10) -> List[Image.Image]:
+    """
+    Extract frames from video at specified FPS.
+    
+    Args:
+        video_content: Raw video bytes
+        fps: Frames per second to extract (default 1.0 = 1 frame per second)
+        max_frames: Maximum number of frames to extract
+        
+    Returns:
+        List of PIL Images
+    """
+    frames = []
+    
+    # Write video to temp file (OpenCV needs file path)
+    with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as tmp_file:
+        tmp_file.write(video_content)
+        tmp_path = tmp_file.name
+    
+    try:
+        cap = cv2.VideoCapture(tmp_path)
+        
+        if not cap.isOpened():
+            print(f"[Video] Failed to open video file")
+            return frames
+        
+        video_fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        duration = total_frames / video_fps if video_fps > 0 else 0
+        
+        print(f"[Video] Duration: {duration:.1f}s, FPS: {video_fps:.1f}, Total frames: {total_frames}")
+        
+        # Calculate frame interval
+        frame_interval = int(video_fps / fps) if video_fps > 0 else 30
+        
+        frame_count = 0
+        extracted_count = 0
+        
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            # Extract frame at interval
+            if frame_count % frame_interval == 0:
+                # Convert BGR to RGB
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                pil_image = Image.fromarray(rgb_frame)
+                frames.append(pil_image)
+                extracted_count += 1
+                print(f"[Video] Extracted frame {extracted_count} at {frame_count/video_fps:.1f}s")
+                
+                if extracted_count >= max_frames:
+                    print(f"[Video] Reached max frames limit ({max_frames})")
+                    break
+            
+            frame_count += 1
+        
+        cap.release()
+        print(f"[Video] Extracted {len(frames)} frames total")
+        
+    finally:
+        # Clean up temp file
+        try:
+            os.unlink(tmp_path)
+        except:
+            pass
+    
+    return frames
+
+
+async def process_upload(upload: UploadFile) -> Tuple[List[Image.Image], str]:
+    """
+    Process an upload file - handles both images and videos.
+    
+    Returns:
+        Tuple of (list of PIL images, media type: 'image' or 'video')
+    """
+    content = await upload.read()
+    filename = upload.filename or ""
+    content_type = upload.content_type or ""
+    
+    print(f"[Upload] Received: filename={filename}, content_type={content_type}, size={len(content)} bytes")
+    
+    # Detect video by filename OR content-type
+    is_video = is_video_file(filename) or content_type.startswith('video/')
+    
+    if is_video:
+        print(f"[Upload] Processing as VIDEO: {filename}")
+        frames = extract_frames_from_video(content, fps=1.0, max_frames=10)
+        if not frames:
+            raise HTTPException(status_code=400, detail=f"Could not extract frames from video: {filename}")
+        return frames, "video"
+    else:
+        # Treat as image
+        print(f"[Upload] Processing as IMAGE: {filename}")
+        try:
+            pil_img = Image.open(io.BytesIO(content)).convert("RGB")
+            return [pil_img], "image"
+        except Exception as e:
+            # Maybe it's a video that wasn't detected correctly
+            print(f"[Upload] Failed to open as image, trying as video: {e}")
+            frames = extract_frames_from_video(content, fps=1.0, max_frames=10)
+            if frames:
+                return frames, "video"
+            raise HTTPException(status_code=400, detail=f"Could not process file: {filename}. Error: {str(e)}")
+
+
+def compute_image_similarity(img1: Image.Image, img2: Image.Image) -> float:
+    """
+    Compute similarity between two images using ResNet features.
+    Returns a value between 0 and 1 (1 = identical, 0 = completely different).
+    """
+    # Resize both images to same size
+    img1_resized = img1.resize((224, 224))
+    img2_resized = img2.resize((224, 224))
+    
+    # Convert to tensors
+    tensor1 = transform(img1_resized).unsqueeze(0).to(device)
+    tensor2 = transform(img2_resized).unsqueeze(0).to(device)
+    
+    # Extract features
+    with torch.no_grad():
+        # Get features before final FC layer
+        features1 = torch.nn.Sequential(*list(resnet.children())[:-1])(tensor1).flatten()
+        features2 = torch.nn.Sequential(*list(resnet.children())[:-1])(tensor2).flatten()
+    
+    # Compute cosine similarity
+    similarity = torch.nn.functional.cosine_similarity(features1.unsqueeze(0), features2.unsqueeze(0)).item()
+    
+    # Normalize to 0-1 range (cosine similarity is -1 to 1)
+    similarity = (similarity + 1) / 2
+    
+    return similarity
+
+
+def filter_matching_frames(reference_img: Image.Image, frames: List[Image.Image], threshold: float = 0.5) -> List[Image.Image]:
+    """
+    Filter video frames to only include those that are similar to the reference image.
+    This handles panning videos where only some frames show the relevant area.
+    
+    Args:
+        reference_img: The reference image (before image)
+        frames: List of video frames
+        threshold: Minimum similarity (0-1) to include a frame
+        
+    Returns:
+        List of matching frames
+    """
+    matching_frames = []
+    
+    for i, frame in enumerate(frames):
+        similarity = compute_image_similarity(reference_img, frame)
+        print(f"[FrameMatch] Frame {i}: similarity = {similarity:.3f} (threshold={threshold})")
+        
+        if similarity >= threshold:
+            matching_frames.append(frame)
+            print(f"  → MATCHED")
+        else:
+            print(f"  → REJECTED (too different)")
+    
+    print(f"[FrameMatch] {len(matching_frames)}/{len(frames)} frames matched reference")
+    return matching_frames
 
 
 def phase1_detect_defect(before_img: Image.Image, after_img: Image.Image) -> Dict:
@@ -191,7 +396,69 @@ def phase2_verify_repair(before_region: np.ndarray, after_region: np.ndarray) ->
         "is_fixed": is_fixed,
         "confidence": round(confidence, 2),
         "feature_distance": round(distance, 2),
-        "verdict": "FIXED" if is_fixed else "NOT_FIXED"
+        "verdict": "FIXED" if is_fixed else "NOT_FIXED",
+        "method": "resnet"
+    }
+
+
+def phase2_verify_repair_video(before_region: np.ndarray, after_region: np.ndarray) -> Dict:
+    """
+    Phase 2 VIDEO MODE: Use CLIP for semantic comparison
+    CLIP is more robust to video compression artifacts and quality differences
+    
+    Logic:
+    - High cosine similarity (>0.85) = same content = NOT_FIXED (defect still there)
+    - Low cosine similarity (<0.85) = different content = FIXED (defect repaired)
+    """
+    if not CLIP_AVAILABLE:
+        print("[Video Mode] CLIP not available, falling back to ResNet")
+        return phase2_verify_repair(before_region, after_region)
+    
+    # Convert to PIL
+    before_pil = Image.fromarray(cv2.cvtColor(before_region, cv2.COLOR_BGR2RGB))
+    after_pil = Image.fromarray(cv2.cvtColor(after_region, cv2.COLOR_BGR2RGB))
+    
+    # Preprocess for CLIP
+    before_tensor = clip_preprocess(before_pil).unsqueeze(0).to(device)
+    after_tensor = clip_preprocess(after_pil).unsqueeze(0).to(device)
+    
+    # Extract CLIP features
+    with torch.no_grad():
+        before_features = clip_model.encode_image(before_tensor)
+        after_features = clip_model.encode_image(after_tensor)
+        
+        # Normalize features
+        before_features = before_features / before_features.norm(dim=-1, keepdim=True)
+        after_features = after_features / after_features.norm(dim=-1, keepdim=True)
+        
+        # Cosine similarity (1.0 = identical, 0.0 = completely different)
+        similarity = (before_features @ after_features.T).item()
+    
+    print(f"[CLIP] Cosine similarity: {similarity:.4f}")
+    
+    # Decision thresholds for video mode
+    # High similarity = same content = defect still there = NOT_FIXED
+    # Low similarity = content changed = defect repaired = FIXED
+    SAME_THRESHOLD = 0.85  # If similarity > 0.85, content is same
+    
+    is_fixed = bool(similarity < SAME_THRESHOLD)
+    
+    # Confidence: how sure are we?
+    # If similarity is very high (0.95+) or very low (0.5-), we're confident
+    # If similarity is near threshold (0.80-0.90), less confident
+    if is_fixed:
+        # Lower similarity = more confident it's fixed
+        confidence = float(1.0 - similarity)
+    else:
+        # Higher similarity = more confident it's not fixed
+        confidence = float(similarity)
+    
+    return {
+        "is_fixed": is_fixed,
+        "confidence": round(confidence, 2),
+        "similarity": round(similarity, 4),
+        "verdict": "FIXED" if is_fixed else "NOT_FIXED",
+        "method": "clip"
     }
 
 
@@ -252,27 +519,77 @@ async def analyze(
     after_images: List[UploadFile] = File(...)
 ):
     """
-    Flexible defect detection - handles different numbers of before/after images.
+    Flexible defect detection - handles different numbers of before/after images AND videos.
+    
+    Supports:
+    - Multiple images
+    - Videos (automatically extracts frames at 1 FPS)
+    - Mix of images and videos
     
     Algorithm:
-    1. Detect ALL defects from ALL before images
-    2. For each defect, find the best matching after image
-    3. Verify if each defect is fixed
-    4. Return per-defect results with overall verdict
+    1. Process uploads (extract frames from videos)
+    2. Detect ALL defects from ALL before frames
+    3. For each defect, find the best matching after frame
+    4. Verify if each defect is fixed
+    5. Return per-defect results with overall verdict
     """
     
     if len(before_images) == 0:
-        raise HTTPException(status_code=400, detail="At least one before image required")
+        raise HTTPException(status_code=400, detail="At least one before image/video required")
     if len(after_images) == 0:
-        raise HTTPException(status_code=400, detail="At least one after image required")
+        raise HTTPException(status_code=400, detail="At least one after image/video required")
     
-    print(f"[Analyze] Received {len(before_images)} before images, {len(after_images)} after images")
+    print(f"[Analyze] Received {len(before_images)} before uploads, {len(after_images)} after uploads")
     
-    # STEP 1: Load all images
+    # STEP 1: Process all uploads (handles both images and videos)
+    all_before_frames = []
+    before_media_types = []
+    
+    for i, upload in enumerate(before_images):
+        frames, media_type = await process_upload(upload)
+        before_media_types.append(media_type)
+        print(f"[Analyze] Before upload {i}: {media_type}, {len(frames)} frame(s)")
+        for frame in frames:
+            all_before_frames.append(frame)
+    
+    all_after_frames = []
+    after_media_types = []
+    after_had_video = False
+    
+    for i, upload in enumerate(after_images):
+        frames, media_type = await process_upload(upload)
+        after_media_types.append(media_type)
+        if media_type == "video":
+            after_had_video = True
+        print(f"[Analyze] After upload {i}: {media_type}, {len(frames)} frame(s)")
+        for frame in frames:
+            all_after_frames.append(frame)
+    
+    print(f"[Analyze] Total: {len(all_before_frames)} before frames, {len(all_after_frames)} after frames")
+    
+    # STEP 1.5: If we have video frames, filter to only frames that match the before images
+    # This handles panning videos where only some frames show the relevant area
+    if after_had_video and len(all_before_frames) > 0:
+        print("[Analyze] Filtering video frames to match before images...")
+        
+        filtered_after_frames = []
+        for before_frame in all_before_frames:
+            # Find after frames similar to this before frame
+            matching = filter_matching_frames(before_frame, all_after_frames, threshold=0.4)
+            for frame in matching:
+                if frame not in filtered_after_frames:
+                    filtered_after_frames.append(frame)
+        
+        if filtered_after_frames:
+            print(f"[Analyze] Using {len(filtered_after_frames)} filtered frames (from {len(all_after_frames)} total)")
+            all_after_frames = filtered_after_frames
+        else:
+            print(f"[Analyze] WARNING: No frames matched! Using all {len(all_after_frames)} frames")
+            # Fall back to using all frames if none match (threshold might be too strict)
+    
+    # Build frame data structures
     before_data = []
-    for i, img in enumerate(before_images):
-        content = await img.read()
-        pil_img = Image.open(io.BytesIO(content)).convert("RGB")
+    for i, pil_img in enumerate(all_before_frames):
         cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
         before_data.append({
             "index": i,
@@ -283,9 +600,7 @@ async def analyze(
         })
     
     after_data = []
-    for i, img in enumerate(after_images):
-        content = await img.read()
-        pil_img = Image.open(io.BytesIO(content)).convert("RGB")
+    for i, pil_img in enumerate(all_after_frames):
         cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
         after_data.append({
             "index": i,
@@ -361,8 +676,11 @@ async def analyze(
                 if before_region.size == 0 or after_region.size == 0:
                     continue
                 
-                # Verify repair
-                result = phase2_verify_repair(before_region, after_region)
+                # Verify repair - use CLIP for video mode, ResNet for image mode
+                if after_had_video:
+                    result = phase2_verify_repair_video(before_region, after_region)
+                else:
+                    result = phase2_verify_repair(before_region, after_region)
                 
                 # Track best result (highest confidence for FIXED, or least bad for NOT_FIXED)
                 if result["is_fixed"]:
@@ -372,9 +690,10 @@ async def analyze(
                         best_result = result
                         best_after_idx = after["index"]
                 elif best_result is None or not best_result.get("is_fixed"):
-                    # For not-fixed, track the one with highest feature distance (closest to maybe fixed)
-                    if result["feature_distance"] > best_confidence:
-                        best_confidence = result["feature_distance"]
+                    # For not-fixed, track the one with highest score (closest to maybe fixed)
+                    score = result.get("feature_distance", result.get("similarity", 0))
+                    if score > best_confidence:
+                        best_confidence = score
                         best_result = result
                         best_after_idx = after["index"]
                         
@@ -400,12 +719,14 @@ async def analyze(
                     "verdict": best_result["verdict"],
                     "is_fixed": best_result["is_fixed"],
                     "confidence": best_result["confidence"],
-                    "feature_distance": best_result["feature_distance"]
+                    "feature_distance": best_result.get("feature_distance", 0),
+                    "similarity": best_result.get("similarity", 0),
+                    "method": best_result.get("method", "unknown")
                 },
                 "before_image": image_to_base64(before["pil"]),
                 "after_image": image_to_base64(after_data[best_after_idx]["pil"]) if best_after_idx is not None else None
             })
-            print(f"  → {best_result['verdict']} (confidence: {best_result['confidence']:.2f})")
+            print(f"  → {best_result['verdict']} (confidence: {best_result['confidence']:.2f}, method: {best_result.get('method', 'unknown')})")
         else:
             defect_results.append({
                 "defect_id": defect["defect_id"],
@@ -434,9 +755,16 @@ async def analyze(
         "fixed_count": fixed_count,
         "total_defects": total_defects,
         "defects": defect_results,
-        # Include all raw images for frontend display
+        # Include all raw images/frames for frontend display
         "before_images": [image_to_base64(b["pil"]) for b in before_data],
-        "after_images": [image_to_base64(a["pil"]) for a in after_data]
+        "after_images": [image_to_base64(a["pil"]) for a in after_data],
+        # Media info
+        "media_info": {
+            "before_frame_count": len(before_data),
+            "after_frame_count": len(after_data),
+            "before_had_video": "video" in before_media_types,
+            "after_had_video": "video" in after_media_types
+        }
     }
 
 
