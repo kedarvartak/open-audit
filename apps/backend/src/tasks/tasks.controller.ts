@@ -164,9 +164,10 @@ export class TasksController {
         const result = await this.tasksService.submitWork(id, req.user.userId, afterImages);
         console.log(`[TasksController] submitWork result: aiResult keys=${result.aiResult ? Object.keys(result.aiResult) : 'null'}`);
         if (result.aiResult && result.aiResult.details) {
+            console.log(`[TasksController] AI verdict: ${result.aiResult.verdict}, summary: ${result.aiResult.summary}`);
             console.log(`[TasksController] AI details count: ${result.aiResult.details.length}`);
-            result.aiResult.details.forEach((d, i) => {
-                console.log(`[TasksController] Detail ${i}: before_len=${d.before_image_annotated?.length}, after_len=${d.after_image_annotated?.length}`);
+            result.aiResult.details.forEach((d: any, i: number) => {
+                console.log(`[TasksController] Defect ${i}: ${d.description}, verdict=${d.phase2_deep_learning?.verdict}`);
             });
         }
         return result;

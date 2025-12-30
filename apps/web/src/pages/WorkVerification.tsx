@@ -309,7 +309,7 @@ export const WorkVerification = () => {
                                                     />
                                                 </div>
                                                 <p className={`text-center mt-2 text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                    {aiResults.details[selectedImageIndex].phase1_groq?.description || 'Defect detected'}
+                                                    {aiResults.details[selectedImageIndex].description || 'Defect detected'}
                                                 </p>
                                             </div>
 
@@ -551,12 +551,15 @@ export const WorkVerification = () => {
                             {activeTab === 'ai' && aiResults && aiResults.details && (
                                 <div className="flex-1 flex flex-col min-h-0">
                                     <div className="px-6 pt-4 pb-2">
-                                        <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${aiResults.verdict === 'FIXED' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                                        <span className={`inline-block px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-2 ${aiResults.verdict === 'FIXED' ? 'bg-emerald-500 text-white' :
+                                            aiResults.verdict === 'PARTIAL' ? 'bg-amber-500 text-white' :
+                                                aiResults.verdict === 'NO_DEFECT' ? 'bg-blue-500 text-white' :
+                                                    'bg-red-500 text-white'
                                             }`}>
                                             VERDICT: {aiResults.verdict}
                                         </span>
                                         <div className={`text-xs font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                            {aiResults.details.length} Analyzed Images
+                                            {aiResults.summary || `${aiResults.details?.length || 0} Defects Analyzed`}
                                         </div>
                                     </div>
                                     <CustomScrollbar className="flex-1">
@@ -591,7 +594,7 @@ export const WorkVerification = () => {
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className={`text-sm font-medium truncate ${theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                                            Result {index + 1}
+                                                            {detail.description || `Defect ${index + 1}`}
                                                         </p>
                                                         <p className={`text-xs ${detail.phase2_deep_learning?.verdict === 'FIXED'
                                                             ? 'text-emerald-500'

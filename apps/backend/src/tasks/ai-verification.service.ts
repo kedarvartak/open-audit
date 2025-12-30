@@ -71,50 +71,51 @@ export class AiVerificationService {
             return {
                 verified: false,
                 confidence: 0,
+                verdict: 'ERROR',
                 reason: 'AI analysis failed',
                 details: []
             };
         }
 
-        const aiResults = result.data; // List of results
-        console.log(`[AiVerificationService] Raw AI results type: ${typeof aiResults}`);
-        console.log(`[AiVerificationService] Is array? ${Array.isArray(aiResults)}`);
-        if (Array.isArray(aiResults) && aiResults.length > 0) {
-            console.log(`[AiVerificationService] First result keys: ${Object.keys(aiResults[0])}`);
-            console.log(`[AiVerificationService] First result content: ${JSON.stringify(aiResults[0])}`);
-            console.log(`[AiVerificationService] First result before_image_annotated length: ${aiResults[0].before_image_annotated?.length}`);
+        const aiResponse = result.data;
+        console.log(`[AiVerificationService] AI Response verdict: ${aiResponse.verdict}`);
+        console.log(`[AiVerificationService] Total defects: ${aiResponse.total_defects}, Fixed: ${aiResponse.fixed_count}`);
+
+        // Handle the new flexible response structure
+        // Response now has: { verdict, summary, fixed_count, total_defects, defects[], before_images[], after_images[] }
+
+        if (aiResponse.verdict === 'NO_DEFECT') {
+            return {
+                verified: true,
+                confidence: 1.0,
+                verdict: 'NO_DEFECT',
+                summary: aiResponse.summary || 'No defects detected in before images',
+                details: [],
+                fixed_count: 0,
+                total_defects: 0
+            };
         }
 
-        // Aggregate results
+        // Calculate average confidence from all defects
+        const defects = aiResponse.defects || [];
         let totalConfidence = 0;
-        let allFixed = true;
-        let details = [];
-
-        // Handle case where aiResults might not be an array (if service error returned object)
-        const resultsArray = Array.isArray(aiResults) ? aiResults : [aiResults];
-
-        for (const res of resultsArray) {
-            const phase2 = res.phase2_deep_learning || {};
-            const isFixed = phase2.is_fixed === true;
-
-            if (!isFixed) allFixed = false;
+        for (const defect of defects) {
+            const phase2 = defect.phase2_deep_learning || {};
             totalConfidence += (phase2.confidence || 0);
-
-            details.push(res);
         }
-
-        const avgConfidence = resultsArray.length > 0 ? totalConfidence / resultsArray.length : 0;
+        const avgConfidence = defects.length > 0 ? totalConfidence / defects.length : 0;
 
         return {
-            verified: allFixed,
+            verified: aiResponse.verdict === 'FIXED',
             confidence: parseFloat(avgConfidence.toFixed(2)),
-            verdict: allFixed ? 'FIXED' : 'NOT_FIXED',
-            summary: `Analyzed ${resultsArray.length} image pairs. Verdict: ${allFixed ? 'FIXED' : 'NOT_FIXED'}`,
-            details: details, // Store full list of results
-            // Keep these for backward compatibility if needed, using the first result or aggregate
-            defectDescription: resultsArray[0]?.phase1_groq?.description || 'Multiple defects',
-            annotatedBeforeImage: resultsArray[0]?.before_image_annotated || null,
-            annotatedAfterImage: resultsArray[0]?.after_image_annotated || null,
+            verdict: aiResponse.verdict, // 'FIXED', 'PARTIAL', or 'NOT_FIXED'
+            summary: aiResponse.summary,
+            fixed_count: aiResponse.fixed_count || 0,
+            total_defects: aiResponse.total_defects || 0,
+            details: defects, // Per-defect results with bbox, before_image, after_image
+            // Include raw image arrays for frontend
+            before_images: aiResponse.before_images || [],
+            after_images: aiResponse.after_images || []
         };
     }
 }

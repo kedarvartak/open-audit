@@ -252,115 +252,192 @@ async def analyze(
     after_images: List[UploadFile] = File(...)
 ):
     """
-    Two-phase defect detection for multiple image pairs:
-    1. Groq Vision finds defect location
-    2. Deep Learning checks if fixed
+    Flexible defect detection - handles different numbers of before/after images.
+    
+    Algorithm:
+    1. Detect ALL defects from ALL before images
+    2. For each defect, find the best matching after image
+    3. Verify if each defect is fixed
+    4. Return per-defect results with overall verdict
     """
-    if len(before_images) != len(after_images):
-        raise HTTPException(status_code=400, detail="Number of before and after images must match")
-
-    results = []
-
-    for i, (before_image, after_image) in enumerate(zip(before_images, after_images)):
-        try:
-            # Load images
-            before_content = await before_image.read()
-            after_content = await after_image.read()
-            
-            before_pil = Image.open(io.BytesIO(before_content)).convert("RGB")
-            after_pil = Image.open(io.BytesIO(after_content)).convert("RGB")
-            
-            # Resize if needed for consistency
-            if before_pil.size != after_pil.size:
-                target_size = (min(before_pil.width, after_pil.width), 
-                              min(before_pil.height, after_pil.height))
-                before_pil = before_pil.resize(target_size)
-                after_pil = after_pil.resize(target_size)
-            
-            width, height = before_pil.size
-            
-            # Convert to OpenCV
-            before_cv = cv2.cvtColor(np.array(before_pil), cv2.COLOR_RGB2BGR)
-            after_cv = cv2.cvtColor(np.array(after_pil), cv2.COLOR_RGB2BGR)
-            
-            # PHASE 1: Groq Vision detects defect by comparing before and after
-            print(f"Processing pair {i+1}: Phase 1 Groq comparing images...")
-            phase1_result = phase1_detect_defect(before_pil, after_pil)
-            
-            if not phase1_result.get("has_defect"):
-                results.append({
-                    "pair_index": i,
-                    "status": "no_defect",
-                    "message": "No defect detected in the image",
-                    "phase1": phase1_result
-                })
+    
+    if len(before_images) == 0:
+        raise HTTPException(status_code=400, detail="At least one before image required")
+    if len(after_images) == 0:
+        raise HTTPException(status_code=400, detail="At least one after image required")
+    
+    print(f"[Analyze] Received {len(before_images)} before images, {len(after_images)} after images")
+    
+    # STEP 1: Load all images
+    before_data = []
+    for i, img in enumerate(before_images):
+        content = await img.read()
+        pil_img = Image.open(io.BytesIO(content)).convert("RGB")
+        cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+        before_data.append({
+            "index": i,
+            "pil": pil_img,
+            "cv": cv_img,
+            "width": pil_img.width,
+            "height": pil_img.height
+        })
+    
+    after_data = []
+    for i, img in enumerate(after_images):
+        content = await img.read()
+        pil_img = Image.open(io.BytesIO(content)).convert("RGB")
+        cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+        after_data.append({
+            "index": i,
+            "pil": pil_img,
+            "cv": cv_img,
+            "width": pil_img.width,
+            "height": pil_img.height
+        })
+    
+    # STEP 2: Detect defects from ALL before images
+    detected_defects = []
+    for before in before_data:
+        print(f"[Analyze] Detecting defects in before image {before['index']}...")
+        
+        # Use first after image as reference for comparison (to identify what changed)
+        # This helps Groq understand what was the "defect" state
+        detection = phase1_detect_defect(before["pil"], after_data[0]["pil"])
+        
+        if detection.get("has_defect"):
+            detected_defects.append({
+                "defect_id": f"defect_{len(detected_defects)}",
+                "before_image_idx": before["index"],
+                "description": detection["description"],
+                "bbox_percent": detection["bbox_percent"],
+                "before_data": before
+            })
+            print(f"  → Found defect: {detection['description']}")
+        else:
+            print(f"  → No defect detected")
+    
+    # If no defects found in any before image
+    if not detected_defects:
+        return {
+            "verdict": "NO_DEFECT",
+            "summary": "No defects detected in before images",
+            "fixed_count": 0,
+            "total_defects": 0,
+            "defects": [],
+            "before_images": [image_to_base64(b["pil"]) for b in before_data],
+            "after_images": [image_to_base64(a["pil"]) for a in after_data]
+        }
+    
+    # STEP 3: For each defect, find best matching after image and verify repair
+    defect_results = []
+    
+    for defect in detected_defects:
+        print(f"[Analyze] Processing {defect['defect_id']}: {defect['description']}")
+        
+        before = defect["before_data"]
+        bbox_percent = defect["bbox_percent"]
+        
+        # Try each after image and find the best match
+        best_result = None
+        best_confidence = -1
+        best_after_idx = None
+        
+        for after in after_data:
+            try:
+                # Resize after image to match before image dimensions for comparison
+                after_resized = after["pil"].resize((before["width"], before["height"]))
+                after_cv_resized = cv2.cvtColor(np.array(after_resized), cv2.COLOR_RGB2BGR)
+                
+                # Convert bbox to pixels
+                bbox_pixels = convert_bbox_percent_to_pixels(
+                    bbox_percent, before["width"], before["height"]
+                )
+                x1, y1, x2, y2 = bbox_pixels
+                
+                # Extract regions
+                before_region = before["cv"][y1:y2, x1:x2]
+                after_region = after_cv_resized[y1:y2, x1:x2]
+                
+                if before_region.size == 0 or after_region.size == 0:
+                    continue
+                
+                # Verify repair
+                result = phase2_verify_repair(before_region, after_region)
+                
+                # Track best result (highest confidence for FIXED, or least bad for NOT_FIXED)
+                if result["is_fixed"]:
+                    # For fixed results, prefer higher confidence
+                    if result["confidence"] > best_confidence:
+                        best_confidence = result["confidence"]
+                        best_result = result
+                        best_after_idx = after["index"]
+                elif best_result is None or not best_result.get("is_fixed"):
+                    # For not-fixed, track the one with highest feature distance (closest to maybe fixed)
+                    if result["feature_distance"] > best_confidence:
+                        best_confidence = result["feature_distance"]
+                        best_result = result
+                        best_after_idx = after["index"]
+                        
+            except Exception as e:
+                print(f"  Error comparing with after image {after['index']}: {e}")
                 continue
-            
-            # Convert bbox from percent to pixels
-            bbox_pixels = convert_bbox_percent_to_pixels(
-                phase1_result["bbox_percent"], width, height
-            )
-            x1, y1, x2, y2 = bbox_pixels
-            
-            # Extract defect regions
-            before_region = before_cv[y1:y2, x1:x2]
-            after_region = after_cv[y1:y2, x1:x2]
-            
-            if before_region.size == 0 or after_region.size == 0:
-                results.append({
-                    "pair_index": i,
-                    "status": "error",
-                    "message": "Invalid defect region detected"
-                })
-                continue
-            
-            # PHASE 2: Deep Learning verifies if fixed
-            print(f"Processing pair {i+1}: Phase 2 Deep Learning verifying repair...")
-            phase2_result = phase2_verify_repair(before_region, after_region)
-            
-            # Return raw images + bbox coordinates (frontend will draw boxes)
-            # This provides crisp, resolution-independent bounding boxes
-            results.append({
-                "pair_index": i,
+        
+        # Build result for this defect
+        if best_result:
+            defect_results.append({
+                "defect_id": defect["defect_id"],
                 "status": "success",
-                "phase1_groq": {
-                    "defect_found": True,
-                    "description": phase1_result["description"],
-                    "location_percent": phase1_result["bbox_percent"],
-                    "location_pixels": bbox_pixels
+                "description": defect["description"],
+                "before_image_idx": defect["before_image_idx"],
+                "best_after_image_idx": best_after_idx,
+                "bbox": {
+                    "x": bbox_percent[0],
+                    "y": bbox_percent[1],
+                    "width": bbox_percent[2],
+                    "height": bbox_percent[3]
                 },
                 "phase2_deep_learning": {
-                    "verdict": phase2_result["verdict"],
-                    "is_fixed": phase2_result["is_fixed"],
-                    "confidence": phase2_result["confidence"],
-                    "feature_distance": phase2_result["feature_distance"]
+                    "verdict": best_result["verdict"],
+                    "is_fixed": best_result["is_fixed"],
+                    "confidence": best_result["confidence"],
+                    "feature_distance": best_result["feature_distance"]
                 },
-                # Send raw images - frontend draws bounding boxes
-                "before_image": image_to_base64(before_pil),
-                "after_image": image_to_base64(after_pil),
-                # Bounding box as percentage (0-100) for frontend rendering
-                "bbox": {
-                    "x": phase1_result["bbox_percent"][0],
-                    "y": phase1_result["bbox_percent"][1],
-                    "width": phase1_result["bbox_percent"][2],
-                    "height": phase1_result["bbox_percent"][3]
-                },
-                "image_dimensions": {
-                    "width": width,
-                    "height": height
-                },
-                "summary": f"Defect: {phase1_result['description']} | Status: {phase2_result['verdict']}"
+                "before_image": image_to_base64(before["pil"]),
+                "after_image": image_to_base64(after_data[best_after_idx]["pil"]) if best_after_idx is not None else None
             })
-            
-        except Exception as e:
-            print(f"Error processing pair {i+1}: {e}")
-            results.append({
-                "pair_index": i,
+            print(f"  → {best_result['verdict']} (confidence: {best_result['confidence']:.2f})")
+        else:
+            defect_results.append({
+                "defect_id": defect["defect_id"],
                 "status": "error",
-                "message": str(e)
+                "description": defect["description"],
+                "before_image_idx": defect["before_image_idx"],
+                "message": "Could not verify repair for this defect"
             })
-
-    return results
+    
+    # STEP 4: Calculate overall verdict
+    fixed_count = sum(1 for d in defect_results if d.get("phase2_deep_learning", {}).get("is_fixed", False))
+    total_defects = len(defect_results)
+    
+    if fixed_count == total_defects:
+        overall_verdict = "FIXED"
+    elif fixed_count > 0:
+        overall_verdict = "PARTIAL"
+    else:
+        overall_verdict = "NOT_FIXED"
+    
+    print(f"[Analyze] Final verdict: {overall_verdict} ({fixed_count}/{total_defects} defects fixed)")
+    
+    return {
+        "verdict": overall_verdict,
+        "summary": f"{fixed_count}/{total_defects} defects fixed",
+        "fixed_count": fixed_count,
+        "total_defects": total_defects,
+        "defects": defect_results,
+        # Include all raw images for frontend display
+        "before_images": [image_to_base64(b["pil"]) for b in before_data],
+        "after_images": [image_to_base64(a["pil"]) for a in after_data]
+    }
 
 
 if __name__ == "__main__":
