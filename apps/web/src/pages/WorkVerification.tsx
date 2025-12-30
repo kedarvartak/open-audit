@@ -4,6 +4,7 @@ import { ArrowLeft, X, ChevronRight, ImageIcon } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Button } from '../components/ui/Button';
 import { CustomScrollbar } from '../components/ui/CustomScrollbar';
+import { ImageWithBoundingBox } from '../components/ui/ImageWithBoundingBox';
 import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI, type Task } from '../services/api';
 import toast from 'react-hot-toast';
@@ -292,27 +293,48 @@ export const WorkVerification = () => {
 
                                     {aiResults.details[selectedImageIndex].status === 'success' ? (
                                         <div className="relative w-full h-full flex gap-4">
+                                            {/* Before Image with Bounding Box */}
                                             <div className="flex-1 flex flex-col">
-                                                <p className={`text-center mb-2 font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>Before (Annotated)</p>
+                                                <p className={`text-center mb-2 font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                    Before (Defect Detected)
+                                                </p>
                                                 <div className="flex-1 relative bg-black/5 rounded-lg overflow-hidden">
-                                                    <img
-                                                        src={aiResults.details[selectedImageIndex].before_image_annotated}
-                                                        alt="Annotated Before"
-                                                        className="absolute inset-0 w-full h-full object-contain"
-                                                        onError={(e) => console.error('Error loading before image', e)}
+                                                    <ImageWithBoundingBox
+                                                        src={aiResults.details[selectedImageIndex].before_image}
+                                                        alt="Before"
+                                                        bbox={aiResults.details[selectedImageIndex].bbox}
+                                                        boxColor="orange"
+                                                        label="DEFECT"
+                                                        className="absolute inset-0 w-full h-full"
                                                     />
                                                 </div>
+                                                <p className={`text-center mt-2 text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                    {aiResults.details[selectedImageIndex].phase1_groq?.description || 'Defect detected'}
+                                                </p>
                                             </div>
+
+                                            {/* After Image with Bounding Box */}
                                             <div className="flex-1 flex flex-col">
-                                                <p className={`text-center mb-2 font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>After (Annotated)</p>
+                                                <p className={`text-center mb-2 font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                    After ({aiResults.details[selectedImageIndex].phase2_deep_learning?.verdict || 'Analyzed'})
+                                                </p>
                                                 <div className="flex-1 relative bg-black/5 rounded-lg overflow-hidden">
-                                                    <img
-                                                        src={aiResults.details[selectedImageIndex].after_image_annotated}
-                                                        alt="Annotated After"
-                                                        className="absolute inset-0 w-full h-full object-contain"
-                                                        onError={(e) => console.error('Error loading after image', e)}
+                                                    <ImageWithBoundingBox
+                                                        src={aiResults.details[selectedImageIndex].after_image}
+                                                        alt="After"
+                                                        bbox={aiResults.details[selectedImageIndex].bbox}
+                                                        boxColor={aiResults.details[selectedImageIndex].phase2_deep_learning?.is_fixed ? 'green' : 'red'}
+                                                        label={aiResults.details[selectedImageIndex].phase2_deep_learning?.verdict}
+                                                        sublabel={`${Math.round((aiResults.details[selectedImageIndex].phase2_deep_learning?.confidence || 0) * 100)}%`}
+                                                        className="absolute inset-0 w-full h-full"
                                                     />
                                                 </div>
+                                                <p className={`text-center mt-2 text-sm font-semibold ${aiResults.details[selectedImageIndex].phase2_deep_learning?.is_fixed
+                                                    ? 'text-emerald-500'
+                                                    : 'text-red-500'
+                                                    }`}>
+                                                    Confidence: {Math.round((aiResults.details[selectedImageIndex].phase2_deep_learning?.confidence || 0) * 100)}%
+                                                </p>
                                             </div>
                                         </div>
                                     ) : (
@@ -552,9 +574,9 @@ export const WorkVerification = () => {
                                                         }`}
                                                 >
                                                     <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0 relative">
-                                                        {detail.after_image_annotated ? (
+                                                        {detail.after_image ? (
                                                             <img
-                                                                src={detail.after_image_annotated}
+                                                                src={detail.after_image}
                                                                 alt={`AI Result ${index + 1}`}
                                                                 className="w-full h-full object-cover transition-transform group-hover:scale-105"
                                                             />
@@ -575,7 +597,7 @@ export const WorkVerification = () => {
                                                             ? 'text-emerald-500'
                                                             : 'text-red-500'
                                                             }`}>
-                                                            {detail.phase2_deep_learning?.verdict} ({detail.phase2_deep_learning?.confidence})
+                                                            {detail.phase2_deep_learning?.verdict} ({Math.round((detail.phase2_deep_learning?.confidence || 0) * 100)}%)
                                                         </p>
                                                     </div>
                                                     <ChevronRight size={16} className={`opacity-0 group-hover:opacity-100 transition-opacity ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />

@@ -318,19 +318,8 @@ async def analyze(
             print(f"Processing pair {i+1}: Phase 2 Deep Learning verifying repair...")
             phase2_result = phase2_verify_repair(before_region, after_region)
             
-            # Draw annotations
-            annotated_before, annotated_after = draw_annotations(
-                before_cv.copy(), after_cv.copy(),
-                bbox_pixels,
-                phase1_result["description"],
-                phase2_result["verdict"],
-                phase2_result["confidence"]
-            )
-            
-            # Convert to PIL and base64
-            before_final = Image.fromarray(cv2.cvtColor(annotated_before, cv2.COLOR_BGR2RGB))
-            after_final = Image.fromarray(cv2.cvtColor(annotated_after, cv2.COLOR_BGR2RGB))
-            
+            # Return raw images + bbox coordinates (frontend will draw boxes)
+            # This provides crisp, resolution-independent bounding boxes
             results.append({
                 "pair_index": i,
                 "status": "success",
@@ -346,8 +335,20 @@ async def analyze(
                     "confidence": phase2_result["confidence"],
                     "feature_distance": phase2_result["feature_distance"]
                 },
-                "before_image_annotated": image_to_base64(before_final),
-                "after_image_annotated": image_to_base64(after_final),
+                # Send raw images - frontend draws bounding boxes
+                "before_image": image_to_base64(before_pil),
+                "after_image": image_to_base64(after_pil),
+                # Bounding box as percentage (0-100) for frontend rendering
+                "bbox": {
+                    "x": phase1_result["bbox_percent"][0],
+                    "y": phase1_result["bbox_percent"][1],
+                    "width": phase1_result["bbox_percent"][2],
+                    "height": phase1_result["bbox_percent"][3]
+                },
+                "image_dimensions": {
+                    "width": width,
+                    "height": height
+                },
                 "summary": f"Defect: {phase1_result['description']} | Status: {phase2_result['verdict']}"
             })
             
