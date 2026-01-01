@@ -7,11 +7,12 @@ import {
     RefreshControl,
     SafeAreaView,
     Modal,
-    Dimensions,
+    Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
-import { tasksAPI, Task } from '../services/api';
+import { useTasks } from '../contexts/TasksContext';
+import { Task } from '../services/api';
 import { BottomNav } from '../components/ui/BottomNav';
 import { CalendarSkeleton } from '../components/ui/Skeleton';
 import {
@@ -20,187 +21,375 @@ import {
     Clock,
     MapPin,
     X,
-    HelpCircle,
+    DollarSign,
+    User,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DAY_CELL_WIDTH = (SCREEN_WIDTH - 32) / 7;
+// Brand colors
+const BRAND_COLORS = {
+    primary: '#1e3a8a',      // Dark blue
+    secondary: '#fbbf24',    // Amber/Yellow
+    accent: '#ef4444',       // Red
+    success: '#22c55e',      // Green
+};
 
-// Get status color matching web version
+// Get status color with brand colors
 const getStatusColor = (status: string) => {
     switch (status) {
         case 'OPEN':
-            return '#3b82f6'; // blue-500
+            return BRAND_COLORS.secondary; // amber
         case 'ACCEPTED':
-            return '#f59e0b'; // amber-500
+            return BRAND_COLORS.primary; // dark blue
         case 'IN_PROGRESS':
-            return '#8b5cf6'; // purple-500
+            return '#8b5cf6'; // purple
         case 'SUBMITTED':
-            return '#06b6d4'; // cyan-500
+            return '#06b6d4'; // cyan
         case 'VERIFIED':
-            return '#22c55e'; // green-500
+            return BRAND_COLORS.success; // green
         case 'PAID':
-            return '#10b981'; // emerald-500
+            return '#10b981'; // emerald
         case 'DISPUTED':
-            return '#ef4444'; // red-500
+            return BRAND_COLORS.accent; // red
         case 'CANCELLED':
-            return '#64748b'; // slate-500
+            return '#64748b'; // slate
         default:
-            return '#64748b';
+            return BRAND_COLORS.primary;
     }
 };
 
-// Task bar shown inside calendar cell
-const TaskBar = ({ task }: { task: Task }) => (
-    <View style={{
-        backgroundColor: getStatusColor(task.status),
-        borderRadius: 4,
-        paddingHorizontal: 4,
-        paddingVertical: 2,
-        marginBottom: 2,
-    }}>
-        <Text style={{ fontSize: 9, color: '#ffffff', fontWeight: '600' }} numberOfLines={1}>
-            {task.title}
-        </Text>
-    </View>
-);
+// Format time helper
+const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
 
-// Task Card for the side panel / modal
-const TaskCard = ({ task }: { task: Task }) => {
-    const formatTime = (deadline: string) => {
-        const date = new Date(deadline);
-        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
-    };
+// Format date for section header
+const formatDateHeader = (date: Date) => {
+    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    return `${days[date.getDay()]} ${date.getDate()}`;
+};
+
+// Event Card Component
+const EventCard = ({ task, onPress }: { task: Task; onPress: () => void }) => {
+    const statusColor = getStatusColor(task.status);
 
     return (
-        <View style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 8,
-            padding: 16,
-            marginBottom: 12,
-            borderWidth: 1,
-            borderColor: '#e2e8f0',
-        }}>
-            {/* Status and Time Row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <View style={{
-                    backgroundColor: getStatusColor(task.status),
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                    borderRadius: 4,
-                }}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#ffffff' }}>
-                        {task.status.replace('_', ' ')}
-                    </Text>
-                </View>
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.7}
+            style={{
+                flexDirection: 'row',
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: '#f1f5f9',
+                backgroundColor: '#ffffff',
+            }}
+        >
+            {/* Time Column */}
+            <View style={{ width: 55, marginRight: 12 }}>
                 {task.deadline && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8 }}>
-                        <Clock size={12} color="#64748b" />
-                        <Text style={{ fontSize: 11, color: '#64748b', marginLeft: 4 }}>
-                            {formatTime(task.deadline)}
-                        </Text>
-                    </View>
+                    <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '500' }}>
+                        {formatTime(task.deadline)}
+                    </Text>
                 )}
             </View>
 
-            {/* Title */}
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#0f172a', marginBottom: 6 }}>
-                {task.title}
-            </Text>
+            {/* Color Indicator Bar */}
+            <View style={{
+                width: 4,
+                borderRadius: 2,
+                backgroundColor: statusColor,
+                marginRight: 12,
+            }} />
 
-            {/* Description */}
-            <Text style={{ fontSize: 13, color: '#64748b', marginBottom: 12, lineHeight: 18 }} numberOfLines={2}>
-                {task.description || 'No description provided'}
-            </Text>
-
-            {/* Budget and User Row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{
-                    backgroundColor: '#fbbf24',
-                    paddingHorizontal: 10,
-                    paddingVertical: 4,
-                    borderRadius: 4,
-                }}>
-                    <Text style={{ fontSize: 12, fontWeight: '700', color: '#0f172a' }}>
-                        {task.budget.toLocaleString()}
-                    </Text>
-                </View>
-
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <View style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: 12,
-                        backgroundColor: '#22c55e',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginRight: 6,
-                    }}>
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>
-                            {task.client?.name?.charAt(0).toUpperCase() || 'T'}
-                        </Text>
-                    </View>
-                    <Text style={{ fontSize: 12, color: '#64748b' }}>
-                        {task.client?.name?.split(' ')[0] || 'Test'}
-                    </Text>
-                </View>
+            {/* Content */}
+            <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a', marginBottom: 2 }}>
+                    {task.title}
+                </Text>
+                <Text style={{ fontSize: 12, color: '#64748b' }} numberOfLines={1}>
+                    {task.description || task.category || 'No description'}
+                </Text>
             </View>
 
-            {/* Location */}
-            {task.location?.address && (
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 12,
-                    paddingTop: 12,
-                    borderTopWidth: 1,
-                    borderTopColor: '#f1f5f9',
-                }}>
-                    <MapPin size={12} color="#64748b" />
-                    <Text style={{ fontSize: 11, color: '#64748b', marginLeft: 4, flex: 1 }} numberOfLines={1}>
-                        {task.location.address}
-                    </Text>
-                </View>
-            )}
+            {/* Budget Badge */}
+            <View style={{
+                backgroundColor: BRAND_COLORS.success,
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 4,
+                alignSelf: 'center',
+            }}>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#ffffff' }}>
+                    ₹{task.budget?.toLocaleString()}
+                </Text>
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+// Day with Events grouped
+const DaySection = ({ date, tasks, onTaskPress }: { date: Date; tasks: Task[]; onTaskPress: (task: Task) => void }) => {
+    if (tasks.length === 0) return null;
+
+    return (
+        <View style={{ marginBottom: 8 }}>
+            {/* Date Header */}
+            <View style={{
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                backgroundColor: '#f8fafc',
+            }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: BRAND_COLORS.primary, letterSpacing: 0.5 }}>
+                    {formatDateHeader(date)}
+                </Text>
+            </View>
+
+            {/* Events */}
+            <View style={{ backgroundColor: '#ffffff' }}>
+                {tasks.map(task => (
+                    <EventCard
+                        key={task.id}
+                        task={task}
+                        onPress={() => onTaskPress(task)}
+                    />
+                ))}
+            </View>
         </View>
+    );
+};
+
+// Task Detail Modal
+const TaskDetailModal = ({ task, visible, onClose }: { task: Task | null; visible: boolean; onClose: () => void }) => {
+    if (!task) return null;
+
+    const statusColor = getStatusColor(task.status);
+
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={onClose}
+        >
+            <View style={{
+                flex: 1,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                justifyContent: 'flex-end',
+            }}>
+                <View style={{
+                    backgroundColor: '#ffffff',
+                    borderTopLeftRadius: 24,
+                    borderTopRightRadius: 24,
+                    maxHeight: '85%',
+                }}>
+                    {/* Modal Header */}
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingHorizontal: 20,
+                        paddingVertical: 16,
+                        borderBottomWidth: 1,
+                        borderBottomColor: '#e2e8f0',
+                        backgroundColor: BRAND_COLORS.primary,
+                        borderTopLeftRadius: 24,
+                        borderTopRightRadius: 24,
+                    }}>
+                        <Text style={{ fontSize: 18, fontWeight: '700', color: '#ffffff' }}>
+                            Task Details
+                        </Text>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 16,
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <X size={18} color="#ffffff" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView style={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+                        {/* Task Image */}
+                        {task.beforeImages && task.beforeImages.length > 0 && (
+                            <View style={{
+                                width: '100%',
+                                height: 180,
+                                borderRadius: 12,
+                                overflow: 'hidden',
+                                marginBottom: 16,
+                                backgroundColor: '#f1f5f9',
+                            }}>
+                                <Image
+                                    source={{ uri: task.beforeImages[0] }}
+                                    style={{ width: '100%', height: '100%' }}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                        )}
+
+                        {/* Title */}
+                        <Text style={{ fontSize: 20, fontWeight: '700', color: '#0f172a', marginBottom: 8 }}>
+                            {task.title}
+                        </Text>
+
+                        {/* Status & Category Badges */}
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                            <View style={{
+                                backgroundColor: statusColor,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 6,
+                            }}>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>
+                                    {task.status.replace('_', ' ')}
+                                </Text>
+                            </View>
+                            <View style={{
+                                backgroundColor: BRAND_COLORS.accent,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 6,
+                            }}>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>
+                                    {(task.category || 'GENERAL').toUpperCase()}
+                                </Text>
+                            </View>
+                            <View style={{
+                                backgroundColor: BRAND_COLORS.success,
+                                paddingHorizontal: 12,
+                                paddingVertical: 6,
+                                borderRadius: 6,
+                            }}>
+                                <Text style={{ fontSize: 12, fontWeight: '700', color: '#ffffff' }}>
+                                    ₹{task.budget?.toLocaleString()}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Description */}
+                        <Text style={{ fontSize: 14, color: '#64748b', lineHeight: 22, marginBottom: 20 }}>
+                            {task.description || 'No description provided.'}
+                        </Text>
+
+                        {/* Info Cards */}
+                        <View style={{
+                            backgroundColor: '#f8fafc',
+                            borderRadius: 12,
+                            padding: 16,
+                            marginBottom: 16,
+                        }}>
+                            {/* Deadline */}
+                            {task.deadline && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                    <View style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 8,
+                                        backgroundColor: BRAND_COLORS.primary,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginRight: 12,
+                                    }}>
+                                        <Clock size={18} color="#ffffff" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Deadline</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }}>
+                                            {new Date(task.deadline).toLocaleDateString('en-US', {
+                                                weekday: 'short',
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: 'numeric',
+                                                minute: '2-digit',
+                                            })}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Client */}
+                            {task.client && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                                    <View style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 8,
+                                        backgroundColor: BRAND_COLORS.secondary,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginRight: 12,
+                                    }}>
+                                        <User size={18} color="#0f172a" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Client</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }}>
+                                            {task.client.name}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Location */}
+                            {task.locationName && (
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 8,
+                                        backgroundColor: BRAND_COLORS.accent,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        marginRight: 12,
+                                    }}>
+                                        <MapPin size={18} color="#ffffff" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Location</Text>
+                                        <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }} numberOfLines={2}>
+                                            {task.locationName}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Bottom Spacing */}
+                        <View style={{ height: 32 }} />
+                    </ScrollView>
+                </View>
+            </View>
+        </Modal>
     );
 };
 
 export default function CalendarScreen() {
     const { user, loading: authLoading } = useAuth();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { tasks, loading, refreshTasks, fetchTasks, getTasksForDate } = useTasks();
     const [refreshing, setRefreshing] = useState(false);
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-    const [showTasksModal, setShowTasksModal] = useState(false);
-    const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+    const [selectedDates, setSelectedDates] = useState<Date[]>([new Date()]);
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [showTaskModal, setShowTaskModal] = useState(false);
 
-    const fetchTasks = async () => {
-        if (!user) return;
-        try {
-            const role = user.role === 'CLIENT' ? 'client' : 'worker';
-            const data = await tasksAPI.getMyTasks(role);
-            setTasks(data);
-        } catch (error) {
-            console.error('Failed to fetch tasks:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
+    // Fetch tasks on mount (will use cache if valid)
     useEffect(() => {
-        if (user) {
-            fetchTasks();
-        }
-    }, [user]);
-
-    const onRefresh = useCallback(() => {
-        setRefreshing(true);
         fetchTasks();
-    }, [user]);
+    }, []);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await refreshTasks();
+        setRefreshing(false);
+    }, [refreshTasks]);
 
     // Calendar navigation
     const goToPreviousMonth = () => {
@@ -209,12 +398,6 @@ export default function CalendarScreen() {
 
     const goToNextMonth = () => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-    };
-
-    const goToToday = () => {
-        const today = new Date();
-        setCurrentDate(today);
-        setSelectedDate(today);
     };
 
     // Get calendar grid data
@@ -230,30 +413,15 @@ export default function CalendarScreen() {
 
         const days: (Date | null)[] = [];
 
-        // Add empty slots for days before the first day of the month
         for (let i = 0; i < startingDayOfWeek; i++) {
             days.push(null);
         }
 
-        // Add all days of the month
         for (let day = 1; day <= daysInMonth; day++) {
             days.push(new Date(year, month, day));
         }
 
         return days;
-    };
-
-    // Get tasks for a specific date
-    const getTasksForDate = (date: Date): Task[] => {
-        return tasks.filter(task => {
-            if (!task.deadline) return false;
-            const taskDate = new Date(task.deadline);
-            return (
-                taskDate.getFullYear() === date.getFullYear() &&
-                taskDate.getMonth() === date.getMonth() &&
-                taskDate.getDate() === date.getDate()
-            );
-        });
     };
 
     const isToday = (date: Date) => {
@@ -266,12 +434,15 @@ export default function CalendarScreen() {
     };
 
     const isSelected = (date: Date) => {
-        if (!selectedDate) return false;
-        return (
-            date.getFullYear() === selectedDate.getFullYear() &&
-            date.getMonth() === selectedDate.getMonth() &&
-            date.getDate() === selectedDate.getDate()
+        return selectedDates.some(d =>
+            d.getFullYear() === date.getFullYear() &&
+            d.getMonth() === date.getMonth() &&
+            d.getDate() === date.getDate()
         );
+    };
+
+    const hasTasksOnDate = (date: Date) => {
+        return getTasksForDate(date).length > 0;
     };
 
     const monthNames = [
@@ -279,25 +450,52 @@ export default function CalendarScreen() {
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
 
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
     const calendarDays = getCalendarDays();
-    const selectedDateTasks = selectedDate ? getTasksForDate(selectedDate) : [];
 
     const handleDayPress = (date: Date) => {
-        setSelectedDate(date);
-        const tasksForDay = getTasksForDate(date);
-        if (tasksForDay.length > 0) {
-            setShowTasksModal(true);
-        }
+        setSelectedDates([date]);
     };
 
-    const formatSelectedDate = () => {
-        if (!selectedDate) return '';
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        return `${days[selectedDate.getDay()]}, ${months[selectedDate.getMonth()]} ${selectedDate.getDate()}`;
+    const handleTaskPress = (task: Task) => {
+        setSelectedTask(task);
+        setShowTaskModal(true);
     };
+
+    // Get events for selected dates
+    const getSelectedDateEvents = () => {
+        const events: { date: Date; tasks: Task[] }[] = [];
+        const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
+
+        sortedDates.forEach(date => {
+            const dayTasks = getTasksForDate(date);
+            if (dayTasks.length > 0) {
+                events.push({ date, tasks: dayTasks });
+            }
+        });
+
+        return events;
+    };
+
+    // Get upcoming events (next 7 days)
+    const getUpcomingEvents = () => {
+        const events: { date: Date; tasks: Task[] }[] = [];
+        const today = new Date();
+
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+            const dayTasks = getTasksForDate(date);
+            if (dayTasks.length > 0) {
+                events.push({ date, tasks: dayTasks });
+            }
+        }
+
+        return events;
+    };
+
+    const selectedEvents = getSelectedDateEvents();
+    const upcomingEvents = selectedEvents.length > 0 ? selectedEvents : getUpcomingEvents();
 
     if (authLoading || loading) {
         return (
@@ -314,71 +512,8 @@ export default function CalendarScreen() {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
             <StatusBar style="dark" />
-
-            {/* Header */}
-            <View style={{
-                backgroundColor: '#ffffff',
-                paddingHorizontal: 16,
-                paddingTop: 12,
-                paddingBottom: 12,
-                borderBottomWidth: 1,
-                borderBottomColor: '#e2e8f0',
-            }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <View>
-                        <Text style={{ fontSize: 22, fontWeight: '700', color: '#0f172a' }}>
-                            Calendar
-                        </Text>
-                        <Text style={{ fontSize: 13, color: '#64748b' }}>
-                            Track and organize your tasks
-                        </Text>
-                    </View>
-
-                    {/* Month/Week Toggle */}
-                    <View style={{
-                        flexDirection: 'row',
-                        borderRadius: 8,
-                        borderWidth: 1,
-                        borderColor: '#e2e8f0',
-                        overflow: 'hidden',
-                    }}>
-                        <TouchableOpacity
-                            onPress={() => setViewMode('month')}
-                            style={{
-                                paddingHorizontal: 14,
-                                paddingVertical: 8,
-                                backgroundColor: viewMode === 'month' ? '#6366f1' : '#ffffff',
-                            }}
-                        >
-                            <Text style={{
-                                fontSize: 13,
-                                fontWeight: '600',
-                                color: viewMode === 'month' ? '#ffffff' : '#64748b',
-                            }}>
-                                Month
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={() => setViewMode('week')}
-                            style={{
-                                paddingHorizontal: 14,
-                                paddingVertical: 8,
-                                backgroundColor: viewMode === 'week' ? '#6366f1' : '#ffffff',
-                            }}
-                        >
-                            <Text style={{
-                                fontSize: 13,
-                                fontWeight: '600',
-                                color: viewMode === 'week' ? '#ffffff' : '#64748b',
-                            }}>
-                                Week
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
 
             <ScrollView
                 style={{ flex: 1 }}
@@ -387,77 +522,57 @@ export default function CalendarScreen() {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        tintColor="#6366f1"
+                        tintColor={BRAND_COLORS.primary}
                     />
                 }
             >
-                {/* Calendar Card */}
+                {/* Header */}
                 <View style={{
-                    backgroundColor: '#ffffff',
-                    margin: 16,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: '#e2e8f0',
-                    overflow: 'hidden',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: 20,
                 }}>
                     {/* Month Navigation */}
-                    <View style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        paddingHorizontal: 16,
-                        paddingVertical: 12,
-                        borderBottomWidth: 1,
-                        borderBottomColor: '#f1f5f9',
-                    }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 24, fontWeight: '700', color: '#0f172a' }}>
+                            {monthNames[currentDate.getMonth()]}
+                        </Text>
+                        <View style={{ flexDirection: 'row', marginLeft: 8 }}>
                             <TouchableOpacity
                                 onPress={goToPreviousMonth}
-                                style={{ padding: 8 }}
+                                style={{ padding: 4 }}
                             >
-                                <ChevronLeft size={20} color="#64748b" />
+                                <ChevronLeft size={20} color={BRAND_COLORS.primary} />
                             </TouchableOpacity>
-
-                            <Text style={{ fontSize: 16, fontWeight: '600', color: '#0f172a', marginHorizontal: 8 }}>
-                                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                            </Text>
-
                             <TouchableOpacity
                                 onPress={goToNextMonth}
-                                style={{ padding: 8 }}
+                                style={{ padding: 4 }}
                             >
-                                <ChevronRight size={20} color="#64748b" />
+                                <ChevronRight size={20} color={BRAND_COLORS.primary} />
                             </TouchableOpacity>
                         </View>
-
-                        <TouchableOpacity
-                            onPress={goToToday}
-                            style={{
-                                backgroundColor: '#f1f5f9',
-                                paddingHorizontal: 14,
-                                paddingVertical: 6,
-                                borderRadius: 6,
-                            }}
-                        >
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748b' }}>
-                                Today
-                            </Text>
-                        </TouchableOpacity>
                     </View>
 
+                    {/* Year */}
+                    <Text style={{ fontSize: 14, color: '#94a3b8', fontWeight: '600' }}>
+                        {currentDate.getFullYear()}
+                    </Text>
+                </View>
+
+                {/* Calendar Grid */}
+                <View style={{ paddingHorizontal: 16 }}>
                     {/* Day Headers */}
-                    <View style={{
-                        flexDirection: 'row',
-                        borderBottomWidth: 1,
-                        borderBottomColor: '#f1f5f9',
-                    }}>
+                    <View style={{ flexDirection: 'row', marginBottom: 8 }}>
                         {dayNames.map((day, index) => (
                             <View
                                 key={index}
                                 style={{
                                     flex: 1,
                                     alignItems: 'center',
-                                    paddingVertical: 10,
+                                    paddingVertical: 8,
                                 }}
                             >
                                 <Text style={{
@@ -471,7 +586,7 @@ export default function CalendarScreen() {
                         ))}
                     </View>
 
-                    {/* Calendar Grid */}
+                    {/* Calendar Days */}
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                         {calendarDays.map((date, index) => {
                             if (!date) {
@@ -480,18 +595,17 @@ export default function CalendarScreen() {
                                         key={`empty-${index}`}
                                         style={{
                                             width: `${100 / 7}%`,
-                                            minHeight: 80,
-                                            borderRightWidth: index % 7 !== 6 ? 1 : 0,
-                                            borderBottomWidth: 1,
-                                            borderColor: '#f1f5f9',
+                                            aspectRatio: 1,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
                                         }}
                                     />
                                 );
                             }
 
-                            const dayTasks = getTasksForDate(date);
                             const isTodayDate = isToday(date);
                             const isSelectedDate = isSelected(date);
+                            const hasTasks = hasTasksOnDate(date);
 
                             return (
                                 <TouchableOpacity
@@ -499,53 +613,32 @@ export default function CalendarScreen() {
                                     onPress={() => handleDayPress(date)}
                                     style={{
                                         width: `${100 / 7}%`,
-                                        minHeight: 80,
-                                        padding: 4,
-                                        borderRightWidth: index % 7 !== 6 ? 1 : 0,
-                                        borderBottomWidth: 1,
-                                        borderColor: '#f1f5f9',
-                                        backgroundColor: isSelectedDate ? '#eef2ff' : 'transparent',
+                                        aspectRatio: 1,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}
                                 >
-                                    {/* Day Number */}
                                     <View style={{
-                                        alignItems: 'flex-start',
-                                        marginBottom: 4,
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 18,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backgroundColor: isTodayDate ? BRAND_COLORS.primary : 'transparent',
+                                        borderWidth: isSelectedDate && !isTodayDate ? 2 : (hasTasks && !isTodayDate ? 2 : 0),
+                                        borderColor: isSelectedDate ? BRAND_COLORS.secondary : BRAND_COLORS.secondary,
                                     }}>
-                                        <View style={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: 12,
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            backgroundColor: isTodayDate ? '#6366f1' : 'transparent',
-                                            borderWidth: isTodayDate ? 0 : (isSelectedDate ? 2 : 0),
-                                            borderColor: '#6366f1',
+                                        <Text style={{
+                                            fontSize: 14,
+                                            fontWeight: isTodayDate || isSelectedDate || hasTasks ? '600' : '400',
+                                            color: isTodayDate
+                                                ? '#ffffff'
+                                                : isSelectedDate || hasTasks
+                                                    ? BRAND_COLORS.primary
+                                                    : '#374151',
                                         }}>
-                                            <Text style={{
-                                                fontSize: 13,
-                                                fontWeight: isTodayDate || isSelectedDate ? '700' : '500',
-                                                color: isTodayDate
-                                                    ? '#ffffff'
-                                                    : isSelectedDate
-                                                        ? '#6366f1'
-                                                        : '#374151',
-                                            }}>
-                                                {date.getDate()}
-                                            </Text>
-                                        </View>
-                                    </View>
-
-                                    {/* Task Bars */}
-                                    <View style={{ flex: 1 }}>
-                                        {dayTasks.slice(0, 2).map((task, i) => (
-                                            <TaskBar key={task.id || i} task={task} />
-                                        ))}
-                                        {dayTasks.length > 2 && (
-                                            <Text style={{ fontSize: 9, color: '#64748b' }}>
-                                                +{dayTasks.length - 2} more
-                                            </Text>
-                                        )}
+                                            {date.getDate()}
+                                        </Text>
                                     </View>
                                 </TouchableOpacity>
                             );
@@ -553,83 +646,50 @@ export default function CalendarScreen() {
                     </View>
                 </View>
 
-                {/* Bottom Padding */}
-                <View style={{ height: 100 }} />
+                {/* Divider */}
+                <View style={{
+                    height: 1,
+                    backgroundColor: '#e2e8f0',
+                    marginTop: 20,
+                }} />
+
+                {/* Events List */}
+                <View style={{ paddingTop: 8, paddingBottom: 100 }}>
+                    {upcomingEvents.length === 0 ? (
+                        <View style={{ padding: 40, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 14, color: '#94a3b8', textAlign: 'center' }}>
+                                No events scheduled
+                            </Text>
+                            <Text style={{ fontSize: 12, color: '#cbd5e1', marginTop: 4, textAlign: 'center' }}>
+                                Tap a date to see tasks
+                            </Text>
+                        </View>
+                    ) : (
+                        upcomingEvents.map((event) => (
+                            <DaySection
+                                key={event.date.toISOString()}
+                                date={event.date}
+                                tasks={event.tasks}
+                                onTaskPress={handleTaskPress}
+                            />
+                        ))
+                    )}
+                </View>
             </ScrollView>
 
-            {/* Tasks Modal - Side Panel Style */}
-            <Modal
-                visible={showTasksModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setShowTasksModal(false)}
-            >
-                <View style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                    justifyContent: 'flex-end',
-                }}>
-                    <View style={{
-                        backgroundColor: '#ffffff',
-                        borderTopLeftRadius: 20,
-                        borderTopRightRadius: 20,
-                        maxHeight: '75%',
-                    }}>
-                        {/* Modal Header */}
-                        <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            paddingHorizontal: 20,
-                            paddingVertical: 16,
-                            borderBottomWidth: 1,
-                            borderBottomColor: '#f1f5f9',
-                        }}>
-                            <Text style={{ fontSize: 18, fontWeight: '700', color: '#0f172a' }}>
-                                Tasks for {formatSelectedDate()}
-                            </Text>
-                            <TouchableOpacity
-                                onPress={() => setShowTasksModal(false)}
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 16,
-                                    backgroundColor: '#f1f5f9',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <X size={18} color="#64748b" />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* Modal Content */}
-                        <ScrollView style={{ padding: 16 }} showsVerticalScrollIndicator={false}>
-                            {selectedDateTasks.length === 0 ? (
-                                <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                                    <Text style={{ fontSize: 16, fontWeight: '600', color: '#94a3b8' }}>
-                                        No tasks scheduled
-                                    </Text>
-                                    <Text style={{ fontSize: 13, color: '#94a3b8', marginTop: 4 }}>
-                                        Select another date or create a new task
-                                    </Text>
-                                </View>
-                            ) : (
-                                selectedDateTasks.map(task => (
-                                    <TaskCard key={task.id} task={task} />
-                                ))
-                            )}
-                            <View style={{ height: 32 }} />
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
+            {/* Task Detail Modal */}
+            <TaskDetailModal
+                task={selectedTask}
+                visible={showTaskModal}
+                onClose={() => setShowTaskModal(false)}
+            />
 
             {/* Bottom Navigation */}
             <BottomNav
                 activeTab="calendar"
                 onTabPress={(tab) => {
                     if (tab === 'dashboard') router.push('/dashboard');
+                    if (tab === 'tasks') router.push('/tasks');
                 }}
                 userRole={user?.role}
             />

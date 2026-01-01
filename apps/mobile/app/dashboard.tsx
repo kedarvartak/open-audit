@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
-import { tasksAPI, Task } from '../services/api';
+import { useTasks } from '../contexts/TasksContext';
+import { Task } from '../services/api';
 import { Logo } from '../components/ui/Logo';
 import { BottomNav } from '../components/ui/BottomNav';
 import { DashboardSkeleton, TaskCardSkeleton } from '../components/ui/Skeleton';
@@ -231,31 +232,20 @@ const TaskCard = ({ task, onPress }: { task: Task; onPress: () => void }) => {
 
 export default function Dashboard() {
     const { user, logout, loading: authLoading } = useAuth();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { tasks, loading, refreshTasks, activeTasks, completedTasks, fetchTasks } = useTasks();
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState<'active' | 'all' | 'completed'>('all');
 
-    const fetchTasks = async () => {
-        try {
-            const data = await tasksAPI.getMarketplace();
-            setTasks(data);
-        } catch (error) {
-            console.error('Failed to fetch tasks:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
-
+    // Fetch tasks on mount (will use cache if valid)
     useEffect(() => {
         fetchTasks();
     }, []);
 
-    const onRefresh = useCallback(() => {
+    const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        fetchTasks();
-    }, []);
+        await refreshTasks();
+        setRefreshing(false);
+    }, [refreshTasks]);
 
     const handleTaskPress = (taskId: string) => {
         // TODO: Navigate to task details
@@ -269,8 +259,8 @@ export default function Dashboard() {
         return true;
     });
 
-    const activeTasksCount = tasks.filter(t => t.status === 'OPEN' || t.status === 'ACCEPTED' || t.status === 'IN_PROGRESS').length;
-    const completedTasksCount = tasks.filter(t => t.status === 'COMPLETED' || t.status === 'VERIFIED' || t.status === 'PAID').length;
+    const activeTasksCount = activeTasks.length;
+    const completedTasksCount = completedTasks.length;
 
     if (authLoading || loading) {
         return (
@@ -489,8 +479,8 @@ export default function Dashboard() {
             <BottomNav
                 activeTab="dashboard"
                 onTabPress={(tab) => {
+                    if (tab === 'tasks') router.push('/tasks');
                     if (tab === 'calendar') router.push('/calendar');
-                    // Add other routes as they become available
                 }}
                 userRole={user?.role}
             />
