@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI, type Task } from '../services/api';
 import { ChevronLeft, ChevronRight, Clock, MapPin, AlertCircle, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CalendarSkeleton } from '../components/ui/CalendarSkeleton';
 
 type ViewMode = 'month' | 'week';
 
@@ -136,6 +137,16 @@ const Calendar = () => {
 
     const calendarDays = getCalendarDays();
     const selectedDateTasks = selectedDate ? getTasksForDate(selectedDate) : [];
+
+
+
+    if (loading) {
+        return (
+            <DashboardLayout>
+                <CalendarSkeleton />
+            </DashboardLayout>
+        );
+    }
 
     return (
         <DashboardLayout>
@@ -290,11 +301,7 @@ const Calendar = () => {
                         </div>
                     </div>
 
-                    {loading && (
-                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center rounded-xl">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#464ace]" />
-                        </div>
-                    )}
+
                 </div>
 
                 {/* Collapsible Right Panel */}

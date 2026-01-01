@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,10 +11,19 @@ import { authAPI } from '../services/api';
 export default function Login() {
     const navigate = useNavigate();
     const [email, setEmail] = useState('client@test.com');
-    const [password, setPassword] = useState('password123');
+    const [password, setPassword] = useState('pass123');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const { theme } = useTheme();
+
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            setEmail(savedEmail);
+            setRememberMe(true);
+        }
+    }, []);
 
     // Decode JWT to extract user data
     const decodeJWT = (token: string) => {
@@ -58,6 +67,12 @@ export default function Login() {
                 localStorage.setItem('userRole', decoded.role);
                 localStorage.setItem('userName', decoded.email || decoded.name || 'User');
 
+                if (rememberMe) {
+                    localStorage.setItem('rememberedEmail', email);
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                }
+
                 console.log('Saved to localStorage:', {
                     userId: decoded.sub,
                     userRole: decoded.role,
@@ -80,7 +95,7 @@ export default function Login() {
             title="Get Started Now"
             subtitle="Please log in to your account to continue."
         >
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                     <label className={`block text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
                         }`} htmlFor="email">
@@ -89,32 +104,27 @@ export default function Login() {
                     <Input
                         id="email"
                         type="email"
-                        placeholder="workmail@gmail.com"
+                        placeholder="name@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        className="font-medium"
                     />
                 </div>
                 <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                        <label className={`block text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
-                            }`} htmlFor="password">
-                            Password
-                        </label>
-                        <Link to="#" className={`text-xs font-medium transition-colors ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
-                            }`}>
-                            Forgot Password?
-                        </Link>
-                    </div>
+                    <label className={`block text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                        }`} htmlFor="password">
+                        Password
+                    </label>
                     <div className="relative">
                         <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            placeholder="••••••••••"
+                            placeholder="pass123"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="pr-10"
+                            className="pr-10 font-medium"
                         />
                         <button
                             type="button"
@@ -122,7 +132,7 @@ export default function Login() {
                             className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
                 </div>
@@ -131,23 +141,24 @@ export default function Login() {
                     <input
                         type="checkbox"
                         id="terms"
-                        className={`w-4 h-4 rounded text-blue-600 focus:ring-blue-500 focus:ring-offset-0 transition-colors cursor-pointer ${theme === 'dark' ? 'border-slate-600 bg-slate-700' : 'border-slate-300 bg-white'
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className={`w-4 h-4 rounded text-[#464ace] focus:ring-[#464ace] focus:ring-offset-0 transition-colors cursor-pointer ${theme === 'dark' ? 'border-slate-600 bg-slate-700' : 'border-slate-300 bg-white'
                             }`}
                     />
-                    <label htmlFor="terms" className={`text-xs cursor-pointer ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                    <label htmlFor="terms" className={`text-sm cursor-pointer ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                         }`}>
-                        I agree to the <Link to="#" className={`font-medium ${theme === 'dark' ? 'text-blue-400 hover:underline' : 'text-blue-600 hover:underline'
-                            }`}>Terms & Privacy</Link>
+                        Remember me
                     </label>
                 </div>
 
-                <Button className="w-full font-semibold text-sm h-12 mt-2" type="submit" disabled={loading}>
+                <Button className="w-full font-bold text-base h-14 mt-4 shadow-lg shadow-blue-500/20" type="submit" disabled={loading}>
                     {loading ? 'Logging in...' : 'Log in'}
                 </Button>
 
-                <p className={`text-center text-sm pt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                <p className={`text-center text-sm pt-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
                     Don't have an account?{' '}
-                    <Link to="/register" className={`font-semibold transition-colors ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                    <Link to="/register" className={`font-bold transition-colors ${theme === 'dark' ? 'text-[#464ace] hover:text-[#3d42b8]' : 'text-[#464ace] hover:text-[#3d42b8]'
                         }`}>
                         Sign up
                     </Link>

@@ -4,11 +4,7 @@ import {
     Home,
     LayoutDashboard,
     CalendarDays,
-    FileText,
-    Trophy,
     Users,
-    Printer,
-    Share2,
     Settings,
     LogOut,
     Sun,
@@ -127,11 +123,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         { icon: Home, path: '/dashboard', label: 'Dashboard' },
         { icon: LayoutDashboard, path: '/my-tasks', label: 'Team Tasks' },
         { icon: CalendarDays, path: '/calendar', label: 'Calendar' },
-        { icon: FileText, path: '/documents', label: 'Documents' },
-        { icon: Trophy, path: '/achievements', label: 'Achievements' },
         { icon: Users, path: '/workspaces', label: 'Workspaces', workerOnly: true },
-        { icon: Printer, path: '/reports', label: 'Reports' },
-        { icon: Share2, path: '/share', label: 'Share' },
     ];
 
     const menuItems = allMenuItems.filter(item => !item.workerOnly || userRole === 'WORKER');

@@ -85,7 +85,7 @@ export default function Register() {
             title="Create an Account"
             subtitle="Join us to start managing your tasks."
         >
-            <form onSubmit={handleRegister} className="space-y-5">
+            <form onSubmit={handleRegister} className="space-y-6">
                 <div className="space-y-2">
                     <label className={`block text-xs font-semibold uppercase tracking-wider ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'
                         }`} htmlFor="name">
@@ -98,6 +98,7 @@ export default function Register() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        className="font-medium"
                     />
                 </div>
                 <div className="space-y-2">
@@ -108,10 +109,11 @@ export default function Register() {
                     <Input
                         id="email"
                         type="email"
-                        placeholder="workmail@gmail.com"
+                        placeholder="name@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        className="font-medium"
                     />
                 </div>
                 <div className="space-y-2">
@@ -124,6 +126,7 @@ export default function Register() {
                         onChange={setRole}
                         options={roleOptions}
                         placeholder="Select account type"
+                        className="h-14"
                     />
                 </div>
                 <div className="space-y-2">
@@ -139,7 +142,7 @@ export default function Register() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            className="pr-10"
+                            className="pr-10 font-medium"
                         />
                         <button
                             type="button"
@@ -147,18 +150,18 @@ export default function Register() {
                             className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${theme === 'dark' ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
                                 }`}
                         >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
                 </div>
 
-                <Button className="w-full font-semibold text-sm h-12 mt-2" type="submit" disabled={loading}>
+                <Button className="w-full font-bold text-base h-14 mt-4 shadow-lg shadow-blue-500/20" type="submit" disabled={loading}>
                     {loading ? 'Creating account...' : 'Sign Up'}
                 </Button>
 
-                <p className={`text-center text-sm pt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                <p className={`text-center text-sm pt-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
                     Already have an account?{' '}
-                    <Link to="/login" className={`font-semibold transition-colors ${theme === 'dark' ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                    <Link to="/login" className={`font-bold transition-colors ${theme === 'dark' ? 'text-[#464ace] hover:text-[#3d42b8]' : 'text-[#464ace] hover:text-[#3d42b8]'
                         }`}>
                         Log in
                     </Link>
