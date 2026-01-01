@@ -104,8 +104,8 @@ export const tasksAPI = {
         return response.data;
     },
 
-    getMyTasks: async () => {
-        const response = await api.get('/tasks/my-tasks');
+    getMyTasks: async (role: 'client' | 'worker') => {
+        const response = await api.get('/tasks/my-tasks', { params: { role } });
         return response.data;
     },
 

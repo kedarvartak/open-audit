@@ -13,53 +13,45 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
 import { tasksAPI, Task } from '../services/api';
 import { Logo } from '../components/ui/Logo';
+import { BottomNav } from '../components/ui/BottomNav';
+import { DashboardSkeleton, TaskCardSkeleton } from '../components/ui/Skeleton';
 import {
-    MapPin,
-    Clock,
-    DollarSign,
     Briefcase,
     LogOut,
-    Search,
-    Filter,
+    User,
+    HelpCircle,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 
-// Skeleton component for loading state
-const TaskCardSkeleton = () => (
-    <View className="bg-slate-100 rounded-2xl p-4 mb-4">
-        <View className="w-full h-32 bg-slate-200 rounded-xl mb-3 animate-pulse" />
-        <View className="h-5 bg-slate-200 rounded w-3/4 mb-2 animate-pulse" />
-        <View className="h-4 bg-slate-200 rounded w-1/2 mb-3 animate-pulse" />
-        <View className="flex-row justify-between">
-            <View className="h-4 bg-slate-200 rounded w-20 animate-pulse" />
-            <View className="h-4 bg-slate-200 rounded w-16 animate-pulse" />
-        </View>
-    </View>
-);
-
-// Task Card Component
+// Task Card Component - Light themed
 const TaskCard = ({ task, onPress }: { task: Task; onPress: () => void }) => {
-    const getStatusColor = (status: string) => {
+    const getStatusBadgeStyle = (status: string) => {
         switch (status) {
             case 'OPEN':
-                return 'bg-emerald-100 text-emerald-700';
+                // Amber/Yellow 500
+                return { backgroundColor: '#f59e0b', textColor: '#ffffff' };
             case 'ACCEPTED':
             case 'IN_PROGRESS':
-                return 'bg-blue-100 text-blue-700';
+                return { backgroundColor: '#3b82f6', textColor: '#ffffff' };
             case 'COMPLETED':
             case 'VERIFIED':
-                return 'bg-purple-100 text-purple-700';
+                return { backgroundColor: '#22c55e', textColor: '#ffffff' };
             case 'PAID':
-                return 'bg-green-100 text-green-700';
+                return { backgroundColor: '#22c55e', textColor: '#ffffff' };
             case 'DISPUTED':
-                return 'bg-red-100 text-red-700';
+                return { backgroundColor: '#ef4444', textColor: '#ffffff' };
             default:
-                return 'bg-slate-100 text-slate-700';
+                return { backgroundColor: '#64748b', textColor: '#ffffff' };
         }
     };
 
     const formatBudget = (budget: number) => {
-        return `₹${budget.toLocaleString()}`;
+        return budget.toLocaleString();
+    };
+
+    const getTimeDisplay = (date: string) => {
+        const created = new Date(date);
+        return created.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
     };
 
     const getTimeAgo = (date: string) => {
@@ -71,93 +63,165 @@ const TaskCard = ({ task, onPress }: { task: Task; onPress: () => void }) => {
 
         if (diffHours < 1) return 'Just now';
         if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffDays === 1) return '1 day ago';
+        if (diffDays < 7) return `${diffDays} days ago`;
         return created.toLocaleDateString();
     };
+
+    const statusStyle = getStatusBadgeStyle(task.status);
 
     return (
         <TouchableOpacity
             onPress={onPress}
-            className="bg-white rounded-2xl shadow-sm mb-4 overflow-hidden border border-slate-100"
-            activeOpacity={0.7}
+            style={{
+                backgroundColor: '#ffffff',
+                borderRadius: 16,
+                marginBottom: 16,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: '#e2e8f0',
+            }}
+            activeOpacity={0.8}
         >
             {/* Image */}
-            <View className="w-full h-36 bg-slate-100">
-                {task.beforeImages?.length > 0 ? (
-                    <Image
-                        source={{ uri: task.beforeImages[0] }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                    />
-                ) : (
-                    <View className="w-full h-full items-center justify-center">
-                        <Briefcase size={32} color="#94a3b8" />
-                    </View>
-                )}
-                {/* Status Badge */}
-                <View className="absolute top-3 left-3">
-                    <View className={`px-2.5 py-1 rounded-full ${getStatusColor(task.status).split(' ')[0]}`}>
-                        <Text className={`text-xs font-semibold ${getStatusColor(task.status).split(' ')[1]}`}>
-                            {task.status.replace('_', ' ')}
-                        </Text>
-                    </View>
+            <View style={{ padding: 12, paddingBottom: 0 }}>
+                <View style={{
+                    width: '100%',
+                    height: 160,
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                }}>
+                    {task.beforeImages?.length > 0 ? (
+                        <Image
+                            source={{ uri: task.beforeImages[0] }}
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={{
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: '#f1f5f9',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}>
+                            <Briefcase size={40} color="#94a3b8" />
+                        </View>
+                    )}
                 </View>
             </View>
 
             {/* Content */}
-            <View className="p-4">
+            <View style={{ padding: 16 }}>
                 {/* Title & Budget */}
-                <View className="flex-row justify-between items-start mb-2">
-                    <Text className="text-base font-bold text-slate-900 flex-1 mr-2" numberOfLines={1}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{
+                        fontSize: 16,
+                        fontWeight: '700',
+                        color: '#0f172a',
+                        flex: 1,
+                        marginRight: 8,
+                    }} numberOfLines={1}>
                         {task.title}
                     </Text>
-                    <View className="flex-row items-center">
-                        <DollarSign size={14} color="#059669" />
-                        <Text className="text-base font-bold text-emerald-600">
+                    <View style={{
+                        backgroundColor: '#22c55e',
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                    }}>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#ffffff' }}>
                             {formatBudget(task.budget)}
                         </Text>
                     </View>
                 </View>
 
                 {/* Description */}
-                <Text className="text-sm text-slate-500 mb-3" numberOfLines={2}>
+                <Text style={{
+                    fontSize: 14,
+                    color: '#64748b',
+                    marginBottom: 12,
+                    lineHeight: 20,
+                }} numberOfLines={2}>
                     {task.description || 'No description provided'}
                 </Text>
 
-                {/* Meta Info */}
-                <View className="flex-row items-center justify-between">
-                    {/* Location */}
-                    {task.location?.address && (
-                        <View className="flex-row items-center flex-1 mr-2">
-                            <MapPin size={14} color="#64748b" />
-                            <Text className="text-xs text-slate-500 ml-1" numberOfLines={1}>
-                                {task.location.address.split(',')[0]}
-                            </Text>
-                        </View>
-                    )}
+                {/* Status Badges Row */}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                    {/* Status Badge */}
+                    <View style={{
+                        backgroundColor: statusStyle.backgroundColor,
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 6,
+                    }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: statusStyle.textColor }}>
+                            {task.status.replace('_', ' ')}
+                        </Text>
+                    </View>
 
-                    {/* Time */}
-                    <View className="flex-row items-center">
-                        <Clock size={14} color="#64748b" />
-                        <Text className="text-xs text-slate-500 ml-1">
-                            {getTimeAgo(task.createdAt)}
+                    {/* Category Badge - Red */}
+                    <View style={{
+                        backgroundColor: '#ef4444',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 6,
+                    }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#ffffff' }}>
+                            {(task.category || 'GENERAL').toUpperCase()}
+                        </Text>
+                    </View>
+
+                    {/* Time Badge - Dark Blue */}
+                    <View style={{
+                        backgroundColor: '#1e3a8a',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 6,
+                    }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#ffffff' }}>
+                            {getTimeDisplay(task.createdAt)}
                         </Text>
                     </View>
                 </View>
 
-                {/* Category */}
-                <View className="mt-3 pt-3 border-t border-slate-100">
-                    <View className="flex-row items-center">
-                        <View className="bg-slate-100 px-2 py-1 rounded-md">
-                            <Text className="text-xs font-medium text-slate-600">
-                                {task.category || 'General'}
+                {/* User Info Row */}
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
+                    {/* Client Info */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: 16,
+                            backgroundColor: '#6366f1',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: 10,
+                        }}>
+                            <Text style={{ fontSize: 14, fontWeight: '700', color: '#ffffff' }}>
+                                {task.client?.name?.charAt(0).toUpperCase() || 'C'}
                             </Text>
                         </View>
-                        {task.client?.name && (
-                            <Text className="text-xs text-slate-400 ml-auto">
-                                by {task.client.name}
+                        <View>
+                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#0f172a' }}>
+                                {task.client?.name || 'Unknown Client'}
                             </Text>
-                        )}
+                            <Text style={{ fontSize: 11, color: '#94a3b8' }}>
+                                {getTimeAgo(task.createdAt)}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Worker Assignment Status */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <HelpCircle size={18} color="#64748b" />
+                        <Text style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>
+                            {task.worker ? task.worker.name : 'Unassigned'}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -170,7 +234,7 @@ export default function Dashboard() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [filter, setFilter] = useState<'all' | 'open'>('all');
+    const [filter, setFilter] = useState<'active' | 'all' | 'completed'>('all');
 
     const fetchTasks = async () => {
         try {
@@ -200,94 +264,178 @@ export default function Dashboard() {
     };
 
     const filteredTasks = tasks.filter(task => {
-        if (filter === 'open') return task.status === 'OPEN';
+        if (filter === 'active') return task.status === 'OPEN' || task.status === 'ACCEPTED' || task.status === 'IN_PROGRESS';
+        if (filter === 'completed') return task.status === 'COMPLETED' || task.status === 'VERIFIED' || task.status === 'PAID';
         return true;
     });
 
-    const openTasksCount = tasks.filter(t => t.status === 'OPEN').length;
+    const activeTasksCount = tasks.filter(t => t.status === 'OPEN' || t.status === 'ACCEPTED' || t.status === 'IN_PROGRESS').length;
+    const completedTasksCount = tasks.filter(t => t.status === 'COMPLETED' || t.status === 'VERIFIED' || t.status === 'PAID').length;
 
-    if (authLoading) {
+    if (authLoading || loading) {
         return (
-            <SafeAreaView className="flex-1 bg-white items-center justify-center">
-                <ActivityIndicator size="large" color="#6366f1" />
+            <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
+                <StatusBar style="dark" />
+                <DashboardSkeleton />
+                <BottomNav
+                    activeTab="dashboard"
+                    onTabPress={() => { }}
+                    userRole={user?.role}
+                />
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-slate-50">
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f8fafc' }}>
             <StatusBar style="dark" />
 
             {/* Header */}
-            <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-100">
-                <View className="flex-row items-center justify-between mb-4">
-                    <View className="flex-row items-center">
+            <View style={{
+                backgroundColor: '#ffffff',
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: '#e2e8f0',
+            }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <Logo width={32} height={32} />
-                        <View className="ml-3">
-                            <Text className="text-lg font-bold text-slate-900">
-                                Hey, {user?.name?.split(' ')[0] || 'Worker'}! 👋
+                        <View style={{ marginLeft: 12 }}>
+                            <Text style={{ fontSize: 18, fontWeight: '700', color: '#0f172a' }}>
+                                Hey, {user?.name?.split(' ')[0] || 'Worker'}!
                             </Text>
-                            <Text className="text-sm text-slate-500">
+                            <Text style={{ fontSize: 14, color: '#64748b' }}>
                                 {user?.email}
                             </Text>
                         </View>
                     </View>
                     <TouchableOpacity
                         onPress={logout}
-                        className="w-10 h-10 rounded-full bg-slate-100 items-center justify-center"
+                        style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 20,
+                            backgroundColor: '#f1f5f9',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                     >
                         <LogOut size={20} color="#64748b" />
                     </TouchableOpacity>
                 </View>
 
-                {/* Stats */}
-                <View className="flex-row gap-3">
-                    <View className="flex-1 bg-indigo-50 rounded-xl p-3">
-                        <Text className="text-2xl font-bold text-indigo-600">
-                            {openTasksCount}
+                {/* Stats Row */}
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{
+                        flex: 1,
+                        backgroundColor: '#fbbf24',
+                        borderRadius: 12,
+                        padding: 12,
+                    }}>
+                        <Text style={{ fontSize: 24, fontWeight: '700', color: '#0f172a' }}>
+                            {activeTasksCount}
                         </Text>
-                        <Text className="text-xs text-indigo-600 font-medium">
-                            Open Tasks
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: '#0f172a' }}>
+                            Active Tasks
                         </Text>
                     </View>
-                    <View className="flex-1 bg-emerald-50 rounded-xl p-3">
-                        <Text className="text-2xl font-bold text-emerald-600">
+                    <View style={{
+                        flex: 1,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 12,
+                        padding: 12,
+                    }}>
+                        <Text style={{ fontSize: 24, fontWeight: '700', color: '#ffffff' }}>
                             {tasks.length}
                         </Text>
-                        <Text className="text-xs text-emerald-600 font-medium">
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: '#ffffff' }}>
                             Total Tasks
+                        </Text>
+                    </View>
+                    <View style={{
+                        flex: 1,
+                        backgroundColor: '#1e3a8a',
+                        borderRadius: 12,
+                        padding: 12,
+                    }}>
+                        <Text style={{ fontSize: 24, fontWeight: '700', color: '#ffffff' }}>
+                            {completedTasksCount}
+                        </Text>
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: '#ffffff' }}>
+                            Completed
                         </Text>
                     </View>
                 </View>
             </View>
 
-            {/* Filter Bar */}
-            <View className="flex-row items-center px-5 py-3 bg-white border-b border-slate-100">
+            {/* Filter Bar - 3 Badges */}
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                backgroundColor: '#1e3a8a',
+            }}>
+                <TouchableOpacity
+                    onPress={() => setFilter('active')}
+                    style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 4,
+                        marginRight: 8,
+                        backgroundColor: '#ffffff',
+                    }}
+                >
+                    <Text style={{
+                        fontSize: 14,
+                        fontWeight: '500',
+                        color: '#0f172a',
+                    }}>
+                        Active
+                    </Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => setFilter('all')}
-                    className={`px-4 py-2 rounded-full mr-2 ${filter === 'all' ? 'bg-slate-900' : 'bg-slate-100'
-                        }`}
+                    style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 4,
+                        marginRight: 8,
+                        backgroundColor: '#ffffff',
+                    }}
                 >
-                    <Text className={`text-sm font-medium ${filter === 'all' ? 'text-white' : 'text-slate-600'
-                        }`}>
+                    <Text style={{
+                        fontSize: 14,
+                        fontWeight: '500',
+                        color: '#0f172a',
+                    }}>
                         All Tasks
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    onPress={() => setFilter('open')}
-                    className={`px-4 py-2 rounded-full ${filter === 'open' ? 'bg-emerald-500' : 'bg-slate-100'
-                        }`}
+                    onPress={() => setFilter('completed')}
+                    style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 4,
+                        backgroundColor: '#ffffff',
+                    }}
                 >
-                    <Text className={`text-sm font-medium ${filter === 'open' ? 'text-white' : 'text-slate-600'
-                        }`}>
-                        Open Only
+                    <Text style={{
+                        fontSize: 14,
+                        fontWeight: '500',
+                        color: '#0f172a',
+                    }}>
+                        Completed
                     </Text>
                 </TouchableOpacity>
             </View>
 
             {/* Task List */}
             <ScrollView
-                className="flex-1 px-5 pt-4"
+                style={{ flex: 1, paddingHorizontal: 20, paddingTop: 16 }}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
@@ -298,11 +446,11 @@ export default function Dashboard() {
                 }
             >
                 {/* Section Header */}
-                <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-lg font-bold text-slate-900">
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: '#0f172a' }}>
                         Available Tasks
                     </Text>
-                    <Text className="text-sm text-slate-500">
+                    <Text style={{ fontSize: 14, color: '#64748b' }}>
                         {filteredTasks.length} tasks
                     </Text>
                 </View>
@@ -314,12 +462,12 @@ export default function Dashboard() {
                         <TaskCardSkeleton />
                     </>
                 ) : filteredTasks.length === 0 ? (
-                    <View className="items-center justify-center py-20">
+                    <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 80 }}>
                         <Briefcase size={48} color="#cbd5e1" />
-                        <Text className="text-lg font-semibold text-slate-400 mt-4">
+                        <Text style={{ fontSize: 18, fontWeight: '600', color: '#94a3b8', marginTop: 16 }}>
                             No tasks found
                         </Text>
-                        <Text className="text-sm text-slate-400 mt-1">
+                        <Text style={{ fontSize: 14, color: '#94a3b8', marginTop: 4 }}>
                             Pull down to refresh
                         </Text>
                     </View>
@@ -333,9 +481,19 @@ export default function Dashboard() {
                     ))
                 )}
 
-                {/* Bottom Padding */}
-                <View className="h-6" />
+                {/* Bottom Padding for nav bar */}
+                <View style={{ height: 80 }} />
             </ScrollView>
+
+            {/* Bottom Navigation */}
+            <BottomNav
+                activeTab="dashboard"
+                onTabPress={(tab) => {
+                    if (tab === 'calendar') router.push('/calendar');
+                    // Add other routes as they become available
+                }}
+                userRole={user?.role}
+            />
         </SafeAreaView>
     );
 }
