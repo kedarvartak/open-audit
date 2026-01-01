@@ -4,6 +4,7 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { useTheme } from '../contexts/ThemeContext';
 import { tasksAPI } from '../services/api';
 import type { Task } from '../services/api';
+import { TaskCardSkeleton } from '../components/ui/TaskCardSkeleton';
 
 export default function MyTasks() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -90,15 +91,7 @@ export default function MyTasks() {
         return true;
     });
 
-    if (loading) {
-        return (
-            <DashboardLayout>
-                <div className="flex justify-center items-center h-64">
-                    <p className={theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>Loading tasks...</p>
-                </div>
-            </DashboardLayout>
-        );
-    }
+
 
     return (
         <DashboardLayout>
@@ -135,7 +128,13 @@ export default function MyTasks() {
                 </div>
 
                 {/* Tasks Grid - Same as Dashboard */}
-                {filteredTasks.length === 0 ? (
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        {[...Array(8)].map((_, i) => (
+                            <TaskCardSkeleton key={i} />
+                        ))}
+                    </div>
+                ) : filteredTasks.length === 0 ? (
                     <div className={`flex-1 flex items-center justify-center rounded-md border ${theme === 'dark'
                         ? 'bg-slate-700/50 border-slate-600'
                         : 'bg-slate-200 border-slate-300'
