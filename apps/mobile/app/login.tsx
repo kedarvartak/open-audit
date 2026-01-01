@@ -1,20 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Animated, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, Animated, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Link, router } from 'expo-router';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Logo } from '../components/ui/Logo';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ChevronLeft } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useAuth } from '../contexts/AuthContext';
 
 type Step = 'email' | 'password';
 
 export default function Login() {
+    const { login } = useAuth();
     const [step, setStep] = useState<Step>('email');
-    const [email, setEmail] = useState('client@test.com');
+    const [email, setEmail] = useState('worker@test.com');
     const [password, setPassword] = useState('pass123');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
     const animateTransition = (callback: () => void) => {
@@ -33,6 +35,8 @@ export default function Login() {
     };
 
     const handleContinue = async () => {
+        setError('');
+
         if (step === 'email') {
             if (!email.trim()) return;
             animateTransition(() => setStep('password'));
@@ -40,10 +44,12 @@ export default function Login() {
             if (!password.trim()) return;
             setLoading(true);
             try {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                router.replace('/dashboard');
-            } catch (error) {
-                console.error('Login failed:', error);
+                await login(email, password);
+                // Navigation happens in AuthContext
+            } catch (err: any) {
+                const message = err.response?.data?.message || 'Login failed. Please try again.';
+                setError(message);
+                Alert.alert('Login Failed', message);
             } finally {
                 setLoading(false);
             }
