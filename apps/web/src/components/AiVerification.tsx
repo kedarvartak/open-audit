@@ -53,7 +53,7 @@ export function AiVerification({ proofId, onVerificationComplete }: AiVerificati
 
                 {error && (
                     <div className="ai-verification__error">
-                        <span className="icon">⚠️</span>
+                        <span className="icon">Error</span>
                         {error}
                     </div>
                 )}
@@ -62,7 +62,7 @@ export function AiVerification({ proofId, onVerificationComplete }: AiVerificati
                     <div className="ai-verification__result">
                         <div className={`result-status ${result.verified ? 'verified' : 'not-verified'}`}>
                             <span className="status-icon">
-                                {result.verified ? '✅' : '❌'}
+                                {result.verified ? 'Correct' : 'Incorrect'}
                             </span>
                             <span className="status-text">
                                 {result.verified ? 'VERIFIED - Repair Confirmed' : 'NOT VERIFIED - No Repair Detected'}

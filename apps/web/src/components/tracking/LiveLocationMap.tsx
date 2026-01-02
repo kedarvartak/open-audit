@@ -1,3 +1,6 @@
+// this file is not used for web anymore, however it is preserved so as to retain the logic 
+// if required in future
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Circle, DirectionsRenderer } from '@react-google-maps/api';
 import { subscribeToWorkerLocation, type WorkerLocation } from '../../lib/firebase';

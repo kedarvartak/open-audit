@@ -1,3 +1,5 @@
+// geocoding and geolocation is not used in web, although we intend to use it on mobile
+
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, type Messaging } from 'firebase/messaging';
 import { getDatabase, ref, set, onValue, off, type Database } from 'firebase/database';
