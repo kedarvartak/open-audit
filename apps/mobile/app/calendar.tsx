@@ -7,12 +7,12 @@ import {
     RefreshControl,
     SafeAreaView,
     Modal,
-    Image,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TasksContext';
-import { Task } from '../services/api';
+import { Task, transformImageUrl } from '../services/api';
 import { BottomNav } from '../components/ui/BottomNav';
 import { CalendarSkeleton } from '../components/ui/Skeleton';
 import {
@@ -228,9 +228,12 @@ const TaskDetailModal = ({ task, visible, onClose }: { task: Task | null; visibl
                                 backgroundColor: '#f1f5f9',
                             }}>
                                 <Image
-                                    source={{ uri: task.beforeImages[0] }}
+                                    source={{ uri: transformImageUrl(task.beforeImages[0]) }}
                                     style={{ width: '100%', height: '100%' }}
-                                    resizeMode="cover"
+                                    contentFit="cover"
+                                    transition={200}
+                                    cachePolicy="memory-disk"
+                                    placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
                                 />
                             </View>
                         )}
@@ -339,7 +342,7 @@ const TaskDetailModal = ({ task, visible, onClose }: { task: Task | null; visibl
                             )}
 
                             {/* Location */}
-                            {task.locationName && (
+                            {task.location?.address && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                     <View style={{
                                         width: 36,
@@ -355,7 +358,7 @@ const TaskDetailModal = ({ task, visible, onClose }: { task: Task | null; visibl
                                     <View style={{ flex: 1 }}>
                                         <Text style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>Location</Text>
                                         <Text style={{ fontSize: 14, fontWeight: '600', color: '#0f172a' }} numberOfLines={2}>
-                                            {task.locationName}
+                                            {task.location.address}
                                         </Text>
                                     </View>
                                 </View>

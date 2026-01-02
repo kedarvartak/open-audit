@@ -4,7 +4,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Backend running on local machine - use your computer's IP for physical devices
 const API_URL = 'http://192.168.0.105:3001/v0';
 
+// MinIO storage URL - same host as backend but different port
+const MINIO_HOST = '192.168.0.105';
+const MINIO_PORT = '9000';
+
 console.log('[API] Base URL:', API_URL);
+
+// Transform image URLs to be accessible from mobile device
+// Backend might store URLs with localhost which won't work on mobile
+export const transformImageUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+
+    // Replace localhost with the actual host IP
+    let transformedUrl = url.replace('localhost', MINIO_HOST);
+    transformedUrl = transformedUrl.replace('127.0.0.1', MINIO_HOST);
+
+    // Log for debugging
+    if (url !== transformedUrl) {
+        console.log('[Image] Transformed URL:', url, '->', transformedUrl);
+    }
+
+    return transformedUrl;
+};
 
 const api = axios.create({
     baseURL: API_URL,

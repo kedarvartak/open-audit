@@ -4,15 +4,15 @@ import {
     Text,
     ScrollView,
     TouchableOpacity,
-    Image,
     RefreshControl,
     ActivityIndicator,
     SafeAreaView,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TasksContext';
-import { Task } from '../services/api';
+import { Task, transformImageUrl } from '../services/api';
 import { Logo } from '../components/ui/Logo';
 import { BottomNav } from '../components/ui/BottomNav';
 import { DashboardSkeleton, TaskCardSkeleton } from '../components/ui/Skeleton';
@@ -91,18 +91,21 @@ const TaskCard = ({ task, onPress }: { task: Task; onPress: () => void }) => {
                     height: 160,
                     borderRadius: 12,
                     overflow: 'hidden',
+                    backgroundColor: '#f1f5f9',
                 }}>
                     {task.beforeImages?.length > 0 ? (
                         <Image
-                            source={{ uri: task.beforeImages[0] }}
+                            source={{ uri: transformImageUrl(task.beforeImages[0]) }}
                             style={{ width: '100%', height: '100%' }}
-                            resizeMode="cover"
+                            contentFit="cover"
+                            transition={200}
+                            cachePolicy="memory-disk"
+                            placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
                         />
                     ) : (
                         <View style={{
                             width: '100%',
                             height: '100%',
-                            backgroundColor: '#f1f5f9',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}>
