@@ -224,9 +224,9 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                                     <Button
                                         onClick={handleAccept}
                                         disabled={accepting}
-                                        className="bg-amber-500 hover:bg-amber-600 text-white flex-shrink-0"
+                                        className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold flex-shrink-0"
                                     >
-                                        {accepting ? 'Accepting...' : 'Accept Task'}
+                                        {accepting ? 'ACCEPTING...' : 'ACCEPT'}
                                     </Button>
                                 )}
                             </div>
@@ -260,17 +260,12 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
 
                                 {/* Scheduled Deadline */}
                                 {task.deadline && (
-                                    <div className="p-3 rounded-lg bg-[#464ace] flex-shrink-0">
+                                    <div className="px-4 py-3 rounded-lg bg-[#464ace] flex-shrink-0">
                                         <div className="flex items-center gap-2">
                                             <Calendar size={16} className="text-white" />
-                                            <div>
-                                                <p className="text-xs font-medium text-white/80 whitespace-nowrap">
-                                                    Scheduled Deadline
-                                                </p>
-                                                <p className="text-sm font-semibold text-white whitespace-nowrap">
-                                                    {formatDateTime(task.deadline)}
-                                                </p>
-                                            </div>
+                                            <p className="text-sm font-bold text-white whitespace-nowrap uppercase tracking-wide">
+                                                {formatDateTime(task.deadline)}
+                                            </p>
                                         </div>
                                     </div>
                                 )}

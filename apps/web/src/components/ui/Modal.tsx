@@ -62,8 +62,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }
                     </button>
                 </div>
 
-                {/* Content - scrollable */}
-                <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+                {/* Content - scrollable but allows dropdown overflow */}
+                <div className="p-4 sm:p-6 overflow-y-auto overflow-x-visible flex-1">
                     {children}
                 </div>
             </div>

@@ -119,9 +119,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex h-12 w-full items-center justify-between rounded-md border px-4 py-3 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${theme === 'dark'
-                    ? 'border-slate-600 bg-slate-700 text-slate-100 focus-visible:border-blue-500'
-                    : 'border-slate-300 bg-white text-slate-900 focus-visible:border-blue-500'
+                className={`flex h-14 w-full items-center justify-between rounded-lg border px-4 py-3 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#464ace] ${theme === 'dark'
+                    ? 'border-slate-600 bg-slate-800 text-slate-100 focus-visible:border-[#464ace]'
+                    : 'border-slate-300 bg-white text-slate-900 focus-visible:border-[#464ace]'
                     }`}
             >
                 <span className={value ? '' : theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}>
@@ -131,7 +131,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, placeho
             </button>
 
             {isOpen && (
-                <div className={`absolute z-50 bottom-full mb-2 right-0 w-80 rounded-md border shadow-lg p-4 ${theme === 'dark'
+                <div className={`absolute z-[100] top-full mt-2 left-0 w-80 rounded-md border shadow-xl p-4 ${theme === 'dark'
                     ? 'bg-slate-800 border-slate-700'
                     : 'bg-white border-slate-200'
                     }`}>

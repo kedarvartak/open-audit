@@ -13,12 +13,28 @@ export class FirebaseService implements OnModuleInit {
         try {
             const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
             const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
-            const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n');
+            let privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
 
             if (!projectId || !clientEmail || !privateKey) {
                 this.logger.warn('Firebase credentials not configured - notifications disabled');
+                this.logger.warn(`  projectId: ${projectId ? 'set' : 'missing'}`);
+                this.logger.warn(`  clientEmail: ${clientEmail ? 'set' : 'missing'}`);
+                this.logger.warn(`  privateKey: ${privateKey ? 'set' : 'missing'}`);
                 return;
             }
+
+            // Fix private key formatting - handle various escape scenarios
+            // 1. Replace literal \n strings with actual newlines
+            privateKey = privateKey.replace(/\\n/g, '\n');
+            // 2. Some systems double-escape, so check again
+            privateKey = privateKey.replace(/\\n/g, '\n');
+            // 3. Remove any surrounding quotes that might have been added
+            privateKey = privateKey.replace(/^["']|["']$/g, '');
+
+            // Log key format for debugging (safely, just first/last chars)
+            const keyStart = privateKey.substring(0, 30);
+            const keyEnd = privateKey.substring(privateKey.length - 30);
+            this.logger.log(`Private key format check: starts with "${keyStart}..." ends with "...${keyEnd}"`);
 
             this.firebaseApp = admin.initializeApp({
                 credential: admin.credential.cert({
@@ -30,7 +46,12 @@ export class FirebaseService implements OnModuleInit {
 
             this.logger.log('Firebase initialized successfully');
         } catch (error) {
-            this.logger.error('Failed to initialize Firebase:', error);
+            this.logger.error('Failed to initialize Firebase:', error.message);
+            this.logger.error('This is often caused by private key formatting issues.');
+            this.logger.error('Make sure your FIREBASE_PRIVATE_KEY in .env:');
+            this.logger.error('  1. Contains the full key including BEGIN/END markers');
+            this.logger.error('  2. Has \\n for newlines (not actual line breaks)');
+            this.logger.error('  3. Is not wrapped in extra quotes');
         }
     }
 
