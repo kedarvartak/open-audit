@@ -4,27 +4,37 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Backend running on local machine - use your computer's IP for physical devices
 const API_URL = 'http://192.168.0.105:3001/v0';
 
-// MinIO storage URL - same host as backend but different port
-const MINIO_HOST = '192.168.0.105';
-const MINIO_PORT = '9000';
+// Legacy MinIO configuration (for migration period only)
+const LEGACY_MINIO_HOST = '192.168.0.105';
 
 console.log('[API] Base URL:', API_URL);
 
-// Transform image URLs to be accessible from mobile device
-// Backend might store URLs with localhost which won't work on mobile
+/**
+ * Transform image URLs to be accessible from mobile device
+ * 
+ * Handles:
+ * - Cloudinary URLs (https://res.cloudinary.com/...) - no transformation needed
+ * - Legacy MinIO URLs with localhost - transforms to use actual host IP
+ * - Firebase Storage URLs - no transformation needed
+ */
 export const transformImageUrl = (url: string | undefined): string | undefined => {
     if (!url) return undefined;
 
-    // Replace localhost with the actual host IP
-    let transformedUrl = url.replace('localhost', MINIO_HOST);
-    transformedUrl = transformedUrl.replace('127.0.0.1', MINIO_HOST);
-
-    // Log for debugging
-    if (url !== transformedUrl) {
-        console.log('[Image] Transformed URL:', url, '->', transformedUrl);
+    // Cloudinary, Firebase Storage, and other HTTPS URLs work as-is
+    if (url.startsWith('https://')) {
+        return url;
     }
 
-    return transformedUrl;
+    // Legacy MinIO URLs: Replace localhost with actual host IP
+    // This is only needed during migration from MinIO to Cloudinary
+    if (url.includes('localhost') || url.includes('127.0.0.1')) {
+        let transformedUrl = url.replace('localhost', LEGACY_MINIO_HOST);
+        transformedUrl = transformedUrl.replace('127.0.0.1', LEGACY_MINIO_HOST);
+        console.log('[Image] Transformed legacy URL:', url, '->', transformedUrl);
+        return transformedUrl;
+    }
+
+    return url;
 };
 
 const api = axios.create({
