@@ -8,16 +8,9 @@ async function bootstrap() {
   // Set global prefix
   app.setGlobalPrefix('v0');
 
-  // Enable CORS for web and mobile clients
+  // Enable CORS for all origins (configure restrictively for production)
   app.enableCors({
-    origin: [
-      'http://localhost:5173',           // Vite dev server
-      'http://localhost:3000',           // Alternative local
-      'https://localhost:5173',
-      /\.up\.railway\.app$/,             // Railway deployments
-      /\.vercel\.app$/,                  // Vercel deployments
-      /\.netlify\.app$/,                 // Netlify deployments
-    ],
+    origin: true,  // Allow all origins
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
