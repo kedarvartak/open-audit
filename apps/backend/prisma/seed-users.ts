@@ -7,7 +7,7 @@ async function seedUsers() {
     console.log('🌱 Seeding users...\n');
 
     try {
-        const passwordHash = await bcrypt.hash('pass123', 10);
+        const passwordHash = await bcrypt.hash('password123', 10);
 
         // Create client user
         const client = await prisma.user.upsert({

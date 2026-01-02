@@ -14,7 +14,7 @@ export default function Login() {
     const { login } = useAuth();
     const [step, setStep] = useState<Step>('email');
     const [email, setEmail] = useState('worker@test.com');
-    const [password, setPassword] = useState('pass123');
+    const [password, setPassword] = useState('password123');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const fadeAnim = useRef(new Animated.Value(1)).current;

@@ -11,7 +11,7 @@ import { authAPI } from '../services/api';
 export default function Login() {
     const navigate = useNavigate();
     const [email, setEmail] = useState('client@test.com');
-    const [password, setPassword] = useState('pass123');
+    const [password, setPassword] = useState('password123');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
@@ -120,7 +120,7 @@ export default function Login() {
                         <Input
                             id="password"
                             type={showPassword ? "text" : "password"}
-                            placeholder="pass123"
+                            placeholder="password123"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required

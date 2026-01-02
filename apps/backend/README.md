@@ -45,10 +45,10 @@ graph TB
     end
 
     subgraph External Services
-        PG[(PostgreSQL<br/>Database)]
-        MINIO[(MinIO<br/>Object Storage)]
+        PG[(Supabase<br/>PostgreSQL)]
+        CLOUD[(Cloudinary<br/>Image Storage)]
         AI[AI Service<br/>Python/FastAPI]
-        CHAIN[Blockchain<br/>Hardhat/Ethereum]
+        CHAIN[Blockchain<br/>Polygon Testnet]
         FCM[Firebase Cloud<br/>Messaging]
         SHEETS[Google Sheets<br/>API]
     end
@@ -71,7 +71,7 @@ graph TB
     WS --> PRISMA
     
     PRISMA --> PG
-    STORAGE --> MINIO
+    STORAGE --> CLOUD
     BC --> CHAIN
     FB --> FCM
     EXPORT --> SHEETS
@@ -85,11 +85,11 @@ graph TB
 |-----------|------------|---------|
 | **Runtime** | Node.js 18+ | JavaScript runtime environment |
 | **Framework** | NestJS 10.x | Enterprise-grade Node.js framework |
-| **Database** | PostgreSQL 15 | Primary relational database |
+| **Database** | Supabase (PostgreSQL) | Cloud-hosted relational database (free tier) |
 | **ORM** | Prisma 5.x | Type-safe database client and migrations |
-| **Object Storage** | MinIO | S3-compatible file storage for images |
+| **Image Storage** | Cloudinary | Cloud image storage with CDN (free tier) |
 | **Authentication** | JWT + Passport | Stateless token-based authentication |
-| **Blockchain** | Ethers.js + Hardhat | Ethereum-compatible audit trail |
+| **Blockchain** | Ethers.js + Polygon | Ethereum-compatible audit trail (testnet) |
 | **AI Integration** | Groq LLM + Custom Vision | Description enhancement and repair verification |
 | **Push Notifications** | Firebase Cloud Messaging | Real-time mobile and web notifications |
 | **Export** | Google Sheets API | Data export functionality |
@@ -137,7 +137,7 @@ src/
 │
 ├── storage/                   # Storage Module (File Management)
 │   ├── storage.module.ts      # Module definition
-│   └── storage.service.ts     # MinIO file operations
+│   └── storage.service.ts     # Cloudinary file operations
 │
 ├── export/                    # Export Module (Data Export)
 │   ├── export.module.ts       # Module definition
@@ -267,16 +267,17 @@ Manages push notifications via Firebase Cloud Messaging.
 
 ### StorageService
 
-Handles file uploads and retrieval via MinIO (S3-compatible).
+Handles file uploads and retrieval via Cloudinary.
 
 **Key Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `uploadFile(file, folder)` | Uploads file to MinIO bucket, returns public URL |
+| `uploadFile(file, folder)` | Uploads file to Cloudinary, returns public HTTPS URL |
 | `getFileHash(buffer)` | Generates SHA-256 hash for blockchain verification |
-| `deleteFile(fileName)` | Removes file from storage |
-| `getFile(fileName)` | Retrieves file as buffer |
+| `deleteFile(publicIdOrUrl)` | Removes file from Cloudinary |
+| `getFile(url)` | Retrieves file as buffer |
+| `getOptimizedUrl(url, options)` | Returns optimized/transformed image URL |
 
 ---
 
@@ -659,40 +660,51 @@ Push notifications are sent via Firebase Admin SDK.
 ## Environment Configuration
 
 ```env
-# Server
-PORT=3001
+# =============================================================================
+# DATABASE (Supabase - FREE: 500MB storage, 2 projects)
+# =============================================================================
+# Sign up: https://supabase.com
+# Get connection string from: Settings > Database > Connection string
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres"
 
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/fixit
-
-# JWT Authentication
+# =============================================================================
+# JWT AUTHENTICATION
+# =============================================================================
 JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
+JWT_EXPIRATION=7d
 
-# MinIO Object Storage
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=proofs
-MINIO_USE_SSL=false
+# =============================================================================
+# CLOUDINARY (Image Storage - FREE: 25GB storage + 25GB bandwidth/month)
+# =============================================================================
+# Sign up: https://cloudinary.com/users/register_free
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=your-api-secret
 
-# AI Service
-AI_SERVICE_URL=http://localhost:8003
-
-# Blockchain
-BLOCKCHAIN_RPC_URL=http://localhost:8545
-BLOCKCHAIN_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-TASKESCROW_CONTRACT_ADDRESS=0x...
-
-# Firebase (Push Notifications)
+# =============================================================================
+# FIREBASE (Push Notifications - FREE)
+# =============================================================================
 FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk@project.iam.gserviceaccount.com
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
-# Google Sheets Export
-GOOGLE_CLIENT_EMAIL=your-service-account@project.iam.gserviceaccount.com
-GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+# =============================================================================
+# BLOCKCHAIN (Polygon Amoy Testnet - FREE)
+# =============================================================================
+BLOCKCHAIN_RPC_URL=https://rpc-amoy.polygon.technology
+BLOCKCHAIN_PRIVATE_KEY=0x_YOUR_WALLET_PRIVATE_KEY
+TASKESCROW_CONTRACT_ADDRESS=0x_DEPLOYED_CONTRACT_ADDRESS
+
+# =============================================================================
+# AI SERVICE
+# =============================================================================
+AI_SERVICE_URL=http://localhost:8003
+
+# =============================================================================
+# APP CONFIGURATION
+# =============================================================================
+PORT=3001
+NODE_ENV=development
 ```
 
 ---
@@ -735,7 +747,7 @@ GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\
 
 For production deployment, consider adding:
 - Redis for session/token caching
-- CDN for static assets (MinIO objects)
+- Cloudinary transformations for image optimization
 - Query result caching for frequently accessed data
 
 ---

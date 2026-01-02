@@ -24,7 +24,7 @@ export const transformImageUrl = (url: string | undefined): string | undefined =
     if (url.startsWith('https://')) {
         return url;
     }
-
+    // kept for legacy minio, wont be using, but preserved in codebase 
     // Legacy MinIO URLs: Replace localhost with actual host IP
     // This is only needed during migration from MinIO to Cloudinary
     if (url.includes('localhost') || url.includes('127.0.0.1')) {
