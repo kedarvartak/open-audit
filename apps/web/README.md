@@ -1,4 +1,4 @@
-# GDG Web Application
+# Web App
 
 A comprehensive task management and workforce coordination platform built with React, TypeScript, and Vite. This application enables clients to create and manage tasks while workers can accept, execute, and submit work for verification through an AI-powered review system.
 
@@ -25,7 +25,7 @@ A comprehensive task management and workforce coordination platform built with R
 
 ## Overview
 
-The GDG Web Application is a task marketplace platform that connects clients who need work done with workers who can fulfill those tasks. The platform features:
+The Web App is a task marketplace platform that connects clients who need work done with workers who can fulfill those tasks. The platform features:
 
 - **Role-based authentication**: Clients post tasks, Workers execute them
 - **Task lifecycle management**: From creation through verification to completion
