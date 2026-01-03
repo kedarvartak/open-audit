@@ -16,6 +16,7 @@ import { Task, transformImageUrl } from '../services/api';
 import { BottomNav } from '../components/ui/BottomNav';
 import { TaskCardSkeleton } from '../components/ui/Skeleton';
 import { Logo } from '../components/ui/Logo';
+import { TaskDetailsModal } from '../components/ui/TaskDetailsModal';
 import { router } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -241,6 +242,7 @@ export default function TasksScreen() {
     const { tasks, loading, refreshTasks, fetchTasks } = useTasks();
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
     // Fetch tasks on mount (will use cache if valid)
     useEffect(() => {
@@ -264,9 +266,15 @@ export default function TasksScreen() {
     });
 
     const handleTaskPress = (taskId: string) => {
-        // Navigate to task detail
-        console.log('Navigate to task:', taskId);
-        // router.push(`/task/${taskId}`);
+        setSelectedTaskId(taskId);
+    };
+
+    const handleModalClose = () => {
+        setSelectedTaskId(null);
+    };
+
+    const handleTaskUpdated = () => {
+        refreshTasks();
     };
 
     if (authLoading || loading) {
@@ -409,6 +417,14 @@ export default function TasksScreen() {
                     </View>
                 )}
             </ScrollView>
+
+            {/* Task Details Modal */}
+            <TaskDetailsModal
+                taskId={selectedTaskId}
+                isOpen={!!selectedTaskId}
+                onClose={handleModalClose}
+                onTaskUpdated={handleTaskUpdated}
+            />
 
             {/* Bottom Navigation */}
             <BottomNav

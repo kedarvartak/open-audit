@@ -123,6 +123,25 @@ export const authAPI = {
     },
 };
 
+// Request deduplication cache for in-flight requests
+const pendingRequests: Map<string, Promise<any>> = new Map();
+
+// Task cache with TTL (30 seconds for individual tasks)
+const taskCache: Map<string, { data: any; timestamp: number }> = new Map();
+const TASK_CACHE_TTL = 30 * 1000; // 30 seconds
+
+const getCachedTask = (id: string) => {
+    const cached = taskCache.get(id);
+    if (cached && Date.now() - cached.timestamp < TASK_CACHE_TTL) {
+        return cached.data;
+    }
+    return null;
+};
+
+const setCachedTask = (id: string, data: any) => {
+    taskCache.set(id, { data, timestamp: Date.now() });
+};
+
 // Tasks API
 export const tasksAPI = {
     getMarketplace: async () => {
@@ -130,18 +149,67 @@ export const tasksAPI = {
         return response.data;
     },
 
-    getTask: async (id: string) => {
-        const response = await api.get(`/tasks/${id}`);
-        return response.data;
+    getTask: async (id: string, forceRefresh = false) => {
+        // Check cache first (unless forcing refresh)
+        if (!forceRefresh) {
+            const cached = getCachedTask(id);
+            if (cached) {
+                console.log('[API] Using cached task:', id);
+                return cached;
+            }
+        }
+
+        // Check if there's already a pending request for this task
+        const pendingKey = `task:${id}`;
+        if (pendingRequests.has(pendingKey)) {
+            console.log('[API] Deduplicating request for task:', id);
+            return pendingRequests.get(pendingKey);
+        }
+
+        // Create the request promise
+        const requestPromise = (async () => {
+            try {
+                const response = await api.get(`/tasks/${id}`);
+                setCachedTask(id, response.data);
+                return response.data;
+            } finally {
+                pendingRequests.delete(pendingKey);
+            }
+        })();
+
+        pendingRequests.set(pendingKey, requestPromise);
+        return requestPromise;
     },
 
     getMyTasks: async (role: 'client' | 'worker') => {
-        const response = await api.get('/tasks/my-tasks', { params: { role } });
-        return response.data;
+        // Deduplicate my-tasks requests
+        const pendingKey = `my-tasks:${role}`;
+        if (pendingRequests.has(pendingKey)) {
+            console.log('[API] Deduplicating my-tasks request');
+            return pendingRequests.get(pendingKey);
+        }
+
+        const requestPromise = (async () => {
+            try {
+                const response = await api.get('/tasks/my-tasks', { params: { role } });
+                // Cache individual tasks from the response
+                response.data.forEach((task: any) => {
+                    setCachedTask(task.id, task);
+                });
+                return response.data;
+            } finally {
+                pendingRequests.delete(pendingKey);
+            }
+        })();
+
+        pendingRequests.set(pendingKey, requestPromise);
+        return requestPromise;
     },
 
     acceptTask: async (id: string) => {
         const response = await api.post(`/tasks/${id}/accept`);
+        // Invalidate cache for this task
+        taskCache.delete(id);
         return response.data;
     },
 
@@ -151,6 +219,8 @@ export const tasksAPI = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        // Invalidate cache for this task
+        taskCache.delete(id);
         return response.data;
     },
 
@@ -160,6 +230,12 @@ export const tasksAPI = {
             longitude,
         });
         return response.data;
+    },
+
+    // Clear all caches (useful on logout)
+    clearCache: () => {
+        taskCache.clear();
+        pendingRequests.clear();
     },
 };
 
@@ -178,7 +254,7 @@ export interface Task {
     description: string;
     category: string;
     budget: number;
-    status: 'OPEN' | 'ACCEPTED' | 'IN_PROGRESS' | 'COMPLETED' | 'VERIFIED' | 'PAID' | 'DISPUTED';
+    status: 'OPEN' | 'ACCEPTED' | 'EN_ROUTE' | 'ARRIVED' | 'IN_PROGRESS' | 'SUBMITTED' | 'COMPLETED' | 'VERIFIED' | 'PAID' | 'DISPUTED';
     location?: {
         latitude: number;
         longitude: number;

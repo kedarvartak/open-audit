@@ -16,6 +16,7 @@ import { Task, transformImageUrl } from '../services/api';
 import { Logo } from '../components/ui/Logo';
 import { BottomNav } from '../components/ui/BottomNav';
 import { DashboardSkeleton, TaskCardSkeleton } from '../components/ui/Skeleton';
+import { TaskDetailsModal } from '../components/ui/TaskDetailsModal';
 import {
     Briefcase,
     LogOut,
@@ -238,6 +239,7 @@ export default function Dashboard() {
     const { tasks, loading, refreshTasks, activeTasks, completedTasks, fetchTasks } = useTasks();
     const [refreshing, setRefreshing] = useState(false);
     const [filter, setFilter] = useState<'active' | 'all' | 'completed'>('all');
+    const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
     // Fetch tasks on mount (will use cache if valid)
     useEffect(() => {
@@ -251,9 +253,15 @@ export default function Dashboard() {
     }, [refreshTasks]);
 
     const handleTaskPress = (taskId: string) => {
-        // TODO: Navigate to task details
-        console.log('Task pressed:', taskId);
-        // router.push(`/task/${taskId}`);
+        setSelectedTaskId(taskId);
+    };
+
+    const handleModalClose = () => {
+        setSelectedTaskId(null);
+    };
+
+    const handleTaskUpdated = () => {
+        refreshTasks();
     };
 
     const filteredTasks = tasks.filter(task => {
@@ -477,6 +485,14 @@ export default function Dashboard() {
                 {/* Bottom Padding for nav bar */}
                 <View style={{ height: 80 }} />
             </ScrollView>
+
+            {/* Task Details Modal */}
+            <TaskDetailsModal
+                taskId={selectedTaskId}
+                isOpen={!!selectedTaskId}
+                onClose={handleModalClose}
+                onTaskUpdated={handleTaskUpdated}
+            />
 
             {/* Bottom Navigation */}
             <BottomNav
