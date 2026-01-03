@@ -1,0 +1,13 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacks]
+pkgs = ["nodejs_22"]
+
+[deploy]
+startCommand = "node apps/backend/dist/main.js"
+
+[[services]]
+name = "backend"
+buildCommand = "npm install && npm run build --workspace=backend"
+startCommand = "node apps/backend/dist/main.js"

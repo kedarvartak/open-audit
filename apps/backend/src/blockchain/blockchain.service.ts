@@ -4,21 +4,34 @@ import { ethers } from 'ethers';
 import * as path from 'path';
 import * as fs from 'fs';
 
-// Load TaskEscrow ABI - try multiple locations
-const findABI = () => {
+// Project root - stable in both local dev and production
+const PROJECT_ROOT = process.cwd();
+
+// Load TaskEscrow ABI - search multiple locations for dev/prod compatibility
+const findABI = (): any | null => {
     const locations = [
-        path.join(__dirname, 'abi', 'TaskEscrow.json'),  // Production
-        path.join(__dirname, '..', '..', 'src', 'contracts', 'abi', 'TaskEscrow.json'),  // Development
-        path.join(process.cwd(), 'src', 'contracts', 'abi', 'TaskEscrow.json'),  // Fallback
+        // Production (compiled) - dist folder
+        path.join(PROJECT_ROOT, 'dist', 'contracts', 'abi', 'TaskEscrow.json'),
+
+        // Local development - src folder
+        path.join(PROJECT_ROOT, 'src', 'contracts', 'abi', 'TaskEscrow.json'),
+
+        // Alternative: apps/backend path (for monorepo root execution)
+        path.join(PROJECT_ROOT, 'apps', 'backend', 'dist', 'contracts', 'abi', 'TaskEscrow.json'),
+        path.join(PROJECT_ROOT, 'apps', 'backend', 'src', 'contracts', 'abi', 'TaskEscrow.json'),
     ];
 
     for (const loc of locations) {
         if (fs.existsSync(loc)) {
+            console.log(`Found TaskEscrow ABI at: ${loc}`);
             return JSON.parse(fs.readFileSync(loc, 'utf-8'));
         }
     }
 
-    throw new Error('TaskEscrow.json ABI not found');
+    // Graceful failure - don't crash the app
+    console.warn('TaskEscrow ABI not found. Blockchain features will be disabled.');
+    console.warn('Searched locations:', locations);
+    return null;
 };
 
 const TaskEscrowABI = findABI();
@@ -26,11 +39,18 @@ const TaskEscrowABI = findABI();
 @Injectable()
 export class BlockchainService {
     private readonly logger = new Logger(BlockchainService.name);
-    private provider: ethers.JsonRpcProvider;
-    private wallet: ethers.Wallet;
-    private taskEscrowContract: ethers.Contract;
+    private provider: ethers.JsonRpcProvider | null = null;
+    private wallet: ethers.Wallet | null = null;
+    private taskEscrowContract: ethers.Contract | null = null;
+    private isEnabled: boolean = false;
 
     constructor(private configService: ConfigService) {
+        // Check if ABI was found
+        if (!TaskEscrowABI) {
+            this.logger.warn('Blockchain service disabled - ABI not found');
+            return;
+        }
+
         const rpcUrl = this.configService.get<string>('BLOCKCHAIN_RPC_URL', 'http://localhost:8545');
         const privateKey = this.configService.get<string>(
             'BLOCKCHAIN_PRIVATE_KEY',
@@ -41,12 +61,13 @@ export class BlockchainService {
         this.provider = new ethers.JsonRpcProvider(rpcUrl);
         this.wallet = new ethers.Wallet(privateKey, this.provider);
 
-        if (contractAddress) {
+        if (contractAddress && TaskEscrowABI?.abi) {
             this.taskEscrowContract = new ethers.Contract(
                 contractAddress,
                 TaskEscrowABI.abi,
                 this.wallet
             );
+            this.isEnabled = true;
             this.logger.log('Blockchain service initialized');
             this.logger.log(`Contract address: ${contractAddress}`);
             this.logger.log(`Wallet address: ${this.wallet.address}`);
@@ -74,7 +95,7 @@ export class BlockchainService {
 
             const tx = await this.taskEscrowContract.recordTaskCreation(
                 taskIdHash,
-                clientAddress || this.wallet.address, // Use wallet address if no client address
+                clientAddress || this.wallet?.address || '', // Use wallet address if no client address
                 amountINR,
                 stripePaymentIntentId || ''
             );
@@ -101,7 +122,7 @@ export class BlockchainService {
 
             const tx = await this.taskEscrowContract.recordTaskAcceptance(
                 taskIdHash,
-                workerAddress || this.wallet.address
+                workerAddress || this.wallet?.address || ''
             );
 
             const receipt = await tx.wait();
