@@ -70,10 +70,30 @@ export function TasksProvider({ children }: { children: ReactNode }) {
         try {
             const role = user.role === 'CLIENT' ? 'client' : 'worker';
             console.log('[TasksContext] Fetching tasks for role:', role);
-            const data = await tasksAPI.getMyTasks(role);
-            setTasks(data);
+
+            // For workers, fetch both their assigned tasks AND marketplace tasks
+            if (user.role === 'WORKER') {
+                const [myTasks, marketplaceTasks] = await Promise.all([
+                    tasksAPI.getMyTasks(role),
+                    tasksAPI.getMarketplace()
+                ]);
+
+                // Combine and deduplicate tasks (marketplace may include assigned tasks)
+                const taskMap = new Map<string, Task>();
+                myTasks.forEach((task: Task) => taskMap.set(task.id, task));
+                marketplaceTasks.forEach((task: Task) => taskMap.set(task.id, task));
+
+                const allTasks = Array.from(taskMap.values());
+                setTasks(allTasks);
+                console.log('[TasksContext] Worker tasks fetched:', allTasks.length, '(my:', myTasks.length, '+ marketplace:', marketplaceTasks.length, ')');
+            } else {
+                // For clients, just fetch their tasks
+                const data = await tasksAPI.getMyTasks(role);
+                setTasks(data);
+                console.log('[TasksContext] Client tasks fetched:', data.length);
+            }
+
             setLastFetched(Date.now());
-            console.log('[TasksContext] Tasks fetched:', data.length);
         } catch (err) {
             console.error('[TasksContext] Failed to fetch tasks:', err);
             setError('Failed to load tasks');

@@ -12,7 +12,7 @@ import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../contexts/AuthContext';
 import { useTasks } from '../contexts/TasksContext';
-import { Task, transformImageUrl } from '../services/api';
+import { Task, tasksAPI, transformImageUrl } from '../services/api';
 import { Logo } from '../components/ui/Logo';
 import { BottomNav } from '../components/ui/BottomNav';
 import { DashboardSkeleton, TaskCardSkeleton } from '../components/ui/Skeleton';
@@ -22,6 +22,7 @@ import {
     LogOut,
     User,
     HelpCircle,
+    RefreshCw,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 
@@ -252,6 +253,14 @@ export default function Dashboard() {
         setRefreshing(false);
     }, [refreshTasks]);
 
+    // Hard refresh - clears cache and refetches
+    const handleHardRefresh = useCallback(async () => {
+        setRefreshing(true);
+        tasksAPI.clearCache();
+        await refreshTasks();
+        setRefreshing(false);
+    }, [refreshTasks]);
+
     const handleTaskPress = (taskId: string) => {
         setSelectedTaskId(taskId);
     };
@@ -312,19 +321,39 @@ export default function Dashboard() {
                             </Text>
                         </View>
                     </View>
-                    <TouchableOpacity
-                        onPress={logout}
-                        style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            backgroundColor: '#f1f5f9',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <LogOut size={20} color="#64748b" />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <TouchableOpacity
+                            onPress={handleHardRefresh}
+                            disabled={refreshing}
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                backgroundColor: refreshing ? '#e2e8f0' : '#f1f5f9',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <RefreshCw
+                                size={20}
+                                color={refreshing ? '#94a3b8' : '#64748b'}
+                                style={refreshing ? { transform: [{ rotate: '45deg' }] } : undefined}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={logout}
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                backgroundColor: '#f1f5f9',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <LogOut size={20} color="#64748b" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Stats Row */}
