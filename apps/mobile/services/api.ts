@@ -232,6 +232,17 @@ export const tasksAPI = {
         return response.data;
     },
 
+    // Start work on a task (worker begins the job)
+    startWork: async (id: string, workerLat: number, workerLng: number) => {
+        const response = await api.post(`/tasks/${id}/start`, {
+            lat: workerLat,
+            lng: workerLng,
+        });
+        // Invalidate cache for this task
+        taskCache.delete(id);
+        return response.data;
+    },
+
     // Clear all caches (useful on logout)
     clearCache: () => {
         taskCache.clear();
@@ -260,6 +271,11 @@ export interface Task {
         longitude: number;
         address: string;
     };
+    // Direct location fields from backend
+    locationName?: string;
+    locationLat?: number;
+    locationLng?: number;
+    locationRadius?: number;
     beforeImages: string[];
     afterImageUrl?: string;
     client: {
@@ -272,6 +288,7 @@ export interface Task {
     };
     createdAt: string;
     deadline?: string;
+    scheduledFor?: string; // When the work is scheduled to start
 }
 
 export default api;

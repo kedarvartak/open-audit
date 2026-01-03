@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
     View,
     Text,
@@ -18,10 +18,15 @@ import {
     Calendar,
     MapPin,
     ExternalLink,
+    Clock,
+    Navigation,
+    Play,
+    AlertCircle,
 } from 'lucide-react-native';
 import { tasksAPI, Task, transformImageUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTasks } from '../../contexts/TasksContext';
+import { useLocation } from '../../hooks/useLocation';
 
 interface TaskDetailsModalProps {
     taskId: string | null;
@@ -41,9 +46,11 @@ export const TaskDetailsModal = ({
     const [task, setTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
     const [accepting, setAccepting] = useState(false);
+    const [startingWork, setStartingWork] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const { user } = useAuth();
     const { getTaskById } = useTasks();
+    const location = useLocation();
 
     useEffect(() => {
         if (isOpen && taskId) {
@@ -118,13 +125,128 @@ export const TaskDetailsModal = ({
     };
 
     const openLocation = () => {
-        if (task?.location?.address) {
-            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(task.location.address)}`;
+        if (task?.locationName || task?.location?.address) {
+            const address = task.locationName || task.location?.address;
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address!)}`;
             Linking.openURL(url);
         }
     };
 
     const canAccept = user?.role === 'WORKER' && task?.status === 'OPEN' && task?.client.id !== user?.id;
+    const isAssignedWorker = user?.role === 'WORKER' && task?.worker?.id === user?.id;
+    const canBeginWork = isAssignedWorker && task?.status === 'ACCEPTED';
+
+    // Calculate time status for Begin Task button
+    const timeStatus = useMemo(() => {
+        if (!task?.deadline && !task?.scheduledFor) {
+            // No deadline set - can start anytime
+            return { canStart: true, reason: null, timeUntil: null };
+        }
+
+        const scheduledTime = task.scheduledFor ? new Date(task.scheduledFor) : new Date(task.deadline!);
+        const now = new Date();
+        const diffMs = scheduledTime.getTime() - now.getTime();
+        const diffMins = diffMs / (1000 * 60);
+        const diffHours = diffMs / (1000 * 60 * 60);
+
+        // If more than 2 hours before scheduled time, disable button
+        if (diffHours > 2) {
+            const hours = Math.floor(diffHours);
+            const mins = Math.floor((diffHours - hours) * 60);
+            return {
+                canStart: false,
+                reason: 'too_early',
+                timeUntil: `${hours}h ${mins}m until scheduled time`,
+            };
+        }
+
+        // Within 2 hours or past scheduled time - can attempt to start (needs location check)
+        return { canStart: true, reason: null, timeUntil: null };
+    }, [task?.deadline, task?.scheduledFor]);
+
+    // Handle Begin Task with location verification
+    const handleBeginTask = async () => {
+        if (!task || !taskId) return;
+
+        // Get task location
+        const taskLat = task.locationLat || task.location?.latitude;
+        const taskLng = task.locationLng || task.location?.longitude;
+        const taskRadius = task.locationRadius || 200; // Default 200 meters
+
+        if (!taskLat || !taskLng) {
+            // No location set for task - allow starting without location check
+            Alert.alert(
+                'Start Work',
+                'This task has no specific location. Do you want to begin work?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Begin',
+                        onPress: () => startWork(0, 0),
+                    },
+                ]
+            );
+            return;
+        }
+
+        setStartingWork(true);
+
+        try {
+            // Get current location
+            const currentLocation = await location.getCurrentLocation();
+
+            if (!currentLocation) {
+                setStartingWork(false);
+                return;
+            }
+
+            // Calculate distance
+            const distance = location.calculateDistance(
+                currentLocation.latitude,
+                currentLocation.longitude,
+                taskLat,
+                taskLng
+            );
+
+            console.log(`[BeginTask] Distance to task: ${distance.toFixed(0)}m, Radius: ${taskRadius}m`);
+
+            if (distance <= taskRadius) {
+                // Within radius - can start work
+                await startWork(currentLocation.latitude, currentLocation.longitude);
+            } else {
+                // Outside radius - show alert
+                Alert.alert(
+                    'Too Far From Location',
+                    `You are ${Math.round(distance)}m away from the task location. You need to be within ${taskRadius}m to begin work.\n\nPlease travel to the location and try again.`,
+                    [
+                        { text: 'OK', style: 'default' },
+                        {
+                            text: 'Navigate',
+                            onPress: openLocation,
+                        },
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error('[BeginTask] Error:', error);
+            Alert.alert('Error', 'Failed to verify your location. Please try again.');
+        } finally {
+            setStartingWork(false);
+        }
+    };
+
+    const startWork = async (workerLat: number, workerLng: number) => {
+        if (!taskId) return;
+
+        try {
+            await tasksAPI.startWork(taskId, workerLat, workerLng);
+            Alert.alert('Success', 'Work started! You can now begin the task.');
+            fetchTask();
+            onTaskUpdated?.();
+        } catch (error: any) {
+            Alert.alert('Error', error.response?.data?.message || 'Failed to start work');
+        }
+    };
 
     const getStatusBadgeStyle = (status: string) => {
         switch (status) {
@@ -568,6 +690,90 @@ export const TaskDetailsModal = ({
                                 </Text>
                             )}
                         </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Begin Task Button - For assigned workers */}
+                {canBeginWork && task && (
+                    <View style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        padding: 20,
+                        backgroundColor: '#ffffff',
+                        borderTopWidth: 1,
+                        borderTopColor: '#e2e8f0',
+                    }}>
+                        {/* Time warning if too early */}
+                        {!timeStatus.canStart && (
+                            <View style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                backgroundColor: '#fef3c7',
+                                padding: 12,
+                                borderRadius: 8,
+                                marginBottom: 12,
+                            }}>
+                                <Clock size={18} color="#d97706" />
+                                <Text style={{
+                                    marginLeft: 8,
+                                    color: '#92400e',
+                                    fontSize: 13,
+                                    flex: 1,
+                                }}>
+                                    {timeStatus.timeUntil}
+                                </Text>
+                            </View>
+                        )}
+
+                        <TouchableOpacity
+                            onPress={handleBeginTask}
+                            disabled={!timeStatus.canStart || startingWork}
+                            style={{
+                                backgroundColor: !timeStatus.canStart ? '#cbd5e1' : startingWork ? '#94a3b8' : '#22c55e',
+                                paddingVertical: 16,
+                                borderRadius: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            {startingWork ? (
+                                <>
+                                    <ActivityIndicator color="#ffffff" size="small" />
+                                    <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}>
+                                        VERIFYING LOCATION...
+                                    </Text>
+                                </>
+                            ) : !timeStatus.canStart ? (
+                                <>
+                                    <AlertCircle size={20} color="#64748b" />
+                                    <Text style={{ color: '#64748b', fontSize: 16, fontWeight: '700' }}>
+                                        TOO EARLY TO START
+                                    </Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Play size={20} color="#ffffff" />
+                                    <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}>
+                                        BEGIN TASK
+                                    </Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
+
+                        {timeStatus.canStart && (
+                            <Text style={{
+                                textAlign: 'center',
+                                color: '#64748b',
+                                fontSize: 11,
+                                marginTop: 8,
+                            }}>
+                                Location verification required to begin
+                            </Text>
+                        )}
                     </View>
                 )}
             </View>
