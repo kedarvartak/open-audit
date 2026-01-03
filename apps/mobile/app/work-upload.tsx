@@ -392,7 +392,7 @@ export default function WorkUploadScreen() {
                 borderTopColor: '#e2e8f0',
             }}>
                 <TouchableOpacity
-                    onPress={uploadImages}
+                    onPress={() => uploadImages()}
                     disabled={selectedImages.length === 0 || uploading}
                     style={{
                         backgroundColor: selectedImages.length === 0 ? '#cbd5e1' : uploading ? '#94a3b8' : '#464ace',
