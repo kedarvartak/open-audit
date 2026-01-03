@@ -91,9 +91,22 @@ export default function Marketplace() {
                 </div>
 
                 {loading ? (
-                    <div className="text-center py-12">
-                        <div className="inline-block animate-spin rounded-sm h-12 w-12 border-b-2 border-blue-600"></div>
-                        <p className="mt-4 text-gray-600">Loading tasks...</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="bg-white rounded-md shadow p-6 space-y-4 animate-pulse">
+                                <div className="flex items-start justify-between">
+                                    <div className="h-6 w-20 rounded bg-gray-200" />
+                                    <div className="h-6 w-16 rounded bg-gray-200" />
+                                </div>
+                                <div className="h-6 w-3/4 rounded bg-gray-200" />
+                                <div className="h-4 w-full rounded bg-gray-200" />
+                                <div className="h-4 w-2/3 rounded bg-gray-200" />
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                    <div className="h-4 w-24 rounded bg-gray-200" />
+                                    <div className="h-4 w-12 rounded bg-gray-200" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : tasks.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-md shadow">

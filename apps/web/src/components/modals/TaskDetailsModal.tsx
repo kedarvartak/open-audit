@@ -97,8 +97,32 @@ export const TaskDetailsModal = ({ taskId, isOpen, onClose, onTaskUpdated }: Tas
                 {/* Content - scrollable */}
                 <div className="p-4 sm:p-6 overflow-y-auto flex-1">
                     {loading ? (
-                        <div className={`flex justify-center items-center h-64 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Loading task...
+                        <div className="space-y-4 animate-pulse">
+                            {/* Image carousel skeleton */}
+                            <div className={`w-full h-48 sm:h-64 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+                            {/* Title skeleton */}
+                            <div className={`h-8 w-3/4 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+                            {/* Badges skeleton */}
+                            <div className="flex gap-2">
+                                <div className={`h-6 w-20 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-6 w-24 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-6 w-16 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                            </div>
+
+                            {/* Description skeleton */}
+                            <div className="space-y-2">
+                                <div className={`h-4 w-full rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-4 w-full rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-4 w-2/3 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                            </div>
+
+                            {/* Details skeleton */}
+                            <div className="grid grid-cols-2 gap-4 pt-4">
+                                <div className={`h-16 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-16 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                            </div>
                         </div>
                     ) : !task ? (
                         <div className={`flex justify-center items-center h-64 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>

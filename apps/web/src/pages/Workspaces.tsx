@@ -263,8 +263,18 @@ const Workspaces = () => {
 
                     <div className="flex-1 overflow-auto p-3 space-y-2">
                         {loading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#464ace]" />
+                            <div className="space-y-2">
+                                {[...Array(3)].map((_, i) => (
+                                    <div key={i} className={`p-3 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-full ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                            <div className="flex-1 space-y-2">
+                                                <div className={`h-4 w-3/4 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                                <div className={`h-3 w-1/2 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : workspaces.length === 0 ? (
                             <div className={`text-center py-8 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>

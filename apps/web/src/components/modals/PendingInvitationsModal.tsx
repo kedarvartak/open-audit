@@ -99,8 +99,22 @@ export const PendingInvitationsModal = ({ onClose }: PendingInvitationsModalProp
                 {/* Content */}
                 <div className="p-6 max-h-96 overflow-y-auto">
                     {loading ? (
-                        <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#464ace]"></div>
+                        <div className="space-y-4">
+                            {[...Array(2)].map((_, i) => (
+                                <div key={i} className={`rounded-xl border p-4 animate-pulse ${theme === 'dark' ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-12 h-12 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                        <div className="flex-1 space-y-2">
+                                            <div className={`h-5 w-40 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                            <div className={`h-4 w-32 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 mt-4">
+                                        <div className={`flex-1 h-10 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                        <div className={`flex-1 h-10 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="space-y-4">
