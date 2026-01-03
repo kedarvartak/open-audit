@@ -6,6 +6,8 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export const CreateProject = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
@@ -40,7 +42,7 @@ export const CreateProject = () => {
         try {
             const token = localStorage.getItem('token');
 
-            const projectRes = await axios.post('http://localhost:3000/projects', {
+            const projectRes = await axios.post(`${API_URL}/v0/projects`, {
                 title: formData.title,
                 description: formData.description,
             }, {
@@ -50,7 +52,7 @@ export const CreateProject = () => {
             const projectId = projectRes.data.id;
 
             for (const m of formData.milestones) {
-                await axios.post(`http://localhost:3000/projects/${projectId}/milestones`, {
+                await axios.post(`${API_URL}/v0/projects/${projectId}/milestones`, {
                     description: m.description,
                     amount: parseFloat(m.amount)
                 }, {

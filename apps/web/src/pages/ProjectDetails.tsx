@@ -6,6 +6,8 @@ import { cn } from '../lib/utils';
 import { Button, buttonVariants } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 interface Milestone {
     id: string;
     description: string;
@@ -30,7 +32,7 @@ export const ProjectDetails = () => {
     useEffect(() => {
         const fetchProject = async () => {
             try {
-                const response = await axios.get(`http://localhost:3000/projects/${id}`);
+                const response = await axios.get(`${API_URL}/v0/projects/${id}`);
                 setProject(response.data);
             } catch (error) {
                 console.error('Failed to fetch project:', error);
@@ -54,7 +56,7 @@ export const ProjectDetails = () => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:3000/proofs/${milestoneId}`, formData, {
+            await axios.post(`${API_URL}/v0/proofs/${milestoneId}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': `Bearer ${token}`

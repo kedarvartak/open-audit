@@ -126,9 +126,10 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
                 submitData.append('existingImages', JSON.stringify(existingImages));
             }
 
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
             const url = editTask
-                ? `http://localhost:3001/v0/tasks/${editTask.id}`
-                : 'http://localhost:3001/v0/tasks';
+                ? `${apiUrl}/v0/tasks/${editTask.id}`
+                : `${apiUrl}/v0/tasks`;
 
             const method = editTask ? 'put' : 'post';
 
