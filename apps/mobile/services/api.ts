@@ -1,10 +1,10 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Backend running on local machine - use your computer's IP for physical devices
-const API_URL = 'http://192.168.0.105:3001/v0';
+// Deployed backend on Railway
+const API_URL = 'https://backend-production-172c.up.railway.app/v0';
 
-// Legacy MinIO configuration (for migration period only)
+// Legacy MinIO configuration (for migration period only - no longer used)
 const LEGACY_MINIO_HOST = '192.168.0.105';
 
 console.log('[API] Base URL:', API_URL);
