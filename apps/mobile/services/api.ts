@@ -249,6 +249,7 @@ export const tasksAPI = {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            timeout: 120000, // 2 minutes for image uploads
         });
         // Invalidate cache for this task
         taskCache.delete(id);

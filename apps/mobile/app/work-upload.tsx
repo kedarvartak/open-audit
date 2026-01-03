@@ -105,7 +105,7 @@ export default function WorkUploadScreen() {
         setSelectedImages(prev => prev.filter((_, i) => i !== index));
     };
 
-    const uploadImages = async () => {
+    const uploadImages = async (retryCount = 0) => {
         if (selectedImages.length === 0) {
             Alert.alert('No Images', 'Please add at least one image to upload.');
             return;
@@ -132,7 +132,9 @@ export default function WorkUploadScreen() {
                 } as any);
             }
 
+            console.log(`[WorkUpload] Uploading ${selectedImages.length} images (attempt ${retryCount + 1})`);
             const response = await tasksAPI.uploadWorkerImages(taskId, formData);
+            console.log('[WorkUpload] Upload successful:', response);
 
             Alert.alert(
                 'Success!',
@@ -146,10 +148,28 @@ export default function WorkUploadScreen() {
             );
         } catch (error: any) {
             console.error('Upload failed:', error);
-            Alert.alert(
-                'Upload Failed',
-                error.response?.data?.message || 'Failed to upload images. Please try again.'
-            );
+
+            // Check if it's a timeout error
+            const isTimeout = error.code === 'ECONNABORTED' || error.message?.includes('timeout');
+
+            if (isTimeout && retryCount < 2) {
+                // Auto-retry on timeout (up to 2 retries)
+                Alert.alert(
+                    'Slow Connection',
+                    'Upload is taking longer than expected. Retrying...',
+                    [{ text: 'OK' }]
+                );
+                setUploading(false);
+                setTimeout(() => uploadImages(retryCount + 1), 1000);
+                return;
+            }
+
+            // Show appropriate error message
+            const errorMessage = isTimeout
+                ? 'Upload timed out. Please check your internet connection and try again with fewer or smaller images.'
+                : error.response?.data?.message || 'Failed to upload images. Please try again.';
+
+            Alert.alert('Upload Failed', errorMessage);
         } finally {
             setUploading(false);
         }
