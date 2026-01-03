@@ -232,8 +232,58 @@ export const WorkVerification = () => {
     if (loading) {
         return (
             <DashboardLayout>
-                <div className={`flex justify-center items-center h-full ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                    <div className="animate-pulse">Loading task details...</div>
+                <div className={`h-full flex flex-col ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                    {/* Header Skeleton */}
+                    <div className={`flex items-center justify-between px-6 py-4 border-b ${theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+                        <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-full animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                            <div className="space-y-2">
+                                <div className={`h-5 w-40 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-4 w-56 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className={`h-4 w-24 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                            <div className={`h-10 w-32 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                        </div>
+                    </div>
+
+                    {/* Main Content Skeleton */}
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Center Area Skeleton */}
+                        <div className={`flex-1 flex items-center justify-center ${theme === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                            <div className="flex flex-col items-center gap-4">
+                                <div className={`w-64 h-64 rounded-lg animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                <div className={`h-4 w-40 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-600' : 'bg-slate-300'}`} />
+                            </div>
+                        </div>
+
+                        {/* Right Sidebar Skeleton */}
+                        <div className={`w-96 flex flex-col border-l ${theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-white'}`}>
+                            {/* Tab Navigation Skeleton */}
+                            <div className={`flex border-b ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                                <div className={`flex-1 py-3 flex justify-center`}>
+                                    <div className={`h-4 w-20 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                </div>
+                                <div className={`flex-1 py-3 flex justify-center`}>
+                                    <div className={`h-4 w-20 rounded animate-pulse ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                </div>
+                            </div>
+
+                            {/* Content Skeleton */}
+                            <div className="flex-1 p-6 space-y-3">
+                                {[...Array(4)].map((_, i) => (
+                                    <div key={i} className={`flex items-center gap-4 p-2 rounded-lg border animate-pulse ${theme === 'dark' ? 'border-slate-700' : 'border-slate-100'}`}>
+                                        <div className={`w-16 h-16 rounded-md ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                        <div className="flex-1 space-y-2">
+                                            <div className={`h-4 w-24 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                            <div className={`h-3 w-16 rounded ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </DashboardLayout>
         );
