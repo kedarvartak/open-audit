@@ -45,6 +45,8 @@ export interface Task {
     locationRadius?: number;
     beforeImages: string[];   // Array of image URLs uploaded by client
     afterImageUrl?: string;   // Image uploaded by worker during completion
+    workerImages?: string[];  // Images uploaded by worker for supervisor review
+    workerImagesUploadedAt?: string;  // When worker uploaded images
     deadline?: string;        // Task deadline
     createdAt: string;
     client: {

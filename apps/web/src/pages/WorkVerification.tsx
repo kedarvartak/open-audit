@@ -54,12 +54,22 @@ export const WorkVerification = () => {
                     }
                 }
 
-                // Load uploaded "after" images if they exist
-                // Note: Currently the backend only stores afterImageUrl (single image)
-                // For multiple images support, backend would need to store an array
-                if (taskData.afterImageUrl) {
+                // Load worker-uploaded images if they exist
+                if (taskData.workerImages && taskData.workerImages.length > 0) {
+                    console.log('[WorkVerification] Loading worker-uploaded images:', taskData.workerImages.length);
+                    const workerUploadedImages: CapturedImage[] = taskData.workerImages.map((url: string, index: number) => ({
+                        id: `worker_${index}`,
+                        src: url,
+                        timestamp: new Date(taskData.workerImagesUploadedAt || new Date()),
+                        status: 'pending' as const,
+                        mediaType: 'image' as const,
+                    }));
+                    setCapturedImages(workerUploadedImages);
+                    setActiveTab('verification');
+                }
+                // Fallback: Load single after image if no worker images
+                else if (taskData.afterImageUrl) {
                     console.log('[WorkVerification] Loading uploaded after images');
-                    // For now, just add the single after image
                     const uploadedImage: CapturedImage = {
                         id: 'uploaded_1',
                         src: taskData.afterImageUrl,

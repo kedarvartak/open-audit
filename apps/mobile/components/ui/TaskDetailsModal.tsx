@@ -22,11 +22,13 @@ import {
     Navigation,
     Play,
     AlertCircle,
+    Camera,
 } from 'lucide-react-native';
 import { tasksAPI, Task, transformImageUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTasks } from '../../contexts/TasksContext';
 import { useLocation } from '../../hooks/useLocation';
+import { router } from 'expo-router';
 
 interface TaskDetailsModalProps {
     taskId: string | null;
@@ -135,6 +137,7 @@ export const TaskDetailsModal = ({
     const canAccept = user?.role === 'WORKER' && task?.status === 'OPEN' && task?.client.id !== user?.id;
     const isAssignedWorker = user?.role === 'WORKER' && task?.worker?.id === user?.id;
     const canBeginWork = isAssignedWorker && task?.status === 'ACCEPTED';
+    const canUploadImages = isAssignedWorker && task?.status === 'IN_PROGRESS';
 
     // Calculate time status for Begin Task button
     const timeStatus = useMemo(() => {
@@ -240,9 +243,10 @@ export const TaskDetailsModal = ({
 
         try {
             await tasksAPI.startWork(taskId, workerLat, workerLng);
-            Alert.alert('Success', 'Work started! You can now begin the task.');
-            fetchTask();
+            onClose(); // Close modal
             onTaskUpdated?.();
+            // Navigate to work upload screen
+            router.push(`/work-upload?taskId=${taskId}`);
         } catch (error: any) {
             Alert.alert('Error', error.response?.data?.message || 'Failed to start work');
         }
@@ -774,6 +778,41 @@ export const TaskDetailsModal = ({
                                 Location verification required to begin
                             </Text>
                         )}
+                    </View>
+                )}
+
+                {/* Upload Images Button - For tasks in progress */}
+                {canUploadImages && task && (
+                    <View style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        padding: 20,
+                        backgroundColor: '#ffffff',
+                        borderTopWidth: 1,
+                        borderTopColor: '#e2e8f0',
+                    }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                onClose();
+                                router.push(`/work-upload?taskId=${taskId}`);
+                            }}
+                            style={{
+                                backgroundColor: '#464ace',
+                                paddingVertical: 16,
+                                borderRadius: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                            }}
+                        >
+                            <Camera size={20} color="#ffffff" />
+                            <Text style={{ color: '#ffffff', fontSize: 16, fontWeight: '700' }}>
+                                UPLOAD WORK IMAGES
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 )}
             </View>

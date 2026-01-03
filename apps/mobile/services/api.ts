@@ -243,6 +243,18 @@ export const tasksAPI = {
         return response.data;
     },
 
+    // Worker uploads images for supervisor review (no AI verification)
+    uploadWorkerImages: async (id: string, formData: FormData) => {
+        const response = await api.post(`/tasks/${id}/upload-images`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        // Invalidate cache for this task
+        taskCache.delete(id);
+        return response.data;
+    },
+
     // Clear all caches (useful on logout)
     clearCache: () => {
         taskCache.clear();

@@ -159,6 +159,8 @@ model Task {
   beforeImageHashes Json?    // Array of SHA-256 hashes for blockchain verification
   afterImageUrl   String?    // URL of after image (first one if multiple)
   afterImageHash  String?    // SHA-256 for blockchain verification
+  workerImages    String[]   @default([])  // Images uploaded by worker before verification
+  workerImagesUploadedAt DateTime?  // When worker uploaded images
   
   // AI Verification
   aiVerification  Json?      // Full AI result (confidence, verdict, etc.)

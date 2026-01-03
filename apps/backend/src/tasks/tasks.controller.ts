@@ -173,6 +173,28 @@ export class TasksController {
         return result;
     }
 
+    // Worker uploads images without AI verification - supervisor reviews later
+    @Post(':id/upload-images')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.WORKER, Role.ADMIN)
+    @UseInterceptors(FilesInterceptor('images', 10))
+    async uploadWorkerImages(
+        @Param('id') id: string,
+        @UploadedFiles() images: Express.Multer.File[],
+        @Request() req: any,
+    ) {
+        console.log(`[TasksController] uploadWorkerImages called for task ${id} by user ${req.user.userId}`);
+        console.log(`[TasksController] Received ${images?.length || 0} images`);
+
+        if (!images || images.length === 0) {
+            console.error('[TasksController] No images provided');
+            throw new BadRequestException('Images required');
+        }
+
+        return this.tasksService.uploadWorkerImages(id, req.user.userId, images);
+    }
+
     @Post(':id/dispute')
     @HttpCode(HttpStatus.OK)
     @UseGuards(JwtAuthGuard, RolesGuard)

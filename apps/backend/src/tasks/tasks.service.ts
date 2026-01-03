@@ -411,6 +411,56 @@ export class TasksService {
         return updatedTask;
     }
 
+    // WORKER: Upload images for supervisor review (no AI verification)
+    async uploadWorkerImages(
+        taskId: string,
+        workerId: string,
+        images: Express.Multer.File[],
+    ) {
+        console.log(`[TasksService] uploadWorkerImages: Fetching task ${taskId}`);
+        const task = await this.getTaskById(taskId);
+
+        // Verify worker is assigned to this task
+        if (task.workerId !== workerId) {
+            throw new BadRequestException('You are not assigned to this task');
+        }
+
+        // Task must be in IN_PROGRESS state
+        if (task.status !== TaskStatus.IN_PROGRESS && task.status !== TaskStatus.ACCEPTED) {
+            throw new BadRequestException('Task must be in progress to upload images');
+        }
+
+        // Upload images to Cloudinary
+        const imageUrls: string[] = [];
+        for (const image of images) {
+            const url = await this.storage.uploadFile(image, 'worker-uploads');
+            imageUrls.push(url);
+            console.log(`[TasksService] Uploaded worker image: ${url}`);
+        }
+
+        // Update task with worker images
+        const updatedTask = await this.prisma.task.update({
+            where: { id: taskId },
+            data: {
+                workerImages: imageUrls,
+                workerImagesUploadedAt: new Date(),
+                status: TaskStatus.SUBMITTED, // Mark as submitted for review
+            },
+            include: {
+                client: { select: { id: true, name: true, email: true } },
+                worker: { select: { id: true, name: true, email: true } },
+            },
+        });
+
+        console.log(`[TasksService] Worker images uploaded: ${imageUrls.length} images`);
+        return {
+            success: true,
+            message: 'Images uploaded successfully. Supervisor will review and verify.',
+            imageCount: imageUrls.length,
+            task: updatedTask,
+        };
+    }
+
     // WORKER: Submit completed work
     // Trigger rebuild for Prisma client update
     async submitWork(
