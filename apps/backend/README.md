@@ -743,13 +743,6 @@ NODE_ENV=development
    - Hash computed during upload (single pass)
    - Batch image processing support (up to 10 images)
 
-### Caching Considerations
-
-For production deployment, consider adding:
-- Redis for session/token caching
-- Cloudinary transformations for image optimization
-- Query result caching for frequently accessed data
-
 ---
 
 ## Deployment
