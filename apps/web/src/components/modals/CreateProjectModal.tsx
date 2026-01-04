@@ -217,7 +217,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
 
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: 'AIzaSyAVv-fXnoWeN6LG3c7RqAXykXtIUq4scnE'
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
     });
 
     const [mapCenter] = useState({ lat: 18.5204, lng: 73.8567 }); // Default to Pune
@@ -232,7 +232,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ onClose,
             // Reverse geocode
             try {
                 const response = await fetch(
-                    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyAVv-fXnoWeN6LG3c7RqAXykXtIUq4scnE`
+                    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
                 );
                 const data = await response.json();
                 if (data.status === 'OK' && data.results[0]) {
