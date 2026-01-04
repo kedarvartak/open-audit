@@ -21,7 +21,7 @@ export class TasksService {
     ) {
         // Initialize Groq with API key from environment
         this.groq = new Groq({
-            apiKey: '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',
+            apiKey: process.env.GROQ_API_KEY,
         });
     }
 

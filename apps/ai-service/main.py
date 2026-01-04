@@ -32,7 +32,7 @@ app.add_middleware(
 
 # Initialize models
 print("Loading models...")
-groq_client = Groq(api_key=os.getenv("GROQ_API_KEY", "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"))
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
