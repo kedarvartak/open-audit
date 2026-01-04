@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { AiVerificationService } from './ai-verification.service';
@@ -18,10 +19,15 @@ export class TasksService {
         private aiVerification: AiVerificationService,
         private blockchain: BlockchainService,
         private firebase: FirebaseService,
+        private configService: ConfigService,
     ) {
-        // Initialize Groq with API key from environment
+        // Initialize Groq with API key from environment via ConfigService
+        const groqApiKey = this.configService.get<string>('GROQ_API_KEY');
+        if (!groqApiKey) {
+            console.warn('[TasksService] GROQ_API_KEY not found in environment');
+        }
         this.groq = new Groq({
-            apiKey: process.env.GROQ_API_KEY,
+            apiKey: groqApiKey,
         });
     }
 
